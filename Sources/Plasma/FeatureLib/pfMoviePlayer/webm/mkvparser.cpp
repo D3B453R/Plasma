@@ -12,11 +12,6 @@
 #include <new>
 #include <climits>
 
-#ifdef _MSC_VER
-// Disable MSVC warnings that suggest making code non-portable.
-#pragma warning(disable : 4996)
-#endif
-
 mkvparser::IMkvReader::~IMkvReader() {}
 
 void mkvparser::GetVersion(int& major, int& minor, int& build, int& revision) {
@@ -4129,7 +4124,7 @@ long Chapters::Atom::Parse(IMkvReader* pReader, long long pos, long long size) {
         return status;
     } else if (id == 0x33C4) {  // UID ID
       long long val;
-      status = UnserializeInt(pReader, pos, size, val);
+      status = UnserializeInt(pReader, pos, (long)size, val);
 
       if (val < 0)  // error
         return status;
@@ -6680,7 +6675,7 @@ long Cluster::ParseBlockGroup(long long payload_size, long long& pos,
       return E_FILE_FORMAT_INVALID;
 
     if (id == 0x35A2) {  // DiscardPadding
-      status = UnserializeInt(pReader, pos, size, discard_padding);
+      status = UnserializeInt(pReader, pos, (long)size, discard_padding);
 
       if (status < 0)  // error
         return status;

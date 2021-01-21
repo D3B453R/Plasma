@@ -58,17 +58,13 @@ class pyVaultAgeLinkNode;
 class pyVaultTextNoteNode : public pyVaultNode
 {
 protected:
-    // should only be created from C++ side
-    pyVaultTextNoteNode(RelVaultNode* nfsNode);
-
     //create from the Python side
     pyVaultTextNoteNode();
 
 public:
     // required functions for PyObject interoperability
     PYTHON_CLASS_NEW_FRIEND(ptVaultTextNoteNode);
-    PYTHON_CLASS_NEW_DEFINITION;
-    static PyObject *New(RelVaultNode* nfsNode);
+    PYTHON_CLASS_VAULT_NODE_NEW_DEFINITION;
     PYTHON_CLASS_CHECK_DEFINITION; // returns true if the PyObject is a pyVaultTextNoteNode object
     PYTHON_CLASS_CONVERT_FROM_DEFINITION(pyVaultTextNoteNode); // converts a PyObject to a pyVaultTextNoteNode (throws error if not correct type)
 
@@ -85,10 +81,10 @@ public:
     void Note_SetTextW( const wchar_t * text );
     ST::string Note_GetText() const;
     void Note_SetType( int32_t type );
-    int32_t Note_GetType( void );
+    int32_t Note_GetType();
 
     void Note_SetSubType( int32_t type );
-    int32_t Note_GetSubType( void );
+    int32_t Note_GetSubType();
 
     PyObject * GetDeviceInbox() const; // returns pyVaultFolderNode
     void SetDeviceInbox( const char * devName, PyObject * cb=nil, uint32_t cbContext=0 );

@@ -41,7 +41,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 
 #include <Python.h>
-#pragma hdrstop
 
 #include "pyAgeVault.h"
 #include "pyAgeInfoStruct.h"
@@ -117,7 +116,7 @@ PYTHON_METHOD_DEFINITION(ptAgeVault, getSubAgeLink, args)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptAgeVault, getAgeGuid)
 {
-    return PyString_FromString(self->fThis->GetAgeGuid().AsString().c_str());
+    return PyUnicode_FromSTString(self->fThis->GetAgeGuid().AsString());
 }
 
 PYTHON_METHOD_DEFINITION(ptAgeVault, addDevice, args)

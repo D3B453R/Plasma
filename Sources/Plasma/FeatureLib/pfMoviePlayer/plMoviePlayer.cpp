@@ -43,7 +43,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plMoviePlayer.h"
 
 #include "hsConfig.h"
-#ifdef PLASMA_USE_WEBM
+#ifdef USE_WEBM
 #   define VPX_CODEC_DISABLE_COMPAT 1
 #   include <vpx/vpx_decoder.h>
 #   include <vpx/vp8dx.h>
@@ -82,11 +82,12 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 class VPX
 {
-    VPX() { }
 
-#ifdef PLASMA_USE_WEBM
+#ifdef USE_WEBM
 public:
     vpx_codec_ctx_t codec;
+
+    VPX() : codec() { }
 
     ~VPX()
     {
@@ -118,6 +119,8 @@ public:
         // if this proves false, move decoder function into IProcessVideoFrame
         return vpx_codec_get_frame(&codec, &iter);
     }
+#else
+    VPX() { }
 #endif
 };
 
@@ -185,7 +188,7 @@ plMoviePlayer::~plMoviePlayer()
     if (fPlate)
         // The plPlate owns the Mipmap Texture, so it destroys it for us
         plPlateManager::Instance().DestroyPlate(fPlate);
-#ifdef PLASMA_USE_WEBM
+#ifdef USE_WEBM
     if (fReader) {
         fReader->Close();
         delete fReader;
@@ -195,9 +198,9 @@ plMoviePlayer::~plMoviePlayer()
 
 bool plMoviePlayer::IOpenMovie()
 {
-#ifdef PLASMA_USE_WEBM
+#ifdef USE_WEBM
     if (!plFileInfo(fMoviePath).Exists()) {
-        plStatusLog::AddLineS("movie.log", "%s: Tried to play a movie that doesn't exist.", fMoviePath.AsString().c_str());
+        plStatusLog::AddLineSF("movie.log", "{}: Tried to play a movie that doesn't exist.", fMoviePath);
         return false;
     }
 
@@ -241,14 +244,14 @@ bool plMoviePlayer::IOpenMovie()
 
 bool plMoviePlayer::ILoadAudio()
 {
-#ifdef PLASMA_USE_WEBM
+#ifdef USE_WEBM
     // Fetch audio track information
     if (!fAudioTrack)
         return false;
     const mkvparser::AudioTrack* audio = static_cast<const mkvparser::AudioTrack*>(fAudioTrack->GetTrack());
     plWAVHeader header;
     header.fFormatTag = plWAVHeader::kPCMFormatTag;
-    header.fNumChannels = audio->GetChannels();
+    header.fNumChannels = (uint16_t)audio->GetChannels();
     header.fBitsPerSample = audio->GetBitDepth() == 8 ? 8 : 16;
     header.fNumSamplesPerSec = 48000; // OPUS specs say we shall always decode at 48kHz
     header.fBlockAlign = header.fNumChannels * header.fBitsPerSample / 8;
@@ -256,12 +259,12 @@ bool plMoviePlayer::ILoadAudio()
     fAudioSound.reset(new plWin32VideoSound(header));
 
     // Initialize Opus
-    if (strncmp(audio->GetCodecId(), WEBM_CODECID_OPUS, arrsize(WEBM_CODECID_OPUS)) != 0) {
-        plStatusLog::AddLineS("movie.log", "%s: Not an Opus audio track!", fMoviePath.AsString().c_str());
+    if (strncmp(audio->GetCodecId(), WEBM_CODECID_OPUS, std::size(WEBM_CODECID_OPUS)) != 0) {
+        plStatusLog::AddLineSF("movie.log", "{}: Not an Opus audio track!", fMoviePath);
         return false;
     }
     int error;
-    OpusDecoder* opus = opus_decoder_create(48000, audio->GetChannels(), &error);
+    OpusDecoder* opus = opus_decoder_create(48000, (int)audio->GetChannels(), &error);
     if (error != OPUS_OK)
         hsAssert(false, "Error occured initalizing opus");
 
@@ -270,9 +273,9 @@ bool plMoviePlayer::ILoadAudio()
     fAudioTrack->GetFrames(fReader, fSegment->GetDuration(), frames);
     static const int maxFrameSize = 5760; // for max packet duration at 48kHz
     std::vector<int16_t> decoded;
-    decoded.reserve(frames.size() * audio->GetChannels() * maxFrameSize);
+    decoded.reserve(frames.size() * (size_t)audio->GetChannels() * maxFrameSize);
 
-    int16_t* frameData = new int16_t[maxFrameSize * audio->GetChannels()];
+    int16_t* frameData = new int16_t[maxFrameSize * (size_t)audio->GetChannels()];
     for (const auto& frame : frames) {
         const std::unique_ptr<uint8_t>& buf = std::get<0>(frame);
         int32_t size = std::get<1>(frame);
@@ -303,7 +306,7 @@ bool plMoviePlayer::ICheckLanguage(const mkvparser::Track* track)
 
 void plMoviePlayer::IProcessVideoFrame(const std::vector<blkbuf_t>& frames)
 {
-#ifdef PLASMA_USE_WEBM
+#ifdef USE_WEBM
     vpx_image_t* img = nullptr;
 
     // We have to decode all the frames, but we only want to display the most recent one to the user.
@@ -339,15 +342,15 @@ bool plMoviePlayer::Start()
     if (fPlaying)
         return false;
 
-#ifdef PLASMA_USE_WEBM
+#ifdef USE_WEBM
     if (!IOpenMovie())
         return false;
     hsAssert(fVideoTrack, "nil video track -- expect bad things to happen!");
 
     // Initialize VPX
     const mkvparser::VideoTrack* video = static_cast<const mkvparser::VideoTrack*>(fVideoTrack->GetTrack());
-    if (strncmp(video->GetCodecId(), WEBM_CODECID_VP9, arrsize(WEBM_CODECID_VP9)) != 0) {
-        plStatusLog::AddLineS("movie.log", "%s: Not a VP9 video track!", fMoviePath.AsString().c_str());
+    if (strncmp(video->GetCodecId(), WEBM_CODECID_VP9, std::size(WEBM_CODECID_VP9)) != 0) {
+        plStatusLog::AddLineSF("movie.log", "{}: Not a VP9 video track!", fMoviePath);
         return false;
     }
     if (VPX* vpx = VPX::Create())
@@ -381,7 +384,7 @@ void plMoviePlayer::IInitPlate(uint32_t width, uint32_t height)
         plateHeight *= scale;
     }
     plateMgr.CreatePlate(&fPlate, fPosition.fX, fPosition.fY, 0, 0);
-    plateMgr.SetPlatePixelSize(fPlate, plateWidth, plateHeight);
+    plateMgr.SetPlatePixelSize(fPlate, (uint32_t)plateWidth, (uint32_t)plateHeight);
     fTexture = fPlate->CreateMaterial(width, height, false);
 }
 
@@ -397,7 +400,7 @@ bool plMoviePlayer::NextFrame()
     if (fPaused)
         return true;
 
-#ifdef PLASMA_USE_WEBM
+#ifdef USE_WEBM
     // Get our current timecode
     fMovieTime += frameTimeDelta;
 

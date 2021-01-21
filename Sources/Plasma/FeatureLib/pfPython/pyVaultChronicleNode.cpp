@@ -45,7 +45,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 //
 //////////////////////////////////////////////////////////////////////
 
-#pragma hdrstop
 
 #include "pyVaultChronicleNode.h"
 #include "plVault/plVault.h"
@@ -53,15 +52,9 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #   include "pyVault.h"
 #endif
 
-// should only be created from C++ side
-pyVaultChronicleNode::pyVaultChronicleNode(RelVaultNode* nfsNode)
-: pyVaultNode(nfsNode)
-{
-}
-
 //create from the Python side
-pyVaultChronicleNode::pyVaultChronicleNode(int n)
-: pyVaultNode(new RelVaultNode)
+pyVaultChronicleNode::pyVaultChronicleNode()
+    : pyVaultNode()
 {
     fNode->SetNodeType(plVault::kNodeType_Chronicle);
 }
@@ -85,7 +78,7 @@ ST::string pyVaultChronicleNode::Chronicle_GetName() const
         VaultChronicleNode chron(fNode);
         return chron.GetEntryName();
     }
-    return ST::null;
+    return ST::string();
 }
 
 void pyVaultChronicleNode::Chronicle_SetValue( const char * text )
@@ -102,7 +95,7 @@ ST::string pyVaultChronicleNode::Chronicle_GetValue() const
         VaultChronicleNode chron(fNode);
         return chron.GetEntryValue();
     }
-    return ST::null;
+    return ST::string();
 }
 
 void pyVaultChronicleNode::Chronicle_SetType( uint32_t type )
@@ -114,7 +107,7 @@ void pyVaultChronicleNode::Chronicle_SetType( uint32_t type )
     chron.SetEntryType(type);
 }
 
-uint32_t pyVaultChronicleNode::Chronicle_GetType( void )
+uint32_t pyVaultChronicleNode::Chronicle_GetType()
 {
     if (!fNode)
         return 0;

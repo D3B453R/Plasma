@@ -95,13 +95,12 @@ ST::string gGlobalChannelName;
 plAGAnimInstance::plAGAnimInstance(plAGAnim * anim, plAGMasterMod * master,
                                    float blend, uint16_t blendPriority, bool cache,
                                    bool useAmplitude)
-: fAnimation(anim),
-  fMaster(master),
-  fBlend(blend),
-  fAmplitude(useAmplitude ? 1.0f : -1.0f)
+    : fAnimation(anim), fMaster(master), fAmplitude(useAmplitude ? 1.0f : -1.0f),
+      FadeType(), fFadeDetach(), fFadeAmpGoal(), fFadeAmpRate(),
+      fBlend(blend), fFadeBlendGoal(), fFadeBlendRate(),
+      fTimeConvert()
 {
     int i;
-    fTimeConvert = nil;
     plScalarChannel *timeChan = nil;
 #ifdef TRACK_AG_ALLOCS
     gGlobalAnimName = anim->GetName();      // for debug tracking...
@@ -175,7 +174,7 @@ plAGAnimInstance::plAGAnimInstance(plAGAnim * anim, plAGMasterMod * master,
     fFadeBlend = fFadeAmp = false;
 
 #ifdef TRACK_AG_ALLOCS
-    gGlobalAnimName = ST::null;
+    gGlobalAnimName = ST::string();
 #endif // TRACK_AG_ALLOCS
 }
 
@@ -398,7 +397,7 @@ ST::string plAGAnimInstance::GetName()
     if(fAnimation)
         return fAnimation->GetName();
     else
-        return ST::null;
+        return ST::string();
 }
 
 // SetLoop ----------------------------------

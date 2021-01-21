@@ -204,10 +204,10 @@ void hsG3DDeviceRecord::Clear()
 {
     fFlags = kNone;
 
-    fG3DDriverDesc = ST::null;
-    fG3DDriverName = ST::null;
-    fG3DDriverVersion = ST::null;
-    fG3DDeviceDesc = ST::null;
+    fG3DDriverDesc = ST::string();
+    fG3DDriverName = ST::string();
+    fG3DDriverVersion = ST::string();
+    fG3DDeviceDesc = ST::string();
 
     fCaps.Clear();
     fLayersAtOnce = 0;
@@ -520,9 +520,9 @@ namespace
         float    fFogExp2KneeVal;
     } FogTweakTable;
 
-    FogTweakTable   dsDefaultFogVals =  { 0,    0,      254.0 / 255.0,  0.5f, 0.15f, 0.5f, 0.15f };
-    FogTweakTable   dsi810FogVals =     { 0,    0,      254.0 / 255.0,  0.6f, 0.15f, 0.4f, 0.15f };
-    FogTweakTable   dsRadeonFogVals =   { 0,    0,      254.0 / 255.0,  0.7f, 0.15f, 0.5f, 0.2f };
+    FogTweakTable   dsDefaultFogVals =  { 0,    0,      254.f / 255.f,  0.5f, 0.15f, 0.5f, 0.15f };
+    FogTweakTable   dsi810FogVals =     { 0,    0,      254.f / 255.f,  0.6f, 0.15f, 0.4f, 0.15f };
+    FogTweakTable   dsRadeonFogVals =   { 0,    0,      254.f / 255.f,  0.7f, 0.15f, 0.5f, 0.2f };
 
 
     typedef struct {

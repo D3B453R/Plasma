@@ -1,40 +1,44 @@
-include_directories("../../Apps")
-include_directories("../../CoreLib")
-include_directories("../../FeatureLib/inc")
-include_directories("../../FeatureLib")
-include_directories("../../NucleusLib/inc")
-include_directories("../../NucleusLib")
-include_directories("../../PubUtilLib/inc")
-include_directories("../../PubUtilLib")
-
-include_directories(${OPENAL_INCLUDE_DIR})
-include_directories(${OPENSSL_INCLUDE_DIR})
-include_directories(${PYTHON_INCLUDE_DIR})
-include_directories(${CURL_INCLUDE_DIR})
-
-if(MOVIE_AVAILABLE)
-    include_directories(${VPX_INCLUDE_DIR})
-    include_directories(${Opus_INCLUDE_DIR})
-endif()
-
-# Test for Python Interpreter, which will be used for extra build scripts if available
-find_package(PythonInterp)
-set_package_properties(PythonInterp PROPERTIES
-    URL "http://www.python.org"
-    DESCRIPTION "Python Scripting language interpreter"
-    TYPE OPTIONAL
-    PURPOSE "Used to (re-)build some client resource files"
+find_program(
+    PNGCRUSH_EXECUTABLE pngcrush
+    DOC "Path to pngcrush"
 )
 
-if(PYTHONINTERP_FOUND)
-    include(FindPythonModule)
-    # Test for Python modules needed to build resource.dat
-    find_python_module(rsvg)
-    find_python_module(PIL)
-    if((DEFINED PY_RSVG) AND (DEFINED PY_PIL))
-        set(CAN_BUILD_RESOURCE_DAT ON)
-    endif((DEFINED PY_RSVG) AND (DEFINED PY_PIL))
-endif(PYTHONINTERP_FOUND)
+# Can we generate the resource.dat file?
+python_test_modules(
+    MODULES cairosvg PIL
+    REQUIREMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/external/requirements.txt"
+)
+
+cmake_dependent_option(PLASMA_BUILD_RESOURCE_DAT "Do we want to build resource.dat?" ON "cairosvg_FOUND AND PIL_FOUND" OFF)
+cmake_dependent_option(RESOURCE_OPTIMIZE "Optimize the images in resource.dat" ON "PLASMA_BUILD_RESOURCE_DAT AND PNGCRUSH_EXECUTABLE" OFF)
+cmake_dependent_option(RESOURCE_BRUTE "Allow pngcrush brute-force optimization" OFF "PLASMA_BUILD_RESOURCE_DAT AND PNGCRUSH_EXECUTABLE" OFF)
+
+if(PLASMA_BUILD_RESOURCE_DAT)
+    set(external_DAT "${CMAKE_CURRENT_BINARY_DIR}/resource.dat")
+    if(RESOURCE_OPTIMIZE)
+        string(APPEND OPTIMIZE_ARGUMENT "--pngcrush \"${PNGCRUSH_EXECUTABLE}\" ")
+    endif()
+    if(RESOURCE_BRUTE)
+        string(APPEND OPTIMIZE_ARGUMENT "--brute ")
+    endif()
+
+    add_custom_command(
+        OUTPUT ${external_DAT}
+        COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_CURRENT_SOURCE_DIR}/external/makeres.py"
+                --render --package
+                ${OPTIMIZE_ARGUMENT}
+                -i "${CMAKE_CURRENT_SOURCE_DIR}/external"
+                -w "${CMAKE_CURRENT_BINARY_DIR}"
+                -o "${CMAKE_CURRENT_BINARY_DIR}"
+        DEPENDS ${external_SCRIPTS} ${external_SOURCES}
+    )
+
+    install(
+        FILES "${external_DAT}"
+        DESTINATION client
+    )
+endif()
 
 set(plClient_HEADERS
     plClient.h
@@ -53,7 +57,7 @@ set(plClient_SOURCES
 )
 
 set(plClient_TEXT
-    ../../../../Docs/ReleaseNotes/ReleaseNotes.txt
+    ${Plasma_SOURCE_DIR}/Docs/ReleaseNotes/ReleaseNotes.txt
 )
 
 set(plClient_RESOURCES
@@ -66,12 +70,9 @@ set(plClient_RESOURCES
 )
 
 add_executable(plClient WIN32 ${plClient_SOURCES} ${plClient_HEADERS}
-                              ${plClient_TEXT} ${plClient_RESOURCES})
-
-if(CAN_BUILD_RESOURCE_DAT AND PLASMA_BUILD_RESOURCE_DAT)
-    add_subdirectory(external)
-    add_dependencies(plClient externalResources)
-endif()
+                              ${plClient_TEXT} ${plClient_RESOURCES}
+                              ${external_SCRIPTS} ${external_SOURCES} ${external_DAT}
+)
 
 if(PLASMA_EXTERNAL_RELEASE)
     set_target_properties(plClient PROPERTIES OUTPUT_NAME "UruExplorer")
@@ -159,31 +160,12 @@ target_link_libraries(plClient pnTimer)
 target_link_libraries(plClient pnUtils)
 target_link_libraries(plClient pnUUID)
 
-target_link_libraries(plClient ${PYTHON_LIBRARIES})
-target_link_libraries(plClient ${OPENAL_LIBRARY})
-target_link_libraries(plClient ${OPENSSL_LIBRARIES})
-target_link_libraries(plClient ${EXPAT_LIBRARY})
-target_link_libraries(plClient ${JPEG_LIBRARY})
-target_link_libraries(plClient ${PNG_LIBRARY})
-target_link_libraries(plClient ${PHYSX_LIBRARIES})
-target_link_libraries(plClient ${Ogg_LIBRARIES})
-target_link_libraries(plClient ${Vorbis_LIBRARIES})
 target_link_libraries(plClient ${DirectX_LIBRARIES})
-target_link_libraries(plClient ${CURL_LIBRARY})
+target_link_libraries(plClient CURL::libcurl)
 target_link_libraries(plClient ${STRING_THEORY_LIBRARIES})
 
 if(USE_VLD)
     target_link_libraries(plClient ${VLD_LIBRARY})
-endif()
-
-if(PLASMA_USE_OPUS)
-    target_link_libraries(plClient ${Opus_LIBRARIES})
-endif()
-if(PLASMA_USE_SPEEX)
-    target_link_libraries(plClient ${Speex_LIBRARY})
-endif()
-if(PLASMA_USE_VPX)
-    target_link_libraries(plClient ${VPX_LIBRARY})
 endif()
 
 if (WIN32)
@@ -194,9 +176,25 @@ if (WIN32)
     target_link_libraries(plClient winmm)
     target_link_libraries(plClient strmiids)
     target_link_libraries(plClient crypt32)
+    target_link_libraries(plClient wldap32)
 endif(WIN32)
 
+install(
+    TARGETS plClient
+    DESTINATION client
+)
+
+install(
+    FILES $<TARGET_PDB_FILE:plClient>
+    DESTINATION client
+    OPTIONAL
+)
+
+if(PLASMA_BUILD_RESOURCE_DAT)
+    source_group("Client Resource Scripts" FILES ${external_SCRIPTS})
+    source_group("Client Resource Images" FILES ${external_SOURCES})
+endif()
 source_group("Source Files" FILES ${plClient_SOURCES})
 source_group("Header Files" FILES ${plClient_HEADERS})
 source_group("Text" FILES ${plClient_TEXT})
-source_group("Resource Files" FILES ${plClient_RESOURCES})
+source_group("Windows Resource Files" FILES ${plClient_RESOURCES})

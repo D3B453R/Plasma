@@ -41,7 +41,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 
 #include <cstring>
-#pragma hdrstop
 
 #include "hsMemory.h"
 #include "hsExceptions.h"
@@ -266,16 +265,6 @@ struct hsAppenderHead {
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-hsAppender::hsAppender(uint32_t elemSize, uint32_t elemCount)
-        : fFirstBlock(nil), fElemSize(elemSize), fElemCount(elemCount), fCount(0)
-{
-}
-
-hsAppender::~hsAppender()
-{
-    this->Reset();
-}
-
 uint32_t hsAppender::CopyInto(void* data) const
 {
     if (data)
@@ -472,6 +461,7 @@ bool hsAppender::PopTail(void* data)
 //////////////////////////////////////////////////////////////////////////
 
 hsAppenderIterator::hsAppenderIterator(const hsAppender* list)
+    : fCurrItem()
 {
     this->ResetToHead(list);
 }
@@ -666,7 +656,7 @@ void SortNDumpUnfreedMemory(const char *nm, bool full) // file name base, and FU
 #endif
 
     char fname[512];
-    snprintf(fname,arrsize(fname),"%s_dmp.txt",nm);
+    snprintf(fname, std::size(fname), "%s_dmp.txt", nm);
     char *errStr = "";
 
 
@@ -756,7 +746,7 @@ static  _CrtMemBlockHeader *cmbh_last;  // Remember this header for next increme
         
         CreateDirectory("Reports",NULL);            // stick em in a sub directory
         char fnm[512];
-        snprintf(fnm,arrsize(fnm),"Reports\\%s",fname);
+        snprintf(fnm, std::size(fnm), "Reports\\%s", fname);
  
         FILE * DumpLogFile = fopen( fnm, "w" );
 //      long allocs=0;
@@ -784,7 +774,7 @@ static  _CrtMemBlockHeader *cmbh_last;  // Remember this header for next increme
         static int first=1;
         if (!full)          // if this is a partial mem dump, write to the ROOMS.txt file a summary
         {   
-            snprintf(fnm,arrsize(fnm),"Reports\\%s","ROOMS.txt");
+            snprintf(fnm, std::size(fnm), "Reports\\%s", "ROOMS.txt");
  
             if (first)
             {   DumpLogFile = fopen( fnm, "w" );    // first time clobber the old

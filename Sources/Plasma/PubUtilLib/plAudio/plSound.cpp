@@ -79,72 +79,32 @@ bool            plSound::fLoadOnDemandFlag = true;
 bool            plSound::fLoadFromDiskOnDemand = true;
 unsigned        plSound::fIncidentalsPlaying = 0;
 
-plSound::plSound() :
-fPlaying(false),
-fActive(false),
-fTime(0),
-fMaxFalloff(0),
-fMinFalloff(0),
-fCurrVolume(0.f),
-fOuterVol(0),
-fOuterCone(360),
-fInnerCone(360),
-fLength(0.0f),
-fDesiredVol(0.f),
-fFading(false),
-fRegisteredForTime(false),
-fMuted(true),
-fFadedVolume(0.f),
-fSoftRegion(nil),
-fSoftOcclusionRegion(nil),
-fSoftVolume(0.f),
-fCurrFadeParams(nil),
-fRegistered(false),
-fDistAttenuation(0.f),
-fProperties(0),
-fNotHighEnoughPriority(false),
-fVirtualStartTime(0),
-fOwningSceneObject(nil),
-fPriority(0),
-fType(plSound::kSoundFX),
-fQueued(false),
-fLoading(false),
-fSynchedStartTimeSec(0),
-fMaxVolume(0),
-fFreeData(false)
+plSound::plSound()
+    : fPlaying(), fActive(), fTime(), fMaxFalloff(), fMinFalloff(), fCurrVolume(),
+      fOuterVol(), fOuterCone(360), fInnerCone(360), fLength(), fDesiredVol(), fFading(),
+      fRegisteredForTime(), fMuted(true), fFadedVolume(), fSoftRegion(), fSoftOcclusionRegion(),
+      fSoftVolume(), fCurrFadeParams(), fRegistered(), fDistAttenuation(), fProperties(),
+      fNotHighEnoughPriority(), fVirtualStartTime(), fOwningSceneObject(), fPriority(),
+      fType(plSound::kSoundFX), fQueued(), fLoading(), fSynchedStartTimeSec(), fMaxVolume(),
+      fFreeData(), fDataBuffer(), fDataBufferKey(), fPlayOnReactivate(), fDataBufferLoaded(),
+      f3DPosition(0.f, 0.f, 0.f), f3DVelocity(0.f, 0.f, 0.f), fPlayWhenLoaded(), fDistToListenerSquared()
 {
-    plProfile_Inc( SoundNumLoaded );
-    f3DPosition.Set( 0.f, 0.f, 0.f );
-    f3DVelocity.Set( 0.f, 0.f, 0.f );
-    fDataBuffer = nil;
-    fDataBufferKey = nil;
-    fPlayOnReactivate = false;
-    fDataBufferLoaded = false;
+    plProfile_Inc(SoundNumLoaded);
 }
 
 plSound::~plSound()
 {
-    IStopFade( true );
-    plProfile_Dec( SoundNumLoaded );
+    IStopFade(true);
+    plProfile_Dec(SoundNumLoaded);
 }
 
 void plSound::IPrintDbgMessage( const char *msg, bool isError )
 {
-    static plStatusLog  *ourLog = nil;
-
-    // Print to our log file (create it if necessary)
-    if( ourLog == nil )
-    {
-//      ourLog = plStatusLogMgr::GetInstance().CreateStatusLog( 15, 
-//              "audio.log", plStatusLog::kFilledBackground | plStatusLog::kDeleteForMe | plStatusLog::kAlignToTop );
-    }
-
+    ST::string keyName = GetKey() ? GetKeyName() : ST_LITERAL("unkeyed");
     if( isError )
-//      ourLog->AddLineF( plStatusLog::kRed, "ERROR: %s (%s)", msg, GetKey() ? GetKeyName().c_str() : "unkeyed" );
-        ourLog->AddLineS( "audio.log", plStatusLog::kRed, "ERROR: %s (%s)", msg, GetKey() ? GetKeyName().c_str() : "unkeyed" );
+        plStatusLog::AddLineSF("audio.log", plStatusLog::kRed, "ERROR: {} ({})", msg, keyName);
     else
-//      ourLog->AddLineF( "%s (%s)", msg, GetKey() ? GetKeyName().c_str() : "unkeyed" );
-        ourLog->AddLineS( "audio.log", "%s (%s)", msg, GetKey() ? GetKeyName().c_str() : "unkeyed" );
+        plStatusLog::AddLineSF("audio.log", "{} ({})", msg, keyName);
 }
 
 ///////////////////////////////////////////////////////////
@@ -152,7 +112,7 @@ void plSound::IPrintDbgMessage( const char *msg, bool isError )
 //  sound. Should be called every time any of the values change, which means
 //  the best place is inside ISetActualVolume(). Since that's a pure virtual,
 //  it makes the placement of the call a bit annoying, but oh well.
-void plSound::IUpdateDebugPlate( void )
+void plSound::IUpdateDebugPlate()
 {
     if( this == fCurrDebugPlateSound )
     {
@@ -345,7 +305,7 @@ void plSound::ISynchedPlay( double virtualStartTime )
 ///////////////////////////////////////////////////////////
 //  Takes the virtual start time and sets us to the real time we should be at,
 //  then starts us playing via ITryPlay().
-void plSound::ISynchToStartTime( void )
+void plSound::ISynchToStartTime()
 {
     if( !plgAudioSys::Active() )
         return;
@@ -402,12 +362,12 @@ void plSound::SetVelocity(const hsVector3 vel)
     f3DVelocity = vel;
 }
 
-hsPoint3 plSound::GetPosition( void ) const
+hsPoint3 plSound::GetPosition() const
 {
     return f3DPosition;
 }
 
-hsVector3 plSound::GetVelocity( void ) const
+hsVector3 plSound::GetVelocity() const
 {
     return f3DVelocity;
 }
@@ -458,7 +418,7 @@ void plSound::SetVolume(const float v)
     RefreshVolume();
 }
 
-void plSound::RefreshVolume( void )
+void plSound::RefreshVolume()
 {
     this->ISetActualVolume( fCurrVolume );
 }
@@ -477,7 +437,7 @@ void plSound::SetMuted( bool muted )
     }
 }
 
-void plSound::IRefreshParams( void )
+void plSound::IRefreshParams()
 {
     SetMax( fMaxFalloff );
     SetMin( fMinFalloff );
@@ -491,7 +451,7 @@ void plSound::IRefreshParams( void )
 ////////////////////////////////////////////////////////////////////////
 //  The public interface to stopping, which also synchs the state with the
 //  server.
-void plSound::Stop( void )
+void plSound::Stop()
 {
     fPlaying = false;
 
@@ -519,7 +479,7 @@ void plSound::Stop( void )
     }
 }
 
-void plSound::IActuallyStop( void )
+void plSound::IActuallyStop()
 {
     if( fLoadOnDemandFlag && !IsPropertySet( kPropDisableLOD ) && !IsPropertySet( kPropLoadOnlyOnCall ) )
     {
@@ -556,18 +516,13 @@ void plSound::Update()
     }
 }
 
-float plSound::IGetChannelVolume( void ) const
+float plSound::IGetChannelVolume() const
 {
     float channelVol = plgAudioSys::GetChannelVolume( (plgAudioSys::ASChannel)fType );
-
-    // if not using hardware acceleration then apply 2D/3D bias to non 3D sounds
-    if( !plgAudioSys::Hardware() && !IsPropertySet( kPropIs3DSound ) )
-        channelVol *= plgAudioSys::Get2D3Dbias();
-
-    if( IsPropertySet( kPropDontFade ) )
+    if (IsPropertySet(kPropDontFade))
         return channelVol;
-    
-    return channelVol * plgAudioSys::GetGlobalFadeVolume();
+    else
+        return channelVol * plgAudioSys::GetGlobalFadeVolume();
 }
 
 void plSound::IStartFade( plFadeParams *params, float offsetIntoFade )
@@ -585,7 +540,7 @@ void plSound::IStartFade( plFadeParams *params, float offsetIntoFade )
         fFadeInParams.fVolStart = fCurrVolume;  // Hopefully, we got to fFadedVolume, but maybe not
         fFadeInParams.fVolEnd = fDesiredVol;
         fCurrFadeParams = &fFadeInParams;
-        plStatusLog::AddLineS("audio.log", "Fading in %s", GetKeyName().c_str());
+        plStatusLog::AddLineSF("audio.log", "Fading in {}", GetKeyName());
     }
     else
         fCurrFadeParams = params;
@@ -787,7 +742,7 @@ void plSound::ForceLoad()
     LoadSound( IsPropertySet( kPropIs3DSound ) );
 }
 
-void plSound::ForceUnload( void )
+void plSound::ForceUnload()
 {
     if( !IsPropertySet( kPropLoadOnlyOnCall ) )
         return;
@@ -796,7 +751,7 @@ void plSound::ForceUnload( void )
     IFreeBuffers();
 }
 
-bool plSound::ILoadDataBuffer( void )
+bool plSound::ILoadDataBuffer()
 {
     if(!fDataBufferLoaded)
     {
@@ -804,7 +759,7 @@ bool plSound::ILoadDataBuffer( void )
         if(!buffer)
         {
             hsAssert(false, "unable to load sound buffer");
-            plStatusLog::AddLineS("audio.log", "Unable to load sound buffer: %s", GetKeyName().c_str());
+            plStatusLog::AddLineSF("audio.log", "Unable to load sound buffer: {}", GetKeyName());
             return false;
         }
         SetLength( buffer->GetDataLengthInSecs() );
@@ -823,7 +778,7 @@ void plSound::FreeSoundData()
     }
 }
 
-void plSound::IUnloadDataBuffer( void )
+void plSound::IUnloadDataBuffer()
 {
     if(fDataBufferLoaded)
     {
@@ -863,7 +818,7 @@ plSoundBuffer::ELoadReturnVal plSound::IPreLoadBuffer( bool playWhenLoaded, bool
     }
 }
 
-plFileName plSound::GetFileName( void ) const
+plFileName plSound::GetFileName() const
 {
     if (fDataBufferKey->ObjectIsLoaded())
     {
@@ -881,7 +836,7 @@ plFileName plSound::GetFileName( void ) const
 //  Note that if we already set the length (like at export time), we never need
 //  to load the sound, so the optimization at export time is all ready to plug-
 //  and-play...
-double plSound::GetLength( void )
+double plSound::GetLength()
 {
     if( ( (double)fLength == 0.f ) )
         ILoadDataBuffer();
@@ -994,7 +949,7 @@ float plSound::CalcSoftVolume( bool enable, float distToListenerSquared )
 //  Wee function for the audio system. This basically returns the effective
 //  current volume of this sound. Useful for doing things like ranking all
 //  sounds based on volume.
-float plSound::GetVolumeRank( void )
+float plSound::GetVolumeRank()
 {
     if( !IsPlaying() && !this->IActuallyPlaying() )
         return 0.f;
@@ -1005,7 +960,6 @@ float plSound::GetVolumeRank( void )
     {
         float minDistSquared = (float)( GetMin() * GetMin() );
         float maxDistSquared = (float) (GetMax() * GetMax());
-        hsPoint3 listenerPos = plgAudioSys::Sys()->GetCurrListenerPos();
         if( fDistToListenerSquared > minDistSquared )
         {
             float diff = maxDistSquared - minDistSquared;
@@ -1020,12 +974,12 @@ float plSound::GetVolumeRank( void )
 //  Tests to see whether, if we try to play this sound now, it'll actually
 //  be able to play. Takes into account whether the sound is within range
 //  of the listener and the current soft region value.
-bool plSound::IWillBeAbleToPlay( void )
+bool plSound::IWillBeAbleToPlay()
 {
     if( fSoftVolume == 0.f )
         return false;
 
-    return IsWithinRange( plgAudioSys::Sys()->GetCurrListenerPos(), nil );
+    return IsWithinRange( plgAudioSys::GetCurrListenerPos(), nil );
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -1120,7 +1074,7 @@ void plSound::UpdateSoftVolume( bool enable, bool firstTime )
 
 /////////////////////////////////////////////////////////////////////////
 // Returns the current volume, attenuated
-float plSound::QueryCurrVolume( void ) const
+float plSound::QueryCurrVolume() const
 {
     return IAttenuateActualVolume( fCurrVolume ) * IGetChannelVolume();
 }
@@ -1157,7 +1111,7 @@ void plSound::Activate(bool forcePlay)
     SetMuted(plgAudioSys::IsMuted());
 }
 
-void plSound::DeActivate( void )
+void plSound::DeActivate()
 {
     UnregisterOnAudioSys();
 
@@ -1177,7 +1131,7 @@ void plSound::DeActivate( void )
 
 /////////////////////////////////////////////////////////////////////////
 //  Tell the audio system about ourselves.
-void plSound::RegisterOnAudioSys( void )
+void plSound::RegisterOnAudioSys()
 {
     if( !fRegistered )
     {
@@ -1188,7 +1142,7 @@ void plSound::RegisterOnAudioSys( void )
 
 /////////////////////////////////////////////////////////////////////////
 //  Tell the audio system to stop caring about us
-void plSound::UnregisterOnAudioSys( void )
+void plSound::UnregisterOnAudioSys()
 {
     if( fRegistered )
     {
@@ -1202,7 +1156,7 @@ void plSound::UnregisterOnAudioSys( void )
 //  shutting down). Normally, we should already be shut down, but in case
 //  we're not, this function makes sure everything is cleaned up before
 //  the audio system itself shuts down.
-void plSound::ForceUnregisterFromAudioSys( void )
+void plSound::ForceUnregisterFromAudioSys()
 {
     DeActivate();
     fRegistered = false;
@@ -1362,7 +1316,7 @@ void plSound::plFadeParams::Write( hsStream *s )
     s->WriteBOOL( fFadeSoftVol );
 }
 
-float plSound::plFadeParams::InterpValue( void )
+float plSound::plFadeParams::InterpValue()
 {
     float    val;
 

@@ -668,19 +668,21 @@ template <class T> void hsTArray<T>::Swap( hsTArray<T>& src )
 
 template <class T> void hsTArray<T>::SetCountAndZero(int count)
 {
-    if( fTotalCount <= count )
-    {
-        int n = fTotalCount;
+    static_assert(std::is_trivially_copyable<T>::value,
+                  "Cannot use SetCountAndZero on non-trivially copyable types");
+
+    if (fTotalCount <= count)
         Expand(count);
-    }
-    int i;
-    for( i = 0; i < fTotalCount; i++ )
+    for (int i = 0; i < fTotalCount; i++)
         fArray[i] = 0;
     fUseCount = count;
 }
 
 template <class T> void hsTArray<T>::ExpandAndZero(int count)
 {
+    static_assert(std::is_trivially_copyable<T>::value,
+                  "Cannot use ExpandAndZero on non-trivially copyable types");
+
     if( fTotalCount <= count )
     {
         int n = fTotalCount;
@@ -865,6 +867,18 @@ public:
 };
 
 
+template <class T> void hsLargeArray_CopyForward(const T src[], T dst[], int count)
+{
+    for (int i = 0; i < count; i++)
+        dst[i] = src[i];
+}
+
+template <class T> void hsLargeArray_CopyBackward(const T src[], T dst[], int count)
+{
+    for (int i = count - 1; i >= 0; --i)
+        dst[i] = src[i];
+}
+
 template <class T> class hsLargeArray : public hsLargeArrayBase 
 {
     T*      fArray;
@@ -1041,6 +1055,9 @@ template <class T> void hsLargeArray<T>::Swap( hsLargeArray<T>& src )
 
 template <class T> void hsLargeArray<T>::SetCountAndZero(int count)
 {
+    static_assert(std::is_trivially_copyable<T>::value,
+                  "Cannot use SetCountAndZero on non-trivially copyable types");
+
     if( fTotalCount <= count )
     {
         int n = fTotalCount;
@@ -1052,6 +1069,9 @@ template <class T> void hsLargeArray<T>::SetCountAndZero(int count)
 
 template <class T> void hsLargeArray<T>::ExpandAndZero(int count)
 {
+    static_assert(std::is_trivially_copyable<T>::value,
+                  "Cannot use ExpandAndZero on non-trivially copyable types");
+
     if( fTotalCount <= count )
     {
         int n = fTotalCount;
@@ -1134,18 +1154,6 @@ template <class T> bool hsLargeArray<T>::RemoveItem(const T& item)
 }
 
 //////////  These are the private methods for hsLargeArray
-
-template <class T> void hsLargeArray_CopyForward(const T src[], T dst[], int count)
-{
-    for (int i = 0; i < count; i++)
-        dst[i] = src[i];
-}
-
-template <class T> void hsLargeArray_CopyBackward(const T src[], T dst[], int count)
-{
-    for (int i = count - 1; i >= 0; --i)
-        dst[i] = src[i];
-}
 
 template <class T> void hsLargeArray<T>::IncCount(int index, int count)
 {

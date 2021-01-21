@@ -40,7 +40,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 *==LICENSE==*/
 
-#pragma once
 #ifndef plClient_inc
 #define plClient_inc
 
@@ -85,7 +84,7 @@ class plNetCommAuthMsg;
 class plAgeLoaded2Msg;
 class plResPatcherMsg;
 
-typedef void (*plMessagePumpProc)( void );
+typedef void (*plMessagePumpProc)();
 
 class plClient : public hsKeyedObject
 {
@@ -192,13 +191,13 @@ protected:
 
     void    IStartProgress( const char *title, float len );
     void    IIncProgress( float byHowMuch, const char *text );
-    void    IStopProgress( void );
+    void    IStopProgress();
 
     static void IDispatchMsgReceiveCallback();
     static void IReadKeyedObjCallback(plKey key);
     static void IProgressMgrCallbackProc( plOperationProgress *progress );
 
-    void    IPatchGlobalAgeFiles( void );
+    void    IPatchGlobalAgeFiles();
 
     int IFindRoomByLoc(const plLocation& loc);
     bool IIsRoomLoading(const plLocation& loc);

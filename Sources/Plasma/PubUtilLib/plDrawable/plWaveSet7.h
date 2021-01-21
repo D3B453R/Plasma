@@ -48,6 +48,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "hsTemplates.h"
 #include "pnEncryption/plRandom.h"
 #include "hsBounds.h"
+#include "plStatusLog/plStatusLog.h"
 
 #include "plFixedWaterState7.h"
 
@@ -481,8 +482,24 @@ protected:
     virtual int IShoreRef() const { return kRefShore; }
     virtual int IDecalRef() const { return kRefDecal; }
 
-    inline void LogF(const char *format, ...) const;
-    inline void LogF(uint32_t color, const char *format, ...) const;
+    template<typename... _Args>
+    void Log(const char *format, _Args&&... args) const
+    {
+#ifndef PLASMA_EXTERNAL_RELEASE
+        if (fStatusLog)
+            fStatusLog->AddLineF(format, std::forward<_Args>(args)...);
+#endif
+    }
+
+    template<typename... _Args>
+    void Log(uint32_t color, const char *format, _Args&&... args) const
+    {
+#ifndef PLASMA_EXTERNAL_RELEASE
+        if (fStatusLog)
+            fStatusLog->AddLineF(color, format, std::forward<_Args>(args)...);
+#endif
+    }
+
     inline void IRestartLog() const;
     inline void GraphLen(float len) const;
     inline void IRestartGraph() const;

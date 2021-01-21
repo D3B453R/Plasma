@@ -80,12 +80,12 @@ plFontCache::~plFontCache()
     fInstance = nil;
 }
 
-plFontCache &plFontCache::GetInstance( void )
+plFontCache &plFontCache::GetInstance()
 {
     return *fInstance;
 }
 
-void    plFontCache::Clear( void )
+void    plFontCache::Clear()
 {
 }
 
@@ -114,7 +114,7 @@ plFont  *plFontCache::GetFont( const ST::string &face, uint8_t size, uint32_t fo
     if( currIdx != (uint32_t)-1 )
     {
         //if( currDeltaSize > 0 )
-        //  plStatusLog::AddLineS( "pipeline.log", "Warning: plFontCache is matching %s %d (requested %s %d)", fCache[ currIdx ]->GetFace(), fCache[ currIdx ]->GetSize(), face, size );
+        //  plStatusLog::AddLineS( "pipeline.log", "Warning: plFontCache is matching {} {} (requested {} {})", fCache[ currIdx ]->GetFace(), fCache[ currIdx ]->GetSize(), face, size );
         return fCache[ currIdx ];
     }
 
@@ -131,12 +131,12 @@ plFont  *plFontCache::GetFont( const ST::string &face, uint8_t size, uint32_t fo
         plFont *f = GetFont( face, size, 0 );
         if( f != nil )
         {
-            //plStatusLog::AddLineS( "pipeline.log", "Warning: plFontCache is substituting %s %d regular (flags 0x%x could not be matched)", f->GetFace(), f->GetSize(), fontFlags );
+            //plStatusLog::AddLineS( "pipeline.log", "Warning: plFontCache is substituting {} {} regular (flags 0x{x} could not be matched)", f->GetFace(), f->GetSize(), fontFlags );
             return f;
         }
     }
 
-    //plStatusLog::AddLineS( "pipeline.log", "Warning: plFontCache was unable to match %s %d (0x%x)", face, size, fontFlags );
+    //plStatusLog::AddLineS( "pipeline.log", "Warning: plFontCache was unable to match {} {} (0x{x})", face, size, fontFlags );
     return nil;
 }
 
@@ -146,7 +146,7 @@ void plFontCache::LoadCustomFonts( const plFileName &dir )
     ILoadCustomFonts();
 }
 
-void plFontCache::ILoadCustomFonts( void )
+void plFontCache::ILoadCustomFonts()
 {
     if (!fCustFontDir.IsValid())
         return;

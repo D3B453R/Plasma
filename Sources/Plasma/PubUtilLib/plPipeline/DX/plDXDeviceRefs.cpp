@@ -95,7 +95,7 @@ plDXDeviceRef::~plDXDeviceRef()
         Unlink();
 }
 
-void    plDXDeviceRef::Unlink( void )
+void    plDXDeviceRef::Unlink()
 {
     hsAssert( fBack, "plDXDeviceRef not in list" );
     if( fNext )
@@ -136,7 +136,7 @@ plDXIndexBufferRef::~plDXIndexBufferRef()
 
 //// Releases /////////////////////////////////////////////////////////////////
 
-void    plDXVertexBufferRef::Release( void )
+void    plDXVertexBufferRef::Release()
 {
     if( fD3DBuffer != nil )
     {
@@ -154,7 +154,7 @@ void    plDXVertexBufferRef::Release( void )
     SetDirty( true );
 }
 
-void    plDXIndexBufferRef::Release( void )
+void    plDXIndexBufferRef::Release()
 {
     if( fD3DBuffer != nil )
     {
@@ -206,14 +206,7 @@ plDXTextureRef& plDXTextureRef::Set( D3DFORMAT ft, uint32_t ml, uint32_t mw, uin
     return *this;
 }
 
-//// Constructor & Destructor /////////////////////////////////////////////////
-
-plDXTextureRef::plDXTextureRef( D3DFORMAT ft, uint32_t ml, uint32_t mw, uint32_t mh, uint32_t np, 
-                                uint32_t sz, uint32_t manSize, uint32_t* lSz, void* pd, bool ed, bool renderTarget )
-                                : fD3DTexture(nullptr), fLevelSizes(nullptr), fOwner(nullptr)
-{
-    Set( ft, ml, mw, mh, np, sz, manSize, lSz, pd, ed, renderTarget );
-}
+//// Destructor /////////////////////////////////////////////////
 
 plDXTextureRef::~plDXTextureRef() 
 {
@@ -224,7 +217,7 @@ plDXTextureRef::~plDXTextureRef()
 
 //// Release //////////////////////////////////////////////////////////////////
 
-void    plDXTextureRef::Release( void )
+void    plDXTextureRef::Release()
 {
     plProfile_DelMem(MemTexture, fDataSize + sizeof(plDXTextureRef));
     plProfile_Extern(ManagedMem);
@@ -296,7 +289,7 @@ void    plDXLightRef::UpdateD3DInfo( IDirect3DDevice9 *dev, plDXLightSettings *s
 
             fD3DInfo.Falloff = spotOwner->GetFalloff();
             fD3DInfo.Theta = spotOwner->GetSpotInner() * 2;
-//          fD3DInfo.Phi = spotOwner->GetProjection() ? M_PI : spotOwner->GetSpotOuter() * 2;
+//          fD3DInfo.Phi = spotOwner->GetProjection() ? hsConstants::pi<float> : spotOwner->GetSpotOuter() * 2;
             // D3D doesn't seem to like a Phi of PI, even though that's supposed to be the
             // largest legal value. Symptom is an erratic, intermitant, unpredictable failure
             // of the light to light, with bizarreness like lighting one object but not the object
@@ -333,7 +326,7 @@ plDXLightRef::~plDXLightRef()
 
 //// Release //////////////////////////////////////////////////////////////////
 
-void    plDXLightRef::Release( void )
+void    plDXLightRef::Release()
 {
     // Ensure that this light is disabled
     if( fD3DDevice )
@@ -476,7 +469,7 @@ plDXRenderTargetRef::~plDXRenderTargetRef()
 
 //// Release //////////////////////////////////////////////////////////////////
 
-void    plDXRenderTargetRef::Release( void )
+void    plDXRenderTargetRef::Release()
 {
     int                     i;
     plCubicRenderTarget     *cubic;

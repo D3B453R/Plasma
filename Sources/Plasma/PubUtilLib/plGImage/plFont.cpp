@@ -103,8 +103,9 @@ void    plFont::plCharacter::Write( hsStream *s )
 //// Constructor/Read/Write/Destructor/etc ////////////////////////////////////
 
 plFont::plFont()
+    : fFontAscent(), fFontDescent()
 {
-    IClear( true );
+    IClear(true);
 }
 
 plFont::~plFont()
@@ -117,7 +118,7 @@ void    plFont::IClear( bool onConstruct )
     if( !onConstruct )
         delete [] fBMapData;
 
-    fFace = ST::null;
+    fFace = ST::string();
     fSize = 0;
     fFlags = 0;
 
@@ -181,7 +182,7 @@ void    plFont::SetRenderWrapping( int16_t x, int16_t y, int16_t width, int16_t 
     SetRenderClipRect( x, y, width, height );
 }
 
-void    plFont::ICalcFontAscent( void )
+void    plFont::ICalcFontAscent()
 {
     uint32_t  i;
 
@@ -778,7 +779,7 @@ void    plFont::IRenderChar1To32( const plFont::plCharacter &c )
 void    plFont::IRenderChar1To32AA( const plFont::plCharacter &c )
 {
     uint8_t   bitMask, *src = fBMapData + c.fBitmapOff;
-    uint32_t  *destPtr, *destBasePtr = (uint32_t *)( fRenderInfo.fDestPtr - ( c.fBaseline >> 1 ) * fRenderInfo.fDestStride );
+    uint32_t  *destPtr, *destBasePtr = (uint32_t *)(fRenderInfo.fDestPtr - (c.fBaseline >> 1) * int32_t(fRenderInfo.fDestStride));
     uint16_t  x, y;
 
     
@@ -843,7 +844,7 @@ void    plFont::IRenderChar1To32AA( const plFont::plCharacter &c )
 void    plFont::IRenderChar8To32( const plFont::plCharacter &c )
 {
     uint8_t   *src = fBMapData + c.fBitmapOff;
-    uint32_t  *destPtr, *destBasePtr = (uint32_t *)( fRenderInfo.fDestPtr - c.fBaseline * fRenderInfo.fDestStride );
+    uint32_t  *destPtr, *destBasePtr = (uint32_t *)(fRenderInfo.fDestPtr - c.fBaseline * int32_t(fRenderInfo.fDestStride));
     int16_t   x, y, thisHeight, xstart, thisWidth;
     uint32_t  srcAlpha, oneMinusAlpha, r, g, b, dR, dG, dB, destAlpha;
     uint8_t   srcR, srcG, srcB;
@@ -918,7 +919,7 @@ void    plFont::IRenderChar8To32( const plFont::plCharacter &c )
 void    plFont::IRenderChar8To32FullAlpha( const plFont::plCharacter &c )
 {
     uint8_t   *src = fBMapData + c.fBitmapOff;
-    uint32_t  *destPtr, *destBasePtr = (uint32_t *)( fRenderInfo.fDestPtr - c.fBaseline * fRenderInfo.fDestStride );
+    uint32_t  *destPtr, *destBasePtr = (uint32_t *)(fRenderInfo.fDestPtr - c.fBaseline * int32_t(fRenderInfo.fDestStride));
     int16_t   x, y, thisHeight, xstart, thisWidth;
     uint32_t  destColorOnly;
 
@@ -969,7 +970,7 @@ void    plFont::IRenderChar8To32FullAlpha( const plFont::plCharacter &c )
 void    plFont::IRenderChar8To32Alpha( const plFont::plCharacter &c )
 {
     uint8_t   val, *src = fBMapData + c.fBitmapOff;
-    uint32_t  *destPtr, *destBasePtr = (uint32_t *)( fRenderInfo.fDestPtr - c.fBaseline * fRenderInfo.fDestStride );
+    uint32_t  *destPtr, *destBasePtr = (uint32_t *)(fRenderInfo.fDestPtr - c.fBaseline * int32_t(fRenderInfo.fDestStride));
     int16_t   x, y, thisHeight, xstart, thisWidth;
     uint32_t  destColorOnly, alphaMult, fullAlpha;
 
@@ -1029,7 +1030,7 @@ void    plFont::IRenderChar8To32Alpha( const plFont::plCharacter &c )
 void    plFont::IRenderChar8To32AlphaPremultiplied( const plFont::plCharacter &c )
 {
     uint8_t   *src = fBMapData + c.fBitmapOff;
-    uint32_t  *destPtr, *destBasePtr = (uint32_t *)( fRenderInfo.fDestPtr - c.fBaseline * fRenderInfo.fDestStride );
+    uint32_t  *destPtr, *destBasePtr = (uint32_t *)(fRenderInfo.fDestPtr - c.fBaseline * int32_t(fRenderInfo.fDestStride));
     int16_t   x, y, thisHeight, xstart, thisWidth;
     uint8_t   srcA, srcR, srcG, srcB;
 
@@ -1087,7 +1088,7 @@ void    plFont::IRenderChar8To32AlphaPremultiplied( const plFont::plCharacter &c
 
 void    plFont::IRenderChar8To32AlphaPremShadow( const plFont::plCharacter &c )
 {
-    uint32_t  *destPtr, *destBasePtr = (uint32_t *)( fRenderInfo.fDestPtr - c.fBaseline * fRenderInfo.fDestStride );
+    uint32_t  *destPtr, *destBasePtr = (uint32_t *)(fRenderInfo.fDestPtr - c.fBaseline * int32_t(fRenderInfo.fDestStride));
     int16_t   x, y, thisHeight, xstart, thisWidth;
     uint8_t   srcA, srcR, srcG, srcB;
 
@@ -1535,9 +1536,6 @@ class plLineParser
             if( *fCursor == 0 )
                 return;
 
-            // This is the start of our token
-            const char *start = fCursor;
-
             // Put a stopper here
             fRestore = *fCursor;
             *fCursor = 0;
@@ -1582,28 +1580,28 @@ class plLineParser
 
         ~plLineParser() { }
 
-        const char  *GetKeyword( void )
+        const char  *GetKeyword()
         {
             return IGetNextToken();
         }
 
-        const char  *GetString( void )
+        const char  *GetString()
         {
             IAdvanceToNextToken();
             return IGetNextToken( sQuoteTester );
         }
 
-        const char  *GetKeywordNoDashes( void )
+        const char  *GetKeywordNoDashes()
         {
             return IGetNextToken( sDashTester );
         }
 
-        int32_t       GetInt( void )
+        int32_t       GetInt()
         {
             return atoi( IGetNextToken() );
         }
 
-        float    GetFloat( void )
+        float    GetFloat()
         {
             return (float)atof( IGetNextToken() );
         }
@@ -1621,6 +1619,8 @@ class plBDFSectParser
 
     public:
         plBDFSectParser( plFont &myFont, plBDFConvertCallback *callback ) : fFont( myFont ), fCallback( callback ) {}
+
+        virtual ~plBDFSectParser() { }
 
         virtual plBDFSectParser *ParseKeyword( const char *keyword, plLineParser &line )
         {
@@ -1676,7 +1676,7 @@ class plBDFCharsParser : public plBDFSectParser
         bool                fDoingData;
         uint32_t              fBytesWide, fBMapStride;
 
-        inline void IReset( void )
+        inline void IReset()
         {
             fBitmap = nil;
             fCharacter = nil;
@@ -1687,7 +1687,10 @@ class plBDFCharsParser : public plBDFSectParser
     public:
         static uint32_t       fResolution;
 
-        plBDFCharsParser( plFont &myFont, plBDFConvertCallback *callback ) : plBDFSectParser( myFont, callback ), fDoingData( false ) {}
+        plBDFCharsParser(plFont& myFont, plBDFConvertCallback* callback)
+            : plBDFSectParser(myFont, callback), fDoingData(), fWhichChar(),
+              fRowsLeft(), fCharacter(), fBitmap(), fBytesWide(), fBMapStride()
+        { }
 
         virtual plBDFSectParser *ParseKeyword( const char *keyword, plLineParser &line )
         {

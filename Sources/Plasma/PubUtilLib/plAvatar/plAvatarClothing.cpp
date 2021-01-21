@@ -181,7 +181,7 @@ void plClothingItem::Read(hsStream *s, hsResMgr *mgr)
         for (j = 0; j < layerCount; j++)
         {
             int layer = s->ReadByte();
-            mgr->ReadKeyNotifyMe(s, new plElementRefMsg(GetKey(), plRefMsg::kOnCreate, i, -1, ST::null, layer), plRefFlags::kActiveRef); // texture
+            mgr->ReadKeyNotifyMe(s, new plElementRefMsg(GetKey(), plRefMsg::kOnCreate, i, -1, ST::string(), layer), plRefFlags::kActiveRef); // texture
         }
     }
 
@@ -418,7 +418,7 @@ plClothingOutfit::plClothingOutfit() :
     fTargetLayer(nullptr), fBase(nullptr), fGroup(0), fAvatar(nullptr), fSynchClients(false), fMaterial(nullptr),
     fVaultSaveEnabled(true), fMorphsInitDone(false)
 {
-    fSkinTint.Set(1.f, 0.84, 0.71, 1.f);
+    fSkinTint.Set(1.f, 0.84f, 0.71f, 1.f);
     fItems.Reset();
     int i;
     for (i = 0; i < plClothingLayout::kMaxTileset; i++)
@@ -859,22 +859,22 @@ void plClothingOutfit::WriteToVault()
     if (!rvn)
         return;
 
-    ARRAY(plStateDataRecord*) SDRs;
+    std::vector<plStateDataRecord*> SDRs;
     
     plStateDataRecord clothingSDR(kSDLClothing);
     fAvatar->GetClothingSDLMod()->PutCurrentStateIn(&clothingSDR);
     plSDStateVariable * clothesStateDesc = clothingSDR.FindSDVar(plClothingSDLModifier::kStrWardrobe);
 
     for (unsigned i = 0; i < clothesStateDesc->GetCount(); ++i)
-        SDRs.Add(clothesStateDesc->GetStateDataRecord(i));
+        SDRs.emplace_back(clothesStateDesc->GetStateDataRecord(i));
 
     plSDStateVariable * appearanceStateDesc = clothingSDR.FindSDVar(plClothingSDLModifier::kStrAppearance); // for skin tint
-    SDRs.Add(appearanceStateDesc->GetStateDataRecord(0));
+    SDRs.emplace_back(appearanceStateDesc->GetStateDataRecord(0));
     
     WriteToVault(SDRs);
 }
 
-void plClothingOutfit::WriteToVault(const ARRAY(plStateDataRecord*) & SDRs)
+void plClothingOutfit::WriteToVault(const std::vector<plStateDataRecord*> & SDRs)
 {
     // We'll hit this case when the server asks us to save state for NPCs.
     if (fAvatar->GetTarget(0) != plNetClientApp::GetInstance()->GetLocalPlayer())
@@ -884,7 +884,7 @@ void plClothingOutfit::WriteToVault(const ARRAY(plStateDataRecord*) & SDRs)
     if (!rvn)
         return;
         
-    ARRAY(plStateDataRecord*)   morphs;
+    std::vector<plStateDataRecord*>   morphs;
 
     // Gather morph SDRs    
     hsTArray<const plMorphSequence*> morphsSDRs;
@@ -898,7 +898,7 @@ void plClothingOutfit::WriteToVault(const ARRAY(plStateDataRecord*) & SDRs)
                     lodVar->Set((int)j);
 
                 morphsSDRs[i]->GetSDLMod()->PutCurrentStateIn(morphSDR);
-                morphs.Add(morphSDR);
+                morphs.emplace_back(morphSDR);
             }
         }
     }
@@ -910,28 +910,26 @@ void plClothingOutfit::WriteToVault(const ARRAY(plStateDataRecord*) & SDRs)
     // Get all existing clothing SDRs
     rvn->GetChildNodes(plVault::kNodeType_SDL, 1, &nodes);    // REF: Find
 
-    const ARRAY(plStateDataRecord*) * arrs[] = {
+    const std::vector<plStateDataRecord*> * arrs[] = {
         &SDRs,
         &morphs,
     };
-    for (unsigned arrIdx = 0; arrIdx < arrsize(arrs); ++arrIdx) {
-        const ARRAY(plStateDataRecord*) * arr = arrs[arrIdx];
-        
+    for (const auto * arr : arrs) {
         // Write all SDL to to the outfit folder, reusing existing nodes and creating new ones as necessary
-        for (unsigned i = 0; i < arr->Count(); ++i) {
+        for (plStateDataRecord * rec : *arr) {
             hsRef<RelVaultNode> node;
             if (!nodes.empty()) {
                 node = nodes.front();
                 nodes.pop_front();
             }
             else {
-                node = new RelVaultNode;
+                node.Steal(new RelVaultNode);
                 node->SetNodeType(plVault::kNodeType_SDL);
                 templates.push_back(node);
             }
 
             VaultSDLNode sdl(node);
-            sdl.SetStateDataRecord((*arr)[i], 0);
+            sdl.SetStateDataRecord(rec, 0);
         }
     }
 
@@ -951,9 +949,8 @@ void plClothingOutfit::WriteToVault(const ARRAY(plStateDataRecord*) & SDRs)
         VaultAddChildNodeAndWait(rvn->GetNodeId(), act->GetNodeId(), NetCommGetPlayer()->playerInt);
 
     // Cleanup morph SDRs
-    for (unsigned i = 0; i < morphs.Count(); ++i) {
-        delete morphs[i];
-    }
+    for (plStateDataRecord *morph : morphs)
+        delete morph;
 }
 
 // XXX HACK. DON'T USE (this function exists for the temp console command Clothing.SwapClothTexHACK)
@@ -1003,7 +1000,7 @@ void plClothingOutfit::WearDefaultClothing()
                 if (i == plClothingMgr::kTypeHair || i == plClothingMgr::kTypeFace)
                 {   
                     // Hair tint color
-                    TintItem(items[j], 0.5, 0.3, 0.2, false, false);
+                    TintItem(items[j], 0.5f, 0.3f, 0.2f, false, false);
                 }
                 else
                 {
@@ -1035,7 +1032,7 @@ void plClothingOutfit::WearDefaultClothingType(uint32_t clothingType)
             if (clothingType == plClothingMgr::kTypeHair || clothingType == plClothingMgr::kTypeFace)
             {
                 // Hair tint color
-                TintItem(items[i], 0.5, 0.3, 0.2, false, false);
+                TintItem(items[i], 0.5f, 0.3f, 0.2f, false, false);
             }
             else
             {
@@ -1118,10 +1115,10 @@ void plClothingOutfit::RemoveMaintainerOutfit()
     fVaultSaveEnabled = true;
 }
 
-static plRandom sRandom;
-
 void plClothingOutfit::WearRandomOutfit()
 {
+    static plRandom sRandom;
+
     plClothingMgr *cMgr = plClothingMgr::GetClothingMgr();
     hsTArray<plClothingItem *>items;
 
@@ -1630,7 +1627,7 @@ void plClothingMgr::AddItemsToCloset(hsTArray<plClosetItem> &items)
         plStateDataRecord rec(plClothingSDLModifier::GetClothingItemSDRName());
         plClothingSDLModifier::PutSingleItemIntoSDR(&items[i], &rec);
         
-        hsRef<RelVaultNode> templateNode = new RelVaultNode;
+        hsRef<RelVaultNode> templateNode(new RelVaultNode, hsStealRef);
         templateNode->SetNodeType(plVault::kNodeType_SDL);
         
         VaultSDLNode sdl(templateNode);

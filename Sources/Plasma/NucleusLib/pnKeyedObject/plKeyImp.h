@@ -61,8 +61,8 @@ public:
     plKeyImp(plUoid, uint32_t pos,uint32_t len);
     virtual ~plKeyImp();
 
-    const plUoid&           GetUoid() const HS_OVERRIDE { return fUoid; }
-    ST::string              GetName() const HS_OVERRIDE;
+    const plUoid&           GetUoid() const override { return fUoid; }
+    ST::string              GetName() const override;
 
     virtual hsKeyedObject*  GetObjectPtr();
     virtual hsKeyedObject*  ObjectIsLoaded() const;
@@ -120,7 +120,7 @@ public:
 
     uint32_t  GetNumClones();
     plKey   GetCloneByIdx(uint32_t idx);
-    plKey   GetCloneOwner() { return fCloneOwner; }
+    plKey   GetCloneOwner() const { return fCloneOwner; }
 
     void NotifyCreated();
     void ISetupNotify(plRefMsg* msg, plRefFlags::Type flags); // Setup notifcations for reference, don't send anything.

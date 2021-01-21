@@ -41,20 +41,22 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 #include "plWavFile.h"
 
-#ifdef BUILDING_MAXPLUGIN
-
-#ifdef DX_OLD_SDK
-    #include <dxerr9.h>
-#else
-    #include <dxerr.h>
-#endif
+#ifdef HS_BUILD_FOR_WIN32
 
 #include <dsound.h>
 
+#include "plFileSystem.h"
+
 #pragma comment(lib, "winmm.lib")
-#ifdef PATCHER
-#define DXTRACE_ERR(str,hr) hr      // I'm not linking in directx stuff to the just for this
-#endif
+
+static inline HRESULT DXTrace(const TCHAR* msg, const char* file, int line, HRESULT hr)
+{
+    ST::string error = ST::format("Error Calling: {}\n{}", msg, (hsCOMError)hr);
+    ErrorAssert(line, file, error.c_str());
+    return hr;
+}
+
+#define DXTRACE_ERR(msg, hr) DXTrace(msg, __FILE__, __LINE__, hr)
 
 // if it looks like I lifted this class directly from Microsoft it's because that
 // is exactly what I did.  It's okay, though.  Microsoft tells you to go ahead
@@ -67,16 +69,10 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 //       will close the file.  
 //-----------------------------------------------------------------------------
 CWaveFile::CWaveFile()
-{
-    m_pwfx    = NULL;
-    m_hmmio   = NULL;
-    m_dwSize  = 0;
-    m_bIsReadingFromMemory = FALSE;
-    fSecsPerSample = 0;
-
-}
-
-
+    : m_pwfx(), m_hmmio(), m_dwSize(), m_ckRiff(),
+      m_bIsReadingFromMemory(), fSecsPerSample(), m_mmioinfoOut(), m_dwFlags(),
+      m_pbData(), m_pbDataCur(), m_ulDataSize(), fHeader()
+{ }
 
 
 //-----------------------------------------------------------------------------
@@ -106,35 +102,22 @@ CWaveFile::~CWaveFile()
 // Name: CWaveFile::Open()
 // Desc: Opens a wave file for reading
 //-----------------------------------------------------------------------------
-HRESULT CWaveFile::Open(const char *strFileName, WAVEFORMATEX* pwfx, DWORD dwFlags )
+HRESULT CWaveFile::Open(const plFileName &fileName, WAVEFORMATEX* pwfx, DWORD dwFlags)
 {
     HRESULT hr;
 
     m_dwFlags = dwFlags;
     m_bIsReadingFromMemory = FALSE;
 
-    char fileName[MAX_PATH];
-    sprintf(fileName, strFileName);
+    ST::wchar_buffer wFileName = fileName.WideString();
 
-#ifdef UNICODE
-    wchar_t * temp = hsStringToWString(fileName);
-    std::wstring wFileName = temp;
-    delete [] temp;
-#endif
-
-    if( m_dwFlags == WAVEFILE_READ )
+    if (m_dwFlags == WAVEFILE_READ)
     {
-        if( strFileName == NULL )
-            return E_INVALIDARG;
         free(m_pwfx);
 
-#ifdef UNICODE
-        m_hmmio = mmioOpen( (wchar_t*)wFileName.c_str(), NULL, MMIO_ALLOCBUF | MMIO_READ );
-#else
-        m_hmmio = mmioOpen( fileName, NULL, MMIO_ALLOCBUF | MMIO_READ );
-#endif
+        m_hmmio = mmioOpenW(wFileName.data(), nullptr, MMIO_ALLOCBUF | MMIO_READ);
 
-        if( NULL == m_hmmio )
+        if (!m_hmmio)
         {
             HRSRC   hResInfo;
             HGLOBAL hResData;
@@ -142,19 +125,11 @@ HRESULT CWaveFile::Open(const char *strFileName, WAVEFORMATEX* pwfx, DWORD dwFla
             VOID*   pvRes;
 
             // Loading it as a file failed, so try it as a resource
-#ifdef UNICODE
-            if( NULL == ( hResInfo = FindResource( NULL, wFileName.c_str(), TEXT("WAVE") ) ) )
+            if (!(hResInfo = FindResourceW(nullptr, wFileName.data(), L"WAVE")))
             {
-                if( NULL == ( hResInfo = FindResource( NULL, wFileName.c_str(), TEXT("WAV") ) ) )
+                if (!(hResInfo = FindResourceW(nullptr, wFileName.data(), L"WAV")))
                     return DXTRACE_ERR( TEXT("FindResource"), E_FAIL );
             }
-#else
-            if( NULL == ( hResInfo = FindResource( NULL, strFileName, TEXT("WAVE") ) ) )
-            {
-                if( NULL == ( hResInfo = FindResource( NULL, strFileName, TEXT("WAV") ) ) )
-                    return DXTRACE_ERR( TEXT("FindResource"), E_FAIL );
-            }
-#endif
 
             if( NULL == ( hResData = LoadResource( NULL, hResInfo ) ) )
                 return DXTRACE_ERR( TEXT("LoadResource"), E_FAIL );
@@ -174,7 +149,7 @@ HRESULT CWaveFile::Open(const char *strFileName, WAVEFORMATEX* pwfx, DWORD dwFla
             mmioInfo.cchBuffer = dwSize;
             mmioInfo.pchBuffer = (CHAR*) pData;
 
-            m_hmmio = mmioOpen( NULL, &mmioInfo, MMIO_ALLOCBUF | MMIO_READ );
+            m_hmmio = mmioOpenW(nullptr, &mmioInfo, MMIO_ALLOCBUF | MMIO_READ);
         }
 
         if( FAILED( hr = ReadMMIO() ) )
@@ -197,15 +172,8 @@ HRESULT CWaveFile::Open(const char *strFileName, WAVEFORMATEX* pwfx, DWORD dwFla
     }
     else
     {
-#ifdef UNICODE
-        m_hmmio = mmioOpen( (wchar_t*)wFileName.c_str(), NULL, MMIO_ALLOCBUF  | 
-                                                  MMIO_READWRITE | 
-                                                  MMIO_CREATE );
-#else
-        m_hmmio = mmioOpen( fileName, NULL, MMIO_ALLOCBUF  | 
-                                                  MMIO_READWRITE | 
-                                                  MMIO_CREATE );
-#endif
+        m_hmmio = mmioOpenW(wFileName.data(), nullptr,
+                            MMIO_ALLOCBUF | MMIO_READWRITE | MMIO_CREATE);
         if( NULL == m_hmmio )
             return DXTRACE_ERR( TEXT("mmioOpen"), E_FAIL );
 
@@ -294,12 +262,14 @@ public:
   DWORD   dwSampleOffset;
 
 public:
-    CuePoint(DWORD id, DWORD pos, FOURCC chk, DWORD ckSt, DWORD BkSt, DWORD SO) : 
-      dwIdentifier(id), dwPosition(pos), fccChunk(chk), dwChunkStart(ckSt), dwBlockStart(BkSt), dwSampleOffset(SO)
-      {}
-    CuePoint(){}
-    
-
+    CuePoint(DWORD id, DWORD pos, FOURCC chk, DWORD ckSt, DWORD BkSt, DWORD SO)
+        : dwIdentifier(id), dwPosition(pos), fccChunk(chk),
+          dwChunkStart(ckSt), dwBlockStart(BkSt), dwSampleOffset(SO)
+        { }
+    CuePoint()
+        : dwIdentifier(), dwPosition(), fccChunk(),
+          dwChunkStart(), dwBlockStart(), dwSampleOffset()
+        { }
 };
 
 
@@ -935,18 +905,15 @@ HRESULT CWaveFile::Write( UINT nSizeToWrite, BYTE* pbSrcData, UINT* pnSizeWrote 
 
 
 // Overloads for plAudioFileReader (we only support writing for CWaveFile for now)
-CWaveFile::CWaveFile( const char *path, plAudioCore::ChannelSelect whichChan )
+CWaveFile::CWaveFile(const plFileName &path, plAudioCore::ChannelSelect whichChan)
+    : m_pwfx(), m_hmmio(), m_dwSize(), m_ckRiff(),
+      m_bIsReadingFromMemory(), fSecsPerSample(), m_mmioinfoOut(), m_dwFlags(),
+      m_pbData(), m_pbDataCur(), m_ulDataSize(), fHeader()
 {
-    m_pwfx    = NULL;
-    m_hmmio   = NULL;
-    m_dwSize  = 0;
-    m_bIsReadingFromMemory = FALSE;
-    fSecsPerSample = 0;
-
     // Just a stub--do nothing
 }
 
-bool    CWaveFile::OpenForWriting( const char *path, plWAVHeader &header )
+bool CWaveFile::OpenForWriting(const plFileName &path, plWAVHeader &header)
 {
     fHeader = header;
 
@@ -965,23 +932,23 @@ bool    CWaveFile::OpenForWriting( const char *path, plWAVHeader &header )
     return false;
 }
 
-plWAVHeader &CWaveFile::GetHeader( void )
+plWAVHeader &CWaveFile::GetHeader()
 {
     return fHeader;
 }
 
-void    CWaveFile::Close( void )
+void    CWaveFile::Close()
 {
     IClose();
 }
 
-uint32_t  CWaveFile::GetDataSize( void )
+uint32_t  CWaveFile::GetDataSize()
 {
     hsAssert( false, "Unsupported" );
     return 0;
 }
 
-float   CWaveFile::GetLengthInSecs( void )
+float   CWaveFile::GetLengthInSecs()
 {
     hsAssert( false, "Unsupported" );
     return 0.f;
@@ -999,7 +966,7 @@ bool    CWaveFile::Read( uint32_t numBytes, void *buffer )
     return false;
 }
 
-uint32_t  CWaveFile::NumBytesLeft( void )
+uint32_t  CWaveFile::NumBytesLeft()
 {
     hsAssert( false, "Unsupported" );
     return 0;
@@ -1012,7 +979,7 @@ uint32_t  CWaveFile::Write( uint32_t bytes, void *buffer )
     return (uint32_t)written;
 }
 
-bool    CWaveFile::IsValid( void )
+bool    CWaveFile::IsValid()
 {
     return true;
 }
@@ -1106,4 +1073,4 @@ public:
 
 #endif
 
-#endif // BUILDING_MAXPLUGIN
+#endif // HS_BUILD_FOR_WIN32

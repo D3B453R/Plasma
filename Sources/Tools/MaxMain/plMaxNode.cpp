@@ -58,7 +58,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <iskin.h>
 #include <mnmath.h>
 #include <utilapi.h>
-#pragma hdrstop
 
 #include "GlobalUtility.h"
 #include "plPluginResManager.h"
@@ -78,6 +77,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "pnSceneObject/plSceneObject.h"
 #include "plScene/plSceneNode.h"
+#include "plPhysX/plPXCooking.h"
 #include "plPhysX/plPXPhysical.h"
 #include "plDrawable/plInstanceDrawInterface.h"
 #include "plDrawable/plSharedMesh.h"
@@ -168,7 +168,7 @@ static ST::string GetAnimCompAnimName(plComponentBase *comp)
 {
     if (comp->ClassID() == ANIM_COMP_CID || comp->ClassID() == ANIM_GROUP_COMP_CID)
         return ((plAnimComponentBase*)comp)->GetAnimName();
-    return ST::null;
+    return ST::string();
 }
 
 static plKey GetAnimCompModKey(plComponentBase *comp, plMaxNodeBase *node)
@@ -614,8 +614,6 @@ bool plMaxNode::IFindBones(plErrorMsg *pErrMsg, plConvertSettings *settings)
 }
 
 #include "plMaxMeshExtractor.h"
-#include "plPhysXCooking.h"
-#include "plPhysX/plPXStream.h"
 #include "plPhysX/plSimulationMgr.h"
 
 bool plMaxNode::MakePhysical(plErrorMsg *pErrMsg, plConvertSettings *settings)
@@ -687,10 +685,8 @@ bool plMaxNode::MakePhysical(plErrorMsg *pErrMsg, plConvertSettings *settings)
     plMaxMeshExtractor::NeutralMesh mesh;
     plMaxMeshExtractor::Extract(mesh, proxyNode, bounds == plSimDefs::kBoxBounds, this);
 
-    if (subworld)
-        recipe.l2s = subworld->GetWorldToLocal44() * mesh.fL2W;
-    else
-        recipe.l2s = mesh.fL2W;
+    hsMatrix44 l2s = subworld ? (subworld->GetWorldToLocal44() * mesh.fL2W) : mesh.fL2W;
+    l2s.DecompRigid(recipe.l2sP, recipe.l2sQ);
 
     switch (bounds)
     {
@@ -714,55 +710,17 @@ bool plMaxNode::MakePhysical(plErrorMsg *pErrMsg, plConvertSettings *settings)
     case plSimDefs::kProxyBounds:
     case plSimDefs::kExplicitBounds:
         {
-            // if this is a detector then try to convert to a convex hull first... if that doesn't succeed then do it as an exact
-            if ( group == plSimDefs::kGroupDetector )
-            {
-                // try converting to a convex hull mesh
-                recipe.meshStream = plPhysXCooking::CookHull(mesh.fNumVerts, mesh.fVerts,false);
-                if (recipe.meshStream)
-                {
-                    plPXStream pxs(recipe.meshStream);
-                    recipe.convexMesh = plSimulationMgr::GetInstance()->GetSDK()->createConvexMesh(pxs);
-                    recipe.bounds = plSimDefs::kHullBounds;
-                    // then test to see if the original mesh was convex (unless they said to skip 'em)
-#ifdef WARNINGS_ON_CONCAVE_PHYSX_WORKAROUND
-                    if ( !plPhysXCooking::fSkipErrors )
-                    {
-                        if ( !plPhysXCooking::TestIfConvex(recipe.convexMesh, mesh.fNumVerts, mesh.fVerts) )
-                        {
-                            int retStatus = pErrMsg->Set(true, "Physics Warning: PhysX workaround", "Detector region that is marked as exact and is concave but switching to convex hull for PhysX: %s", GetName()).CheckAskOrCancel();
-                            pErrMsg->Set();
-                            if ( retStatus == 1 )  // cancel?
-                                plPhysXCooking::fSkipErrors = true;
-                        }
-                    }
-#endif  // WARNINGS_ON_CONCAVE_PHYSX_WORKAROUND
-                }
-                if (!recipe.meshStream)
-                {
-                    if ( !pErrMsg->Set(true, "Physics Warning", "Detector region exact failed to be made a Hull, trying trimesh: %s", GetName()).Show() )
-                        pErrMsg->Set();
-                    recipe.meshStream = plPhysXCooking::CookTrimesh(mesh.fNumVerts, mesh.fVerts, mesh.fNumFaces, mesh.fFaces);
-                    if (!recipe.meshStream)
-                    {
-                        pErrMsg->Set(true, "Physics Error", "Trimesh creation failed for physical %s", GetName()).Show();
-                        return false;
-                    }
-                    plPXStream pxs(recipe.meshStream);
-                    recipe.triMesh = plSimulationMgr::GetInstance()->GetSDK()->createTriangleMesh(pxs);
-                }
+            recipe.meshStream = std::make_unique<hsVectorStream>();
+            plPXCooking::WriteTriMesh(recipe.meshStream.get(), mesh.fNumFaces, mesh.fFaces,
+                                      mesh.fNumVerts, mesh.fVerts);
+            recipe.meshStream->Rewind();
+
+            // Attempt to cook the physical
+            if (!(recipe.triMesh = physical->ICookTriMesh(recipe.meshStream.get()))) {
+                pErrMsg->Set("Physics Error", "Failed to cook triangle mesh %s", GetName()).Show();
+                return false;
             }
-            else
-            {
-                recipe.meshStream = plPhysXCooking::CookTrimesh(mesh.fNumVerts, mesh.fVerts, mesh.fNumFaces, mesh.fFaces);
-                if (!recipe.meshStream)
-                {
-                    pErrMsg->Set(true, "Physics Error", "Trimesh creation failed for physical %s", GetName()).Show();
-                    return false;
-                }
-                plPXStream pxs(recipe.meshStream);
-                recipe.triMesh = plSimulationMgr::GetInstance()->GetSDK()->createTriangleMesh(pxs);
-            }
+            recipe.meshStream->Rewind();
         }
         break;
     case plSimDefs::kSphereBounds:
@@ -785,26 +743,16 @@ bool plMaxNode::MakePhysical(plErrorMsg *pErrMsg, plConvertSettings *settings)
         break;
     case plSimDefs::kHullBounds:
         {
-            if ( group == plSimDefs::kGroupDynamic )
-            {
-                recipe.meshStream = plPhysXCooking::IMakePolytope(mesh);
-                if (!recipe.meshStream)
-                {
-                    pErrMsg->Set(true, "Physics Error", "polyTope-convexhull failed for physical %s", GetName()).Show();
-                    return false;
-                }
+            recipe.meshStream = std::make_unique<hsVectorStream>();
+            plPXCooking::WriteConvexHull(recipe.meshStream.get(), mesh.fNumVerts, mesh.fVerts);
+            recipe.meshStream->Rewind();
+
+            // Attempt to cook the physical
+            if (!(recipe.convexMesh = physical->ICookHull(recipe.meshStream.get()))) {
+                pErrMsg->Set("Physics Error", "Failed to cook convex hull %s", GetName()).Show();
+                return false;
             }
-            else
-            {
-                recipe.meshStream = plPhysXCooking::CookHull(mesh.fNumVerts, mesh.fVerts,false);
-                if(!recipe.meshStream)
-                {
-                    pErrMsg->Set(true, "Physics Error", "Convex hull creation failed for physical %s", GetName()).Show();
-                    return false;
-                }
-            }
-            plPXStream pxs(recipe.meshStream);
-            recipe.convexMesh = plSimulationMgr::GetInstance()->GetSDK()->createConvexMesh(pxs);
+            recipe.meshStream->Rewind();
         }
         break;
     }
@@ -817,10 +765,8 @@ bool plMaxNode::MakePhysical(plErrorMsg *pErrMsg, plConvertSettings *settings)
     ST::string objName = GetKey()->GetName();
     plKey physKey = hsgResMgr::ResMgr()->NewKey(objName, physical, nodeLoc, GetLoadMask());
 
-    //
-    // Create the physical
-    //
-    if (!physical->Init())
+    // Sanity check creating the physical actor
+    if (!physical->InitActor())
     {
         pErrMsg->Set(true, "Physics Error", "Physical creation failed for object %s", GetName()).Show();
         physKey->RefObject();
@@ -957,8 +903,7 @@ bool plMaxNode::MakeModifiers(plErrorMsg *pErrMsg, plConvertSettings *settings)
                 toker.Reset(sdata, hsConverterUtils::fTagSeps);
                 int nGot = 0;
                 char* token;
-                hsVector3 scale;
-                scale.Set(1.f,1.f,1.f);
+                hsVector3 scale(1.f, 1.f, 1.f);
                 while( (nGot < 3) && (token = toker.next()) )
                 {
                     switch( nGot )
@@ -2075,8 +2020,6 @@ bool plMaxNode::ConvertToOccluder(plErrorMsg* pErrMsg, bool twoSided, bool isHol
     plLocation nodeLoc = GetLocation();
 
     bool moving = IsMovable();
-    if( moving )
-        moving++;
 
     Matrix3 tmp(true);
 
@@ -2101,11 +2044,11 @@ bool plMaxNode::ConvertToOccluder(plErrorMsg* pErrMsg, bool twoSided, bool isHol
 
             Mesh mesh(meshObj->mesh);
             
-            const float kNormThresh = M_PI / 20.f;
-            const float kEdgeThresh = M_PI / 20.f;
-            const float kBias = 0.1f;
-            const float kMaxEdge = -1.f;
-            const DWORD kOptFlags = OPTIMIZE_SAVESMOOTHBOUNDRIES; 
+            constexpr float kNormThresh = hsConstants::pi<float> / 20.f;
+            constexpr float kEdgeThresh = hsConstants::pi<float> / 20.f;
+            constexpr float kBias = 0.1f;
+            constexpr float kMaxEdge = -1.f;
+            constexpr DWORD kOptFlags = OPTIMIZE_SAVESMOOTHBOUNDRIES;
 
             mesh.Optimize(
                 kNormThresh, // threshold of normal differences to preserve
@@ -2125,7 +2068,7 @@ bool plMaxNode::ConvertToOccluder(plErrorMsg* pErrMsg, bool twoSided, bool isHol
 //          mnMesh.MakeConvexPolyMesh();
             mnMesh.MakePolyMesh();
             mnMesh.MakeConvex();
-//          mnMesh.MakePlanar(1.f * M_PI / 180.f); // Completely ineffective. Winding up with majorly non-planar polys.
+//          mnMesh.MakePlanar(hsDegreesToRadians(1.f)); // Completely ineffective. Winding up with majorly non-planar polys.
 
             mnMesh.Transform(maxV2L);
 
@@ -3004,7 +2947,7 @@ void plMaxNode::GetRTLightAttenAnim(IParamBlock2* ProperPB, plAGAnim *anim)
                         if (key)
                         {
                             float attenEnd = key->fValue;
-                            TimeValue tv = key->fFrame * MAX_TICKS_PER_FRAME;
+                            TimeValue tv = (TimeValue)(key->fFrame * MAX_TICKS_PER_FRAME);
                             float intens = ProperPB->GetFloat(plRTLightBase::kIntensity, tv);
                             float newVal = (intens * plSillyLightKonstants::GetFarPowerKonst() - 1.f) / attenEnd;
                             if( distSq )
@@ -3016,7 +2959,7 @@ void plMaxNode::GetRTLightAttenAnim(IParamBlock2* ProperPB, plAGAnim *anim)
                         if (bezKey)
                         {
                             float attenEnd = bezKey->fValue;
-                            TimeValue tv = bezKey->fFrame * MAX_TICKS_PER_FRAME;
+                            TimeValue tv = (TimeValue)(bezKey->fFrame * MAX_TICKS_PER_FRAME);
                             float intens = ProperPB->GetFloat(plRTLightBase::kIntensity, tv);
                             float newVal = (intens * plSillyLightKonstants::GetFarPowerKonst() - 1.f) / attenEnd;
                             if( distSq )
@@ -3078,14 +3021,14 @@ void plMaxNode::IAdjustRTColorByIntensity(plController* ctl, IParamBlock2* Prope
             hsPoint3Key* key = simp->GetPoint3Key(i);
             if (key)
             {
-                TimeValue tv = key->fFrame * MAX_TICKS_PER_FRAME;
+                TimeValue tv = (TimeValue)(key->fFrame * MAX_TICKS_PER_FRAME);
                 float intens = ProperPB->GetFloat(plRTLightBase::kIntensity, tv);
                 key->fValue *= intens;
             }
             hsBezPoint3Key* bezKey = simp->GetBezPoint3Key(i);
             if (bezKey)
             {
-                TimeValue tv = bezKey->fFrame * MAX_TICKS_PER_FRAME;
+                TimeValue tv = (TimeValue)(bezKey->fFrame * MAX_TICKS_PER_FRAME);
                 float intens = ProperPB->GetFloat(plRTLightBase::kIntensity, tv);
                 bezKey->fInTan *= intens;
                 bezKey->fOutTan *= intens;
@@ -4004,7 +3947,7 @@ TriObject* plMaxNode::GetTriObject(bool& deleteIt)
 //  Starting at 0, returns an incrementing index for each maxNode. Useful for 
 //  assigning indices to sound objects attached to the node.
 
-uint32_t  plMaxNode::GetNextSoundIdx( void )
+uint32_t  plMaxNode::GetNextSoundIdx()
 {
     uint32_t  idx = GetSoundIdxCounter();
     SetSoundIdxCounter( idx + 1 );
@@ -4015,7 +3958,7 @@ uint32_t  plMaxNode::GetNextSoundIdx( void )
 //  Fun temp hack function to tell if a maxNode is physical. Useful after
 //  preConvert (checks for a physical on the simInterface)
 
-bool    plMaxNode::IsPhysical( void )
+bool    plMaxNode::IsPhysical()
 {
     if( GetSceneObject() && GetSceneObject()->GetSimulationInterface() && 
         GetSceneObject()->GetSimulationInterface()->GetPhysical() )

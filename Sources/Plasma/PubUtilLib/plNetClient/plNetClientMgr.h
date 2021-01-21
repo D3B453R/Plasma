@@ -57,7 +57,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plNetCommon/plNetServerSessionInfo.h"
 #include "plNetClientComm/plNetClientComm.h"
 #include "plUnifiedTime/plUnifiedTime.h"
-#pragma warning(disable: 4284)
 
 ////////////////////////////////////////////////////////////////////
 
@@ -237,7 +236,7 @@ private:
     int ISendGameMessage(plMessage* msg);
     void IDisableNet ();
 
-    void ICreateStatusLog() const HS_OVERRIDE;
+    void ICreateStatusLog() const override;
 
 public:
     plNetClientMgr();
@@ -265,7 +264,7 @@ public:
     void SendApplyAvatarCustomizationsMsg(const plKey msgReceiver, bool netPropagate=true, bool localPropagate=true);
 
     // plLoggable
-    bool Log(const ST::string& str) const HS_OVERRIDE;
+    bool Log(const ST::string& str) const override;
 
     // setters
     void SetIniAuthServer(const char * value)  { fIniAuthServer=value;}
@@ -281,7 +280,7 @@ public:
     void SetPingServer(uint8_t serverType) { fPingServerType = serverType; }
     
     // getters
-    uint32_t            GetPlayerID( void ) const;
+    uint32_t            GetPlayerID() const;
     ST::string          GetPlayerName( const plKey avKey=nil ) const;
     ST::string          GetPlayerNameById (unsigned playerId) const;
     unsigned            GetPlayerIdByName(const ST::string & name) const;
@@ -373,11 +372,6 @@ public:
     plOperationProgress* GetTaskProgBar() { return fTaskProgBar; }
     void BeginTask();
     void EndTask();
-
-    bool DebugMsgV(const char* fmt, va_list args) const;
-    bool ErrorMsgV(const char* fmt, va_list args) const; 
-    bool WarningMsgV(const char* fmt, va_list args) const; 
-    bool AppMsgV(const char* fmt, va_list args) const;
 
     bool IsObjectOwner();
     void SetObjectOwner(bool own);

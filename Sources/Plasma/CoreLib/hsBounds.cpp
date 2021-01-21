@@ -41,7 +41,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 
 #include "HeadSpin.h"
-#pragma hdrstop
 
 #include "hsBounds.h"
 #include "hsStream.h"
@@ -215,7 +214,7 @@ void hsBounds3::InscribeSphere()
     if( fType != kBoundsNormal )
         return;
 
-    const float ooSix = hsInvert(2.f * 3.f);
+    constexpr float ooSix = hsInvert(2.f * 3.f);
     float a = GetMaxDim() * ooSix;
     hsPoint3 p = GetCenter();
     p.fX += a;
@@ -292,11 +291,11 @@ void hsBounds3::MakeTriMeshSphere(hsGTriMesh* tMesh, hsPoint3* cornersIn) const
     {
         for( j = 0; j < nLati; j++ )
         {
-            float theta = (float(i) / nLong) * 2.f * M_PI;
+            float theta = (float(i) / nLong) * hsConstants::two_pi<float>;
             float cosTheta = cos(theta);
             float sinTheta = sin(theta);
 
-            float phi = (float(j+1) / (nLati+1)) * M_PI;
+            float phi = (float(j+1) / (nLati+1)) * hsConstants::pi<float>;
             float cosPhi = cos(phi);
             float sinPhi = sin(phi);
 
@@ -460,7 +459,7 @@ float hsBounds3::ClosestPointToInfiniteLine(const hsPoint3* p, const hsVector3* 
 {
     float magSq = v->MagnitudeSquared();
     float t = 0.f;
-    hsPoint3 origin(0,0,0);
+    hsPoint3 origin;
     if( magSq < hsBounds::kRealSmall )
     {
         *out = origin;
@@ -649,6 +648,7 @@ void hsBoundsOriented::Read(hsStream *stream)
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 hsBounds3Ext::hsBounds3Ext(const hsBounds3 &b)
+    : fDists(), fRadius()
 {
     Reset(&b);
 }
@@ -742,7 +742,6 @@ void hsBounds3Ext::IMakeSphere() const
         else
         {
             hsVector3 accum;
-            accum.Set(0,0,0);
             int i;
             for( i = 0; i < 3; i++ )
             {
@@ -1618,7 +1617,6 @@ bool hsBounds3Ext::ISectBB(const hsBounds3Ext &other, const hsVector3 &myVel, hs
     {
         // now do a weighted average of the axes
         hsAssert(totDepth > 0, "nobody home");
-        norm.Set(0,0,0);
         for( i =0; i < 6; i++ )
         {
             if( tstDepths[i] > 0 )

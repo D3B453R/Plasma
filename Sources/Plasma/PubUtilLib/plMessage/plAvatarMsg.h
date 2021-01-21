@@ -39,7 +39,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
       Mead, WA   99021
 
 *==LICENSE==*/
-#ifndef NO_AV_MSGS
 
 #ifndef plAvatarMsg_inc
 #define plAvatarMsg_inc
@@ -190,7 +189,7 @@ public:
     // tors
     plAvSeekMsg();
     plAvSeekMsg(const plKey& sender, const plKey& receiver, const plKey &seekKey, float duration, bool smartSeek,
-                plAvAlignment align = kAlignHandle, const ST::string& animName = ST::null, bool noSeek = false,
+                plAvAlignment align = kAlignHandle, const ST::string& animName = {}, bool noSeek = false,
                 uint8_t flags = kSeekFlagForce3rdPersonOnStart, plKey finishKey = nil);
     
     // plasma protocol
@@ -339,7 +338,6 @@ public:
 //
 ///////////////////
 
-#ifndef SERVER
 class plAvPushBrainMsg : public plAvTaskMsg
 {
 public:
@@ -372,8 +370,6 @@ public:
     CLASSNAME_REGISTER( plAvPopBrainMsg );
     GETINTERFACE_ANY( plAvPopBrainMsg, plAvTaskMsg);
 };
-
-#endif // SERVER
 
 
 // For entering/exiting "stealth mode"
@@ -461,4 +457,3 @@ public:
 };
 
 #endif // plAvatarMsg_inc
-#endif // ndef NO_AV_MSGS

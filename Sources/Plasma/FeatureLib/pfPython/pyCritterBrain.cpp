@@ -43,7 +43,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <Python.h>
 #include "pyGeometry3.h"
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "pyCritterBrain.h"
 #include "pySceneObject.h"
@@ -113,7 +112,7 @@ std::string pyCritterBrain::BehaviorName(int behavior) const
 ST::string pyCritterBrain::AnimationName(int behavior) const
 {
     if (!fBrain)
-        return ST::null;
+        return ST::string();
     return fBrain->AnimationName(behavior);
 }
 

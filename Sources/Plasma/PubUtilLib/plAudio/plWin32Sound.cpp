@@ -68,20 +68,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 plProfile_CreateMemCounter("Sounds", "Memory", MemSounds);
 plProfile_Extern(SoundPlaying);
 
-plWin32Sound::plWin32Sound() :
-fFailed(false),
-fPositionInited(false),
-fAwaitingPosition(false),
-fTotalBytes(0),
-fReallyPlaying(false),
-fChannelSelect(0),
-fDSoundBuffer(nil)
-{
-}
-
-plWin32Sound::~plWin32Sound()
-{
-}
 
 void plWin32Sound::Activate( bool forcePlay )
 {
@@ -97,7 +83,7 @@ void plWin32Sound::DeActivate()
     IFreeBuffers();
 }
 
-void plWin32Sound::IFreeBuffers( void )
+void plWin32Sound::IFreeBuffers()
 {
     if( fDSoundBuffer != nil )
     {
@@ -116,7 +102,7 @@ void plWin32Sound::Update()
     plSound::Update();
 }
 
-void plWin32Sound::IActuallyPlay( void )
+void plWin32Sound::IActuallyPlay()
 {
     //plSound::Play();
     if (!fDSoundBuffer && plgAudioSys::Active())
@@ -159,7 +145,7 @@ void plWin32Sound::IActuallyStop()
                 --fIncidentalsPlaying;
             }
             fDSoundBuffer->Stop();
-            plStatusLog::AddLineS("impacts.log", "Stopping %s", GetKeyName().c_str());
+            plStatusLog::AddLineSF("impacts.log", "Stopping {}", GetKeyName());
         
         }
         fReallyPlaying = false;
@@ -168,7 +154,7 @@ void plWin32Sound::IActuallyStop()
     {
         if( fDSoundBuffer != nil && fDSoundBuffer->IsPlaying() )
         {
-            plStatusLog::AddLineS( "audio.log", 0xffff0000, "WARNING: BUFFER FLAGGED AS STOPPED BUT NOT STOPPED - %s", GetKey() ? GetKeyName().c_str() : nil );
+            plStatusLog::AddLineSF( "audio.log", 0xffff0000, "WARNING: BUFFER FLAGGED AS STOPPED BUT NOT STOPPED - {}", GetKey() ? GetKeyName() : ST_LITERAL("(nil)") );
             fDSoundBuffer->Stop();
         }
     }
@@ -254,7 +240,7 @@ void plWin32Sound::SetPosition( const hsPoint3 pos )
         // doing this allows us to play mono gui sounds and still hear them, since this attaches the sound to the listener.
         if(fType == kGUISound)
         {
-            hsPoint3 listenerPos = plgAudioSys::Sys()->GetCurrListenerPos();
+            hsPoint3 listenerPos = plgAudioSys::GetCurrListenerPos();
             fDSoundBuffer->SetPosition(listenerPos.fX, listenerPos.fZ, listenerPos.fY);
         }
         else
@@ -297,7 +283,7 @@ void plWin32Sound::ISetActualVolume(float volume)
 //  The base class will make sure all our params are correct and up-to-date,
 //  but before it does its work, we have to make sure our buffer is ready to
 //  be updated.
-void plWin32Sound::IRefreshParams( void )
+void plWin32Sound::IRefreshParams()
 {
     if (!fDSoundBuffer && plgAudioSys::Active())
         LoadSound( IsPropertySet( kPropIs3DSound ) );

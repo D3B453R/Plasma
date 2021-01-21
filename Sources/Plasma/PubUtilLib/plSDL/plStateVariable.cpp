@@ -108,7 +108,7 @@ public:
 
 void plStateVarNotificationInfo::Read(hsStream* s, uint32_t readOptions)
 {
-    uint8_t saveFlags=s->ReadByte();  // unused
+    (void)s->ReadByte();  // unused: saveFlags
     ST::string hint=s->ReadSafeString();
     if (!hint.empty() && !(readOptions & plSDL::kSkipNotificationInfo))
         fHintString = hint;
@@ -430,7 +430,7 @@ ST::string plSimpleStateVariable::GetAsString(int idx) const
                 else if (type==plVarDescriptor::kShort)
                     str << fS[i++];
                 else if (type==plVarDescriptor::kByte)
-                    str << fBy[i++];
+                    str << static_cast<unsigned>(fBy[i++]);
                 else if (type==plVarDescriptor::kFloat  || type==plVarDescriptor::kAgeTimeOfDay)
                     str << ST::format("{.3f}", fF[i++]);
                 else if (type==plVarDescriptor::kDouble)
@@ -491,7 +491,6 @@ ST::string plSimpleStateVariable::GetAsString(int idx) const
     default:
         {   
             // handles value in the form "(i,j,k)" for things like vectors
-            int i=idx*fVar.GetAtomicCount();
             for(j=0;j<fVar.GetAtomicCount();j++)
             {
                 str << "other";
@@ -1779,7 +1778,9 @@ ST::string plSimpleStateVariable::GetKeyName(int idx) const
     return "(nil)";
 }
 
-#pragma optimize( "g", off )    // disable float optimizations
+#ifdef _MSC_VER
+#   pragma optimize( "g", off )    // disable float optimizations
+#endif
 bool plSimpleStateVariable::IWriteData(hsStream* s, float timeConvert, int idx, uint32_t writeOptions) const
 {
 #ifdef HS_DEBUGGING
@@ -1948,7 +1949,9 @@ bool plSimpleStateVariable::IReadData(hsStream* s, float timeConvert, int idx, u
     
     return true;
 }
-#pragma optimize( "", on )  // restore optimizations to their defaults
+#ifdef _MSC_VER
+#   pragma optimize( "", on )  // restore optimizations to their defaults
+#endif
 
 bool plSimpleStateVariable::WriteData(hsStream* s, float timeConvert, uint32_t writeOptions) const
 {

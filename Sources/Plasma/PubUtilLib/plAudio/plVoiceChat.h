@@ -66,7 +66,6 @@ class  plWinAudible;
 class  plPlate;
 class  plStatusLog;
 class  plSpeex;
-typedef struct ALCdevice_struct ALCdevice;
 class plVoiceDecoder;
 class plVoiceEncoder;
 
@@ -85,13 +84,13 @@ public:
     void SetSampleRate(uint32_t rate);
 
 private:
-    virtual bool    ILoadDataBuffer( void ){ return true; }
-    virtual void    IUnloadDataBuffer( void ){}
+    virtual bool    ILoadDataBuffer(){ return true; }
+    virtual void    IUnloadDataBuffer(){}
 
-    virtual void    IDerivedActuallyPlay( void );
+    virtual void    IDerivedActuallyPlay();
     virtual void    ISetActualTime( double t ){}
     virtual float   GetActualTimeSec() { return 0.0f; }
-    virtual void    IRefreshParams( void );
+    virtual void    IRefreshParams();
 
     static unsigned fCount;
     double   fLastUpdate;

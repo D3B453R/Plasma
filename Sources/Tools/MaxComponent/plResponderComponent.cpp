@@ -48,7 +48,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <utilapi.h>
 
 #include "resource.h"
-#pragma hdrstop
 
 #include "plResponderComponentPriv.h"
 #include "plComponent.h"
@@ -503,7 +502,7 @@ void plResponderComponent::ISetupDefaultWait(plMaxNode* node, plErrorMsg* pErrMs
             waitInfo.receiver = responder->GetKey();
             waitInfo.callbackUser = numCallbacks++;
             waitInfo.msg = cmds[convertedIdx].fMsg;
-            waitInfo.point = ST::null;
+            waitInfo.point = ST::string();
 
             IParamBlock2 *pb = (IParamBlock2*)statePB->GetReferenceTarget(kStateCmdParams, 0, i);
             plResponderCmd *cmd = plResponderCmd::Find(pb);

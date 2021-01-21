@@ -46,7 +46,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 ***/
 
 #include "../../Pch.h"
-#pragma hdrstop
 
 #include "pnAceNtInt.h"
 
@@ -298,7 +297,7 @@ void INtConnCompleteOperation (NtObject * ntObj) {
         break;
 
         default:
-            LogMsg(kLogError, "NtConnCompleteOp %p %u", ntObj, ntObj->ioType);
+            LogMsg(kLogError, "NtConnCompleteOp {#x} {}", (uintptr_t)ntObj, ntObj->ioType);
         break;
     }
 }
@@ -324,11 +323,11 @@ void NtInitialize () {
         (LPCTSTR) nil   // name
     );
     if (!s_waitEvent)
-        ErrorAssert(__LINE__, __FILE__, "CreateEvent %#x", GetLastError());        
+        ErrorAssert(__LINE__, __FILE__, "CreateEvent {#x}", GetLastError());        
 
     // create IO completion port
     if (0 == (s_ioPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0)))
-        ErrorAssert(__LINE__, __FILE__, "CreateIoCompletionPort %#x", GetLastError());        
+        ErrorAssert(__LINE__, __FILE__, "CreateIoCompletionPort {#x}", GetLastError());        
 
     // calculate number of IO worker threads to create
     if (!s_pageSizeMask) {

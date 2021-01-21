@@ -62,10 +62,6 @@ plProfile_Extern(MemSounds);
 plProfile_CreateAsynchTimer( "Static Shove Time", "Sound", StaticSndShoveTime );
 plProfile_CreateAsynchTimer( "Static Swizzle Time", "Sound", StaticSwizzleTime );
 
-plWin32StaticSound::plWin32StaticSound()
-{
-}
-
 plWin32StaticSound::~plWin32StaticSound()
 {
     DeActivate();
@@ -170,7 +166,7 @@ bool plWin32StaticSound::LoadSound( bool is3D )
         {
             delete fDSoundBuffer;
             fDSoundBuffer = nil;
-            plStatusLog::AddLineS("audio.log", "Could not play static sound, no voices left %s", GetKeyName().c_str());
+            plStatusLog::AddLineSF("audio.log", "Could not play static sound, no voices left {}", GetKeyName());
             return false;
         }
 
@@ -208,7 +204,7 @@ void plWin32StaticSound::Update()
     }
 }
 
-void plWin32StaticSound::IDerivedActuallyPlay( void )
+void plWin32StaticSound::IDerivedActuallyPlay()
 {
     // Ensure there's a stop notify for us
     if( !fReallyPlaying )

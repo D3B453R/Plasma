@@ -145,9 +145,9 @@ public:
     bool    HasMovementFlag(int f) { return fMoveFlags.IsBitSet(f); }
     void    SetMovementFlag(int f, bool on = true) { fMoveFlags.SetBit(f, on);} 
         
-    hsPoint3 GetCameraPos() { return fOutputPos; }
-    hsPoint3 GetCameraPOA() { return fOutputPOA; }
-    hsVector3 GetCameraUp() { return fOutputUp; }
+    hsPoint3 GetCameraPos() const { return fOutputPos; }
+    hsPoint3 GetCameraPOA() const { return fOutputPOA; }
+    hsVector3 GetCameraUp() const { return fOutputUp; }
     void    SetCutNextTrans(); // used when player warps into a new camera region
 
     const hsMatrix44 GetCurrentMatrix() { return fMatrix; }
@@ -195,7 +195,6 @@ private:
     void FinishTransition();
     void SetRender(bool render);
     void IHandleCameraStatusLog(plCameraModifier1* pMod, int action);
-    void ICreatePlate();
     void FreezeOutput(int frames) { fFreezeCounter = frames; } // I hate this and I hate myself for doing it
     void UnFadeAvatarIn(int frames) { fFadeCounter = frames; } // ditto
     void FirstPersonOverride();
@@ -212,7 +211,6 @@ private:
     hsVector3           fOutputUp;
     int                 fTransPos;
     plDebugInputInterface*  fCameraDriveInterface;
-    plPlate*            fEffectPlate;
     FILE*               foutLog;
     plCameraVec         fCameraStack;
     int                 fFreezeCounter;

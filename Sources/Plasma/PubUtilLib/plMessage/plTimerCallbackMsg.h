@@ -50,15 +50,15 @@ class hsResMgr;
 class plTimerCallbackMsg : public plMessage
 {
 public:
-    plTimerCallbackMsg(){;}
-    plTimerCallbackMsg(const plKey &s, const plKey &r, const double* t){;}
-    plTimerCallbackMsg(const plKey &r, uint32_t id = 0) { AddReceiver(r); fID = id;}
-    ~plTimerCallbackMsg(){;}
+    plTimerCallbackMsg() { }
+    plTimerCallbackMsg(const plKey &s, const plKey &r, const double* t) { }
+    plTimerCallbackMsg(const plKey &r, int32_t id = 0) { AddReceiver(r); fID = id;}
+    ~plTimerCallbackMsg() { }
 
     CLASSNAME_REGISTER( plTimerCallbackMsg );
     GETINTERFACE_ANY( plTimerCallbackMsg, plMessage );
-    
-    uint32_t fID;
+
+    int32_t fID;
     float fTime;
 
     virtual void Read(hsStream* stream, hsResMgr* mgr)

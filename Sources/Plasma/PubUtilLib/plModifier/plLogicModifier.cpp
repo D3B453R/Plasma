@@ -57,7 +57,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plModifier/plDetectorLog.h"
 #include "plInputCore/plSceneInputInterface.h"
-#include "pfConditional/plFacingConditionalObject.h"
 #include "pfConditional/plObjectInBoxConditionalObject.h"
 
 
@@ -87,8 +86,6 @@ bool plLogicModifier::VerifyConditions(plMessage* msg)
 
 bool plLogicModifier::MsgReceive(plMessage* msg)
 {
-    bool retVal = false;
-    
     // read messages:
     plCondRefMsg* pCondMsg = plCondRefMsg::ConvertNoRef(msg);
     if (pCondMsg)
@@ -105,7 +102,6 @@ bool plLogicModifier::MsgReceive(plMessage* msg)
             if (pCond->HasFlag(plConditionalObject::kLocalElement))
                 SetFlag(kLocalElement);
         }
-        retVal = true;
     }
     plTimerCallbackMsg* pTMsg = plTimerCallbackMsg::ConvertNoRef(msg);
     if (pTMsg)
@@ -171,7 +167,7 @@ bool plLogicModifier::MsgReceive(plMessage* msg)
             {
                 if ( Disabled() )
                 {
-                    DetectorLogRed("%s: LogicMod is disabled", GetKeyName().c_str());
+                    plDetectorLog::Red("{}: LogicMod is disabled", GetKeyName());
                 }
                 else
                 {
@@ -179,12 +175,7 @@ bool plLogicModifier::MsgReceive(plMessage* msg)
                     {
                         if (!fConditionList[i]->Verify(msg))
                         {
-                            if ( plObjectInBoxConditionalObject::ConvertNoRef(fConditionList[i]) )
-                                DetectorLogRed("%s: LogicMod InRegion conditional not met", fConditionList[i]->GetKeyName().c_str());
-                            else if ( plFacingConditionalObject::ConvertNoRef(fConditionList[i]) )
-                                DetectorLogRed("%s: LogicMod Facing conditional not met", fConditionList[i]->GetKeyName().c_str());
-                            else
-                                DetectorLogRed("%s: LogicMod <unknown> conditional not met", fConditionList[i]->GetKeyName().c_str());
+                            plDetectorLog::Red("{}: LogicMod {} conditional not met", fConditionList[i]->GetKeyName(), fConditionList[i]->ClassName());
                         }
                     }
                 }

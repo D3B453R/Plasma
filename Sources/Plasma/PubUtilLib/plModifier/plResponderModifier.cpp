@@ -102,18 +102,6 @@ void plResponderEnableMsg::Write(hsStream* stream, hsResMgr* mgr)
 /////////////////////////////////////////////////////
 /////////////////////////////////////////////////////
 
-plResponderModifier::plResponderModifier() : 
-    fCurState(0), 
-    fCurCommand(-1), 
-    fEnabled(true), 
-    fFlags(0), 
-    fEnter(false),
-    fResponderSDLMod(nil), 
-    fGotFirstLoad(false),
-    fNotifyMsgFlags(0)
-{
-}
-
 plResponderModifier::~plResponderModifier()
 {
     delete fResponderSDLMod;
@@ -167,9 +155,9 @@ bool plResponderModifier::MsgReceive(plMessage* msg)
     plTimerCallbackMsg *timerMsg = plTimerCallbackMsg::ConvertNoRef(msg);
     if (pEventMsg || timerMsg)
     {
-        uint32_t waitID = pEventMsg ? pEventMsg->fUser : timerMsg->fID;
+        int32_t waitID = pEventMsg ? pEventMsg->fUser : timerMsg->fID;
 
-        if (waitID != -1)
+        if (waitID >= 0)
         {
             // Flag that this callback completed and try sending in case any commands were waiting on this
             fCompletedEvents.SetBit(waitID);
@@ -700,12 +688,13 @@ void plResponderModifier::Write(hsStream* stream, hsResMgr* mgr)
             stream->WriteByte(cmd.fWaitOn);
         }
 
-        int8_t mapSize = state.fWaitToCmd.size();
-        stream->WriteByte(mapSize);
-        for (WaitToCmd::iterator it = state.fWaitToCmd.begin(); it != state.fWaitToCmd.end(); it++)
+        size_t mapSize = state.fWaitToCmd.size();
+        hsAssert(mapSize < std::numeric_limits<uint8_t>::max(), "WaitToCmd map too large");
+        stream->WriteByte(uint8_t(mapSize));
+        for (auto it : state.fWaitToCmd)
         {
-            stream->WriteByte(it->first);
-            stream->WriteByte(it->second);
+            stream->WriteByte(it.first);
+            stream->WriteByte(it.second);
         }
     }
 
@@ -784,7 +773,7 @@ void plResponderModifier::ILog(uint32_t color, const char* format, ...)
     char buf[256];
     va_list args;
     va_start(args, format);
-    int numWritten = hsVsnprintf(buf, sizeof(buf), format, args);
+    int numWritten = vsnprintf(buf, sizeof(buf), format, args);
     hsAssert(numWritten > 0, "Buffer too small");
     va_end(args);
 
@@ -793,7 +782,6 @@ void plResponderModifier::ILog(uint32_t color, const char* format, ...)
     if (modPos != -1)
         keyName = keyName.left(modPos);
 
-    ST::string logLine = ST::format("{}: {}", keyName, buf);
-    gLog->AddLine(logLine.c_str(), color);
+    gLog->AddLineF(color, "{}: {}", keyName, buf);
 #endif // STATUS_LOG
 }

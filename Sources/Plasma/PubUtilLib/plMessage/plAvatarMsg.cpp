@@ -39,19 +39,16 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
       Mead, WA   99021
 
 *==LICENSE==*/
-#ifndef NO_AV_MSGS
 
 #include "hsResMgr.h"
-#pragma hdrstop
 
 #include "plAvatarMsg.h"
 
 #include "plMessage/plOneShotCallbacks.h"
 #include "pnSceneObject/plSceneObject.h"
 
-#ifndef SERVER
-#   include "plAvatar/plAvBrain.h"
-#endif
+
+#include "plAvatar/plAvBrain.h"
 
 
 //////////////////////
@@ -486,8 +483,6 @@ void plAvBrainGenericMsg::ReadVersion(hsStream* s, hsResMgr* mgr)
 //
 ///////////////////
 
-#ifndef SERVER
-
 // default ctor
 plAvPushBrainMsg::plAvPushBrainMsg()
 : fBrain(nil)
@@ -517,8 +512,6 @@ void plAvPushBrainMsg::Write(hsStream *stream, hsResMgr *mgr)
     mgr->WriteCreatable(stream, fBrain);
 }
 
-#endif // SERVER
-
 
 
 ///////////////////////////
@@ -543,6 +536,3 @@ void plAvatarStealthModeMsg::Write(hsStream *stream, hsResMgr *mgr)
 {
     hsAssert(false, "This message is not supposed to travel over the network or persist in a file.");
 }
-
-
-#endif // ndef NO_AV_MSGS

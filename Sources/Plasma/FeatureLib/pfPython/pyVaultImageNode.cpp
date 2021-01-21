@@ -48,7 +48,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <Python.h>
 #include "plPipeline.h"
 #include "hsResMgr.h"
-#pragma hdrstop
 
 #include "pyVaultImageNode.h"
 #ifndef BUILDING_PYPLASMA
@@ -85,19 +84,9 @@ static plKey CreateAndRefImageKey (unsigned nodeId, plMipmap * mipmap) {
     return key;
 }
 
-// should only be created from C++ side
-pyVaultImageNode::pyVaultImageNode(RelVaultNode* nfsNode)
-: pyVaultNode(nfsNode)
-, fMipmapKey(nil)
-, fMipmap(nil)
-{
-}
-
 //create from the Python side
-pyVaultImageNode::pyVaultImageNode(int n)
-: pyVaultNode(new RelVaultNode)
-, fMipmapKey(nil)
-, fMipmap(nil)
+pyVaultImageNode::pyVaultImageNode()
+    : fMipmap(), pyVaultNode()
 {
     fNode->SetNodeType(plVault::kNodeType_Image);
 }
@@ -135,10 +124,10 @@ ST::string pyVaultImageNode::Image_GetTitle() const
         VaultImageNode image(fNode);
         return image.GetImageTitle();
     }
-    return ST::null;
+    return ST::string();
 }
 
-PyObject* pyVaultImageNode::Image_GetImage( void )
+PyObject* pyVaultImageNode::Image_GetImage()
 {
     if (!fNode)
         PYTHON_RETURN_NONE;
@@ -194,9 +183,12 @@ void pyVaultImageNode::SetImageFromBuf( PyObject * pybuf )
         fMipmap = nil;
     }
 
-    uint8_t * buffer = nil;
-    Py_ssize_t bytes;
-    PyObject_AsReadBuffer(pybuf, (const void **)&buffer, &bytes);
+    Py_buffer view;
+    PyObject_GetBuffer(pybuf, &view, PyBUF_SIMPLE);
+    uint8_t* buffer = (uint8_t*)view.buf;
+    Py_ssize_t bytes = view.len;
+    PyBuffer_Release(&view);
+
     if (buffer) {
         VaultImageNode access(fNode);
         access.SetImageData(buffer, bytes);

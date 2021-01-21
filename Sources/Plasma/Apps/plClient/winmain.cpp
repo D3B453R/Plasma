@@ -67,6 +67,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plStatusLog/plStatusLog.h"
 #include "plProduct.h"
 #include "plNetGameLib/plNetGameLib.h"
+#include "plPhysX/plPXSimulation.h"
 
 #include "res/resource.h"
 
@@ -97,6 +98,7 @@ enum
     kArgSkipPreload,
     kArgPlayerId,
     kArgStartUpAgeName,
+    kArgPvdFile,
 };
 
 static const plCmdArgDef s_cmdLineArgs[] = {
@@ -106,6 +108,7 @@ static const plCmdArgDef s_cmdLineArgs[] = {
     { kCmdArgFlagged  | kCmdTypeBool,       "SkipPreload",     kArgSkipPreload },
     { kCmdArgFlagged  | kCmdTypeInt,        "PlayerId",        kArgPlayerId },
     { kCmdArgFlagged  | kCmdTypeString,     "Age",             kArgStartUpAgeName },
+    { kCmdArgFlagged  | kCmdTypeString,     "PvdFile",         kArgPvdFile },
 };
 
 /// Made globals now, so we can set them to zero if we take the border and 
@@ -148,7 +151,7 @@ static wchar_t s_patcherExeName[] = L"UruLauncher.exe";
 //============================================================================
 struct LoginDialogParam {
     ENetError   authError;
-    char        username[kMaxAccountNameLength];
+    wchar_t     username[kMaxAccountNameLength];
     ShaDigest   namePassHash;
     bool        remember;
     int         focus;
@@ -362,7 +365,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(hWnd, message, wParam, lParam);
 }
  
-void    PumpMessageQueueProc( void )
+void    PumpMessageQueueProc()
 {
     MSG msg;
 
@@ -380,7 +383,7 @@ void InitNetClientComm()
     NetCommStartup();
 }
 
-BOOL CALLBACK AuthDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam )
+INT_PTR CALLBACK AuthDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
     static bool* cancelled = NULL;
 
@@ -405,7 +408,7 @@ BOOL CALLBACK AuthDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
         return FALSE;
 
     case WM_NCHITTEST:
-        SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, (LONG_PTR)HTCAPTION);
+        SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, (LONG_PTR)HTCAPTION);
         return TRUE;
 
     case WM_DESTROY:
@@ -454,7 +457,7 @@ static plStatusLog* s_DebugLog = nullptr;
 static void _DebugMessageProc(const char* msg)
 {
 #if defined(HS_DEBUGGING) || !defined(PLASMA_EXTERNAL_RELEASE)
-    s_DebugLog->AddLine(msg, plStatusLog::kRed);
+    s_DebugLog->AddLine(plStatusLog::kRed, msg);
 #endif // defined(HS_DEBUGGING) || !defined(PLASMA_EXTERNAL_RELEASE)
 }
 
@@ -465,13 +468,11 @@ static void _StatusMessageProc(const char* msg)
 #endif // defined(HS_DEBUGGING) || !defined(PLASMA_EXTERNAL_RELEASE)
 }
 
-static void DebugMsgF(const char* format, ...)
+template<typename... _Args>
+static void DebugMsg(const char* format, _Args&&... args)
 {
 #if defined(HS_DEBUGGING) || !defined(PLASMA_EXTERNAL_RELEASE)
-    va_list args;
-    va_start(args, format);
-    s_DebugLog->AddLineV(plStatusLog::kYellow, format, args);
-    va_end(args);
+    s_DebugLog->AddLineF(plStatusLog::kYellow, format, std::forward<_Args>(args)...);
 #endif // defined(HS_DEBUGGING) || !defined(PLASMA_EXTERNAL_RELEASE)
 }
 
@@ -533,7 +534,7 @@ static void AuthFailedStrings (ENetError authError,
 }
 
 
-BOOL CALLBACK AuthFailedDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam )
+INT_PTR CALLBACK AuthFailedDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
     switch( uMsg )
     {
@@ -563,14 +564,14 @@ BOOL CALLBACK AuthFailedDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             return TRUE;
 
         case WM_NCHITTEST:
-            SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, (LONG_PTR)HTCAPTION);
+            SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, (LONG_PTR)HTCAPTION);
             return TRUE;
 
     }
     return FALSE;
 }
 
-BOOL CALLBACK UruTOSDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam )
+INT_PTR CALLBACK UruTOSDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
     switch( uMsg )
     {
@@ -605,7 +606,7 @@ BOOL CALLBACK UruTOSDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
         break;
 
     case WM_NCHITTEST:
-        SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, (LONG_PTR)HTCAPTION);
+        SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, (LONG_PTR)HTCAPTION);
         return TRUE;
     }
     return FALSE;
@@ -637,14 +638,14 @@ static void StoreHash(const ST::string& username, const ST::string& password, Lo
     }
 }
 
-static void SaveUserPass(LoginDialogParam *pLoginParam, char *password)
+static void SaveUserPass(LoginDialogParam* pLoginParam, wchar_t* password)
 {
     ST::string theUser = pLoginParam->username;
     ST::string thePass = password;
 
     HKEY hKey;
     RegCreateKeyEx(HKEY_CURRENT_USER, ST::format("Software\\Cyan, Inc.\\{}\\{}", plProduct::LongName(), GetServerDisplayName()).c_str(), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &hKey, NULL);
-    RegSetValueEx(hKey, "LastAccountName", NULL, REG_SZ, (LPBYTE) pLoginParam->username, kMaxAccountNameLength);
+    RegSetValueExW(hKey, L"LastAccountName", NULL, REG_SZ, (LPBYTE) pLoginParam->username, sizeof(pLoginParam->username));
     RegSetValueEx(hKey, "RememberPassword", NULL, REG_DWORD, (LPBYTE) &(pLoginParam->remember), sizeof(LPBYTE));
     RegCloseKey(hKey);
 
@@ -658,7 +659,7 @@ static void SaveUserPass(LoginDialogParam *pLoginParam, char *password)
         if (pLoginParam->remember)
             store->SetPassword(pLoginParam->username, thePass);
         else
-            store->SetPassword(pLoginParam->username, ST::null);
+            store->SetPassword(pLoginParam->username, ST::string());
     }
 
     NetCommSetAccountUsernamePassword(theUser, pLoginParam->namePassHash);
@@ -670,22 +671,22 @@ static void SaveUserPass(LoginDialogParam *pLoginParam, char *password)
 static void LoadUserPass(LoginDialogParam *pLoginParam)
 {
     HKEY hKey;
-    char accountName[kMaxAccountNameLength];
-    memset(accountName, 0, kMaxAccountNameLength);
+    wchar_t accountName[kMaxAccountNameLength];
+    memset(accountName, 0, sizeof(accountName));
     uint32_t rememberAccount = 0;
-    DWORD acctLen = kMaxAccountNameLength, remLen = sizeof(rememberAccount);
+    DWORD acctLen = sizeof(accountName), remLen = sizeof(rememberAccount);
     RegOpenKeyEx(HKEY_CURRENT_USER, ST::format("Software\\Cyan, Inc.\\{}\\{}", plProduct::LongName(), GetServerDisplayName()).c_str(), 0, KEY_QUERY_VALUE, &hKey);
-    RegQueryValueEx(hKey, "LastAccountName", 0, NULL, (LPBYTE) &accountName, &acctLen);
+    RegQueryValueExW(hKey, L"LastAccountName", 0, NULL, (LPBYTE) &accountName, &acctLen);
     RegQueryValueEx(hKey, "RememberPassword", 0, NULL, (LPBYTE) &rememberAccount, &remLen);
     RegCloseKey(hKey);
 
     pLoginParam->remember = false;
-    pLoginParam->username[0] = '\0';
+    pLoginParam->username[0] = 0;
 
     if (acctLen > 0)
-        strncpy(pLoginParam->username, accountName, kMaxAccountNameLength);
+        wcsncpy(pLoginParam->username, accountName, kMaxAccountNameLength);
     pLoginParam->remember = (rememberAccount != 0);
-    if (pLoginParam->remember && pLoginParam->username[0] != '\0')
+    if (pLoginParam->remember && pLoginParam->username[0])
     {
         pfPasswordStore* store = pfPasswordStore::Instance();
         ST::string password = store->GetPassword(pLoginParam->username);
@@ -693,7 +694,7 @@ static void LoadUserPass(LoginDialogParam *pLoginParam)
             StoreHash(pLoginParam->username, password, pLoginParam);
         pLoginParam->focus = IDOK;
     }
-    else if (pLoginParam->username[0] == '\0')
+    else if (!pLoginParam->username[0])
         pLoginParam->focus = IDC_URULOGIN_USERNAME;
     else
         pLoginParam->focus = IDC_URULOGIN_PASSWORD;
@@ -711,7 +712,7 @@ static size_t CurlCallback(void *buffer, size_t size, size_t nmemb, void *param)
     return size * nmemb;
 }
 
-BOOL CALLBACK UruLoginDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam )
+INT_PTR CALLBACK UruLoginDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
     static LoginDialogParam* pLoginParam;
     static bool showAuthFailed = false;
@@ -731,6 +732,8 @@ BOOL CALLBACK UruLoginDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 // For reporting errors
                 char curlError[CURL_ERROR_SIZE];
                 curl_easy_setopt(hCurl, CURLOPT_ERRORBUFFER, curlError);
+                curl_easy_setopt(hCurl, CURLOPT_FOLLOWLOCATION, 1);
+                curl_easy_setopt(hCurl, CURLOPT_MAXREDIRS, 5);
 
                 while (s_loginDlgRunning) {
                     curl_easy_setopt(hCurl, CURLOPT_URL, statusUrl.c_str());
@@ -757,7 +760,7 @@ BOOL CALLBACK UruLoginDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
 
             EnableWindow(GetDlgItem(hwndDlg, IDOK), FALSE);
 
-            SetDlgItemText(hwndDlg, IDC_URULOGIN_USERNAME, pLoginParam->username);
+            SetDlgItemTextW(hwndDlg, IDC_URULOGIN_USERNAME, pLoginParam->username);
             CheckDlgButton(hwndDlg, IDC_URULOGIN_REMEMBERPASS, pLoginParam->remember ? BST_CHECKED : BST_UNCHECKED);
             if (pLoginParam->remember)
                 SetDlgItemText(hwndDlg, IDC_URULOGIN_PASSWORD, FAKE_PASS_STRING);
@@ -796,7 +799,7 @@ BOOL CALLBACK UruLoginDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
     
         case WM_NCHITTEST:
         {
-            SetWindowLongPtr(hwndDlg, DWL_MSGRESULT, (LONG_PTR)HTCAPTION);
+            SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, (LONG_PTR)HTCAPTION);
             return TRUE;
         }
     
@@ -817,10 +820,10 @@ BOOL CALLBACK UruLoginDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 bool ok = (LOWORD(wParam) == IDOK);
                 if (ok)
                 {
-                    char password[kMaxPasswordLength];
+                    wchar_t password[kMaxPasswordLength];
 
-                    GetDlgItemText(hwndDlg, IDC_URULOGIN_USERNAME, pLoginParam->username, kMaxAccountNameLength);
-                    GetDlgItemText(hwndDlg, IDC_URULOGIN_PASSWORD, password, kMaxPasswordLength);
+                    GetDlgItemTextW(hwndDlg, IDC_URULOGIN_USERNAME, pLoginParam->username, kMaxAccountNameLength);
+                    GetDlgItemTextW(hwndDlg, IDC_URULOGIN_PASSWORD, password, kMaxPasswordLength);
                     pLoginParam->remember = (IsDlgButtonChecked(hwndDlg, IDC_URULOGIN_REMEMBERPASS) == BST_CHECKED);
 
                     plLocalization::Language new_language = (plLocalization::Language)SendMessage(GetDlgItem(hwndDlg, IDC_LANGUAGE), CB_GETCURSEL, 0, 0L);
@@ -861,14 +864,9 @@ BOOL CALLBACK UruLoginDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             }
             else if (HIWORD(wParam) == EN_CHANGE && LOWORD(wParam) == IDC_URULOGIN_USERNAME)
             {
-                char username[kMaxAccountNameLength];
-                GetDlgItemText(hwndDlg, IDC_URULOGIN_USERNAME, username, kMaxAccountNameLength);
-
-                if (StrLen(username) == 0)
-                    EnableWindow(GetDlgItem(hwndDlg, IDOK), FALSE);
-                else
-                    EnableWindow(GetDlgItem(hwndDlg, IDOK), TRUE);
-
+                wchar_t username[kMaxAccountNameLength];
+                GetDlgItemTextW(hwndDlg, IDC_URULOGIN_USERNAME, username, kMaxAccountNameLength);
+                EnableWindow(GetDlgItem(hwndDlg, IDOK), username[0] != 0);
                 return TRUE;
             }
             else if (HIWORD(wParam) == BN_CLICKED && LOWORD(wParam) == IDC_URULOGIN_NEWACCTLINK)
@@ -900,7 +898,7 @@ BOOL CALLBACK UruLoginDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
     return FALSE;
 }
 
-BOOL CALLBACK SplashDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK SplashDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
@@ -933,7 +931,7 @@ BOOL CALLBACK SplashDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lP
     return 0;
 }
 
-BOOL CALLBACK ExceptionDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam )
+INT_PTR CALLBACK ExceptionDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
     static char *sLastMsg = nil;
 
@@ -1015,7 +1013,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         args.push_back(ST::string::from_utf8(__argv[i]));
     }
 
-    plCmdParser cmdParser(s_cmdLineArgs, arrsize(s_cmdLineArgs));
+    plCmdParser cmdParser(s_cmdLineArgs, std::size(s_cmdLineArgs));
     cmdParser.Parse(args);
 
     bool doIntroDialogs = true;
@@ -1033,6 +1031,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
         NetCommSetIniPlayerId(cmdParser.GetInt(kArgPlayerId));
     if (cmdParser.IsSpecified(kArgStartUpAgeName))
         NetCommSetIniStartUpAge(cmdParser.GetString(kArgStartUpAgeName));
+    if (cmdParser.IsSpecified(kArgPvdFile))
+        plPXSimulation::SetDefaultDebuggerEndpoint(cmdParser.GetString(kArgPvdFile));
 #endif
 
     plFileName serverIni = "server.ini";
@@ -1115,7 +1115,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
     // Set up to log errors by using hsDebugMessage
     DebugInit();
-    DebugMsgF("Plasma 2.0.%i.%i - %s", PLASMA2_MAJOR_VERSION, PLASMA2_MINOR_VERSION, plProduct::ProductString().c_str());
+    DebugMsg("Plasma 2.0.{}.{} - {}", PLASMA2_MAJOR_VERSION, PLASMA2_MINOR_VERSION, plProduct::ProductString());
 
     FILE *serverIniFile = plFileSystem::Open(serverIni, "rb");
     if (serverIniFile)

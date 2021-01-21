@@ -106,11 +106,13 @@ bool plSceneInputInterface::fShowLOS = false;
 //// Constructor/Destructor //////////////////////////////////////////////////
 
 plSceneInputInterface::plSceneInputInterface()
+    : fPipe(), fCurrentCursor(), fButtonState(), fClickability(),
+      fCurrClickIsAvatar(), fLastClickIsAvatar(), fFadedLocalAvatar(),
+      fPendingLink(), fBookMode(), fOffereeID()
 {
-    fPipe = nil;
     fAgeInstanceGuid.Clear();
     fInstance = this;
-    SetEnabled( true );         // Always enabled
+    SetEnabled(true);         // Always enabled
 }
 
 plSceneInputInterface::~plSceneInputInterface()
@@ -156,7 +158,7 @@ void    plSceneInputInterface::Init( plInputInterfaceMgr *manager )
 
 }
 
-void    plSceneInputInterface::Shutdown( void )
+void    plSceneInputInterface::Shutdown()
 {
     if( fPipe == nil )
         plgDispatch::Dispatch()->UnRegisterForExactType( plRenderMsg::Index(), fManager->GetKey() );
@@ -191,12 +193,12 @@ void plSceneInputInterface::IHalfFadeAvatar(bool out)
 
 void plSceneInputInterface::ResetClickableState()
 {
-    if( fLastClicked != nil )
-        ISetLastClicked( nil, hsPoint3(0,0,0) );
-    
+    if (fLastClicked != nullptr)
+        ISetLastClicked(nullptr, {});
+
     ClearClickableMap();
-    fCurrentClickable = nil;
-    fCurrentClickableLogicMod = nil;
+    fCurrentClickable = nullptr;
+    fCurrentClickableLogicMod = nullptr;
     fCurrentCursor = SetCurrentCursorID(kNullCursor);
     fCurrClickIsAvatar = false;
     
@@ -257,7 +259,6 @@ bool    plSceneInputInterface::MsgReceive( plMessage *msg )
     {
         if( pLOSMsg->fRequestID == ID_FIND_CLICKABLE )
         {
-            bool clearCursor = false;
             if (!fClickability)
                 return true;
             if( pLOSMsg->fObj )
@@ -269,9 +270,9 @@ bool    plSceneInputInterface::MsgReceive( plMessage *msg )
                     if (fShowLOS)
                     {
                         if (pLOSMsg->fNoHit)
-                            DetectorLogSpecial("%s: LOS miss", pObj->GetKeyName().c_str());
+                            plDetectorLog::Special("{}: LOS miss", pObj->GetKeyName());
                         else
-                            DetectorLogSpecial("%s: LOS hit", pObj->GetKeyName().c_str());
+                            plDetectorLog::Special("{}: LOS hit", pObj->GetKeyName());
                     }
                     int i;
                     const plInterfaceInfoModifier* pMod = 0;
@@ -559,7 +560,7 @@ bool    plSceneInputInterface::MsgReceive( plMessage *msg )
                 if (pMS->fAvatar == plNetClientMgr::GetInstance()->GetLocalPlayerKey())
                 {
                     // do something else
-                    if (fBookMode = kNotOffering && fPendingLink == false) // we just linked out
+                    if (fBookMode == kNotOffering && fPendingLink == false) // we just linked out
                     {
                         // make me clickable again
                         ISendAvatarDisabledNotification(true);
@@ -1063,7 +1064,7 @@ bool plSceneInputInterface::InterpretInputEvent( plInputEventMsg *pMsg )
             if( fLastClicked != nil )
             {
                 fButtonState &= ~kLeftButtonDown;
-                ISetLastClicked( nil, hsPoint3(0,0,0) );
+                ISetLastClicked(nullptr, {});
                 
                 return true;
             }
@@ -1178,12 +1179,15 @@ void    plSceneInputInterface::IRequestLOSCheck( float xPos, float yPos, int ID 
     
     if(ID == ID_FIND_CLICKABLE) {
         pMsg = new plLOSRequestMsg( fManager->GetKey(), startPos, endPos, plSimDefs::kLOSDBUIItems, plLOSRequestMsg::kTestClosest );
+        pMsg->SetRequestName(ST_LITERAL("Scene Input Interface: Find Clickable"));
         pMsg->SetCullDB(plSimDefs::kLOSDBUIBlockers);
     } else if(ID == ID_FIND_WALKABLE_GROUND) {
         pMsg = new plLOSRequestMsg( fManager->GetKey(), startPos, endPos, plSimDefs::kLOSDBAvatarWalkable, plLOSRequestMsg::kTestClosest);
-    } else
+        pMsg->SetRequestName(ST_LITERAL("Scene Input Interface: Find Terrain"));
+    } else {
         pMsg = new plLOSRequestMsg( fManager->GetKey(), startPos, endPos, plSimDefs::kLOSDBLocalAvatar, plLOSRequestMsg::kTestClosest);
-    
+        pMsg->SetRequestName(ST_LITERAL("Scene Input Interface: Find Local Avatar"));
+    }
     pMsg->SetReportType( plLOSRequestMsg::kReportHitOrMiss );
 
     pMsg->SetRequestID( ID );
@@ -1196,7 +1200,7 @@ void    plSceneInputInterface::IRequestLOSCheck( float xPos, float yPos, int ID 
         
 //// IWorldPosMovedSinceLastLOSCheck /////////////////////////////////////////
 
-bool    plSceneInputInterface::IWorldPosMovedSinceLastLOSCheck( void )
+bool    plSceneInputInterface::IWorldPosMovedSinceLastLOSCheck()
 {
     if( fPipe == nil )
         return false;

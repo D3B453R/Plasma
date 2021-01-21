@@ -45,8 +45,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 //
 //////////////////////////////////////////////////////////////////////
 
+#include <memory>
 #include <Python.h>
-#pragma hdrstop
 
 #ifdef BUILDING_PYPLASMA
 # error "pyVault is not compatible with pyPlasma.pyd. Use BUILDING_PYPLASMA macro to ifdef out unwanted headers."
@@ -80,35 +80,29 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 //============================================================================
 static PyObject * GetFolder (unsigned folderType) {
-    PyObject * result = nil;
     if (hsRef<RelVaultNode> rvnPlr = VaultGetPlayerNode()) {
         if (hsRef<RelVaultNode> rvnFldr = rvnPlr->GetChildFolderNode(folderType, 1))
-            result = pyVaultFolderNode::New(rvnFldr);
+            return pyVaultFolderNode::New(rvnFldr);
     }
-    
-    return result;
+    return nullptr;
 }
 
 //============================================================================
 static PyObject * GetPlayerInfoList (unsigned folderType) {
-    PyObject * result = nil;
     if (hsRef<RelVaultNode> rvnPlr = VaultGetPlayerNode()) {
         if (hsRef<RelVaultNode> rvnFldr = rvnPlr->GetChildPlayerInfoListNode(folderType, 1))
-            result = pyVaultPlayerInfoListNode::New(rvnFldr);
+            return pyVaultPlayerInfoListNode::New(rvnFldr);
     }
-    
-    return result;
+    return nullptr;
 }
 
 //============================================================================
 static PyObject * GetAgeInfoList (unsigned folderType) {
-    PyObject * result = nil;
     if (hsRef<RelVaultNode> rvnPlr = VaultGetPlayerNode()) {
         if (hsRef<RelVaultNode> rvnFldr = rvnPlr->GetChildAgeInfoListNode(folderType, 1))
-            result = pyVaultAgeInfoListNode::New(rvnFldr);
+            return pyVaultAgeInfoListNode::New(rvnFldr);
     }
-    
-    return result;
+    return nullptr;
 }
 
 //////////////////////////////////////////////////
@@ -119,11 +113,11 @@ PyObject* pyVault::GetPlayerInfo()
         if (hsRef<RelVaultNode> rvnPlrInfo = rvnPlr->GetChildNode(plVault::kNodeType_PlayerInfo, 1))
             result = pyVaultPlayerInfoNode::New(rvnPlrInfo);
     }
-    
+
     // just return an empty node
     if (!result)
-        result = pyVaultPlayerInfoNode::New(nil);
-        
+        result = pyVaultPlayerInfoNode::New();
+
     return result;
 }
 
@@ -182,14 +176,14 @@ PyObject* pyVault::GetAgeJournalsFolder()
     
     // just return an empty node
     if (!result)
-        result = pyVaultFolderNode::New(nil);
-        
+        result = pyVaultFolderNode::New();
+
     return result;
 }
 
 // finds the stats for the players vault
 // ...such as how many pictures, notes and markers they have
-PyObject* pyVault::GetKIUsage(void)
+PyObject* pyVault::GetKIUsage()
 {
     uint32_t pictures = 0;
     uint32_t notes = 0;
@@ -395,34 +389,25 @@ PyObject* pyVault::GetInviteFolder()
 
 PyObject* pyVault::GetPsnlAgeSDL() const
 {
-    PyObject * result = nil;
-    hsRef<NetVaultNode> templateNode = new NetVaultNode;
-
     if (hsRef<RelVaultNode> rvnFldr = VaultGetAgesIOwnFolder()) {
-
-        templateNode->SetNodeType(plVault::kNodeType_AgeInfo);
-        VaultAgeInfoNode ageInfo(templateNode);
+        NetVaultNode templateNode;
+        templateNode.SetNodeType(plVault::kNodeType_AgeInfo);
+        VaultAgeInfoNode ageInfo(&templateNode);
         ageInfo.SetAgeFilename(kPersonalAgeFilename);
 
-        if (hsRef<RelVaultNode> rvnInfo = rvnFldr->GetChildNode(templateNode, 2)) {
-            templateNode->Clear();
-            templateNode->SetNodeType(plVault::kNodeType_SDL);
+        if (hsRef<RelVaultNode> rvnInfo = rvnFldr->GetChildNode(&templateNode, 2)) {
+            templateNode.Clear();
+            templateNode.SetNodeType(plVault::kNodeType_SDL);
 
-            if (hsRef<RelVaultNode> rvnSdl = rvnInfo->GetChildNode(templateNode, 1)) {
+            if (hsRef<RelVaultNode> rvnSdl = rvnInfo->GetChildNode(&templateNode, 1)) {
                 VaultSDLNode sdl(rvnSdl);
-                plStateDataRecord * rec = new plStateDataRecord;
-                if (sdl.GetStateDataRecord(rec, plSDL::kKeepDirty))
-                    result = pySDLStateDataRecord::New(rec);
-                else
-                    delete rec;
+                auto rec = std::make_unique<plStateDataRecord>();
+                if (sdl.GetStateDataRecord(rec.get(), plSDL::kKeepDirty))
+                    return pySDLStateDataRecord::New(rec.release());
             }
         }
     }
-
-    if (!result)
-        PYTHON_RETURN_NONE;
-    
-    return result;
+    PYTHON_RETURN_NONE;
 }
 
 void pyVault::UpdatePsnlAgeSDL( pySDLStateDataRecord & pyrec )
@@ -431,19 +416,17 @@ void pyVault::UpdatePsnlAgeSDL( pySDLStateDataRecord & pyrec )
     if ( !rec )
         return;
 
-    hsRef<NetVaultNode> templateNode = new NetVaultNode;
-
+    NetVaultNode templateNode;
     if (hsRef<RelVaultNode> rvnFldr = VaultGetAgesIOwnFolder()) {
-
-        templateNode->SetNodeType(plVault::kNodeType_AgeInfo);
-        VaultAgeInfoNode ageInfo(templateNode);
+        templateNode.SetNodeType(plVault::kNodeType_AgeInfo);
+        VaultAgeInfoNode ageInfo(&templateNode);
         ageInfo.SetAgeFilename(kPersonalAgeFilename);
 
-        if (hsRef<RelVaultNode> rvnInfo = rvnFldr->GetChildNode(templateNode, 2)) {
-            templateNode->Clear();
-            templateNode->SetNodeType(plVault::kNodeType_SDL);
+        if (hsRef<RelVaultNode> rvnInfo = rvnFldr->GetChildNode(&templateNode, 2)) {
+            templateNode.Clear();
+            templateNode.SetNodeType(plVault::kNodeType_SDL);
 
-            if (hsRef<RelVaultNode> rvnSdl = rvnInfo->GetChildNode(templateNode, 1)) {
+            if (hsRef<RelVaultNode> rvnSdl = rvnInfo->GetChildNode(&templateNode, 1)) {
                 VaultSDLNode sdl(rvnSdl);
                 sdl.SetStateDataRecord(rec, plSDL::kDirtyOnly | plSDL::kTimeStampOnRead);
             }
@@ -521,7 +504,7 @@ void pyVault::UnRegisterVisitAge( const char * guidstr )
 }
 
 //============================================================================
-void _InvitePlayerToAge(ENetError result, void* state, void* param, RelVaultNode* node)
+void _InvitePlayerToAge(ENetError result, void* state, void* param, hsWeakRef<RelVaultNode> node)
 {
     if (result == kNetSuccess)
         VaultSendNode(node, (uint32_t)((uintptr_t)param));
@@ -529,16 +512,16 @@ void _InvitePlayerToAge(ENetError result, void* state, void* param, RelVaultNode
 
 void pyVault::InvitePlayerToAge( const pyAgeLinkStruct & link, uint32_t playerID )
 {
-    hsRef<NetVaultNode> templateNode = new NetVaultNode;
-    templateNode->SetNodeType(plVault::kNodeType_TextNote);
-    VaultTextNoteNode visitAcc(templateNode);
+    NetVaultNode templateNode;
+    templateNode.SetNodeType(plVault::kNodeType_TextNote);
+    VaultTextNoteNode visitAcc(&templateNode);
     visitAcc.SetNoteType(plVault::kNoteType_Visit);
     visitAcc.SetVisitInfo(*link.GetAgeLink()->GetAgeInfo());
-    VaultCreateNode(templateNode, (FVaultCreateNodeCallback)_InvitePlayerToAge, nil, (void*)(uintptr_t)playerID);
+    VaultCreateNode(&templateNode, (FVaultCreateNodeCallback)_InvitePlayerToAge, nullptr, (void*)(uintptr_t)playerID);
 }
 
 //============================================================================
-void _UninvitePlayerToAge(ENetError result, void* state, void* param, RelVaultNode* node)
+void _UninvitePlayerToAge(ENetError result, void* state, void* param, hsWeakRef<RelVaultNode> node)
 {
     if (result == kNetSuccess)
         VaultSendNode(node, (uint32_t)((uintptr_t)param));
@@ -557,12 +540,12 @@ void pyVault::UnInvitePlayerToAge( const char * str, uint32_t playerID )
         }
     }
 
-    hsRef<NetVaultNode> templateNode = new NetVaultNode;
-    templateNode->SetNodeType(plVault::kNodeType_TextNote);
-    VaultTextNoteNode visitAcc(templateNode);
+    NetVaultNode templateNode;
+    templateNode.SetNodeType(plVault::kNodeType_TextNote);
+    VaultTextNoteNode visitAcc(&templateNode);
     visitAcc.SetNoteType(plVault::kNoteType_UnVisit);
     visitAcc.SetVisitInfo(info);
-    VaultCreateNode(templateNode, (FVaultCreateNodeCallback)_UninvitePlayerToAge, nil, (void*)(uintptr_t)playerID);
+    VaultCreateNode(&templateNode, (FVaultCreateNodeCallback)_UninvitePlayerToAge, nullptr, (void*)(uintptr_t)playerID);
 }
 
 //============================================================================
@@ -635,14 +618,15 @@ PyObject* pyVault::GetGlobalInbox()
 PyObject* pyVault::FindNode( pyVaultNode* templateNode ) const
 {
     // See if we already have a matching node locally
-    if (hsRef<RelVaultNode> rvn = VaultGetNode(templateNode->GetNode()))
+    hsWeakRef<NetVaultNode> node(templateNode->GetNode());
+    if (hsRef<RelVaultNode> rvn = VaultGetNode(node))
         return pyVaultNode::New(rvn);
     
     // See if a matching node exists on the server
-    ARRAY(unsigned) nodeIds;
-    VaultFindNodesAndWait(templateNode->GetNode(), &nodeIds);
+    std::vector<unsigned> nodeIds;
+    VaultFindNodesAndWait(node, &nodeIds);
     
-    if (nodeIds.Count()) {
+    if (!nodeIds.empty()) {
         // Only fetch the first matching node since this function returns a single node
         VaultFetchNodesAndWait(&nodeIds[0], 1);
         // If we fetched it successfully then it'll be in our local node cache now

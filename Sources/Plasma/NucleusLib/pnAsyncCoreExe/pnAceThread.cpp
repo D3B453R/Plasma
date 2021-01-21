@@ -46,7 +46,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 ***/
 
 #include "Pch.h"
-#pragma hdrstop
 
 
 /*****************************************************************************
@@ -119,7 +118,7 @@ void * AsyncThreadCreate (
     thread->handle          = nil;
     thread->argument        = argument;
     thread->workTimeMs      = kAsyncTimeInfinite;
-    StrCopy(thread->name, name, arrsize(thread->name));
+    StrCopy(thread->name, name, std::size(thread->name));
     
     // Create thread suspended
     unsigned threadId;
@@ -132,7 +131,7 @@ void * AsyncThreadCreate (
         &threadId
     );
     if (!handle) {
-        LogMsg(kLogFatal, "%s (%u)", __FILE__, GetLastError());
+        LogMsg(kLogFatal, "{} ({})", __FILE__, GetLastError());
         ErrorAssert(__LINE__, __FILE__, "_beginthreadex failed");
     }
 

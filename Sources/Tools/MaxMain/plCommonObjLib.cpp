@@ -49,7 +49,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "HeadSpin.h"
 #include "hsTemplates.h"
-#pragma hdrstop
 
 #include "plCommonObjLib.h"
 #include "pnKeyedObject/hsKeyedObject.h"
@@ -94,7 +93,7 @@ class plCommonObjLibList
 
 plCommonObjLibList  *plCommonObjLib::fLibList = nil;
 
-uint32_t  plCommonObjLib::GetNumLibs( void )
+uint32_t  plCommonObjLib::GetNumLibs()
 {
     return ( fLibList != nil ) ? fLibList->fLibs.GetCount() : 0;
 }
@@ -145,7 +144,7 @@ plCommonObjLib::~plCommonObjLib()
 
 //// ClearObjectList /////////////////////////////////////////////////////////
 
-void    plCommonObjLib::ClearObjectList( void )
+void    plCommonObjLib::ClearObjectList()
 {
     int     i;
 

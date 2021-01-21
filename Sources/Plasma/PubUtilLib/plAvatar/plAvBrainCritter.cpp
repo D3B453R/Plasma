@@ -63,7 +63,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static plRandom sRandom; // random number generator
+plRandom plAvBrainCritter::sRandom; // random number generator
 
 const char kDefaultIdleAnimName[] = "Idle";
 const char kDefaultIdleBehName[] = "Idle";
@@ -127,14 +127,15 @@ protected:
 
 ///////////////////////////////////////////////////////////////////////////////
 
-plAvBrainCritter::plAvBrainCritter(): fWalkingStrategy(nil), fCurMode(kIdle), fNextMode(kIdle), fFadingNextBehavior(true),
-    fAvoidingAvatars(false), fFinalGoalPos(0, 0, 0), fImmediateGoalPos(0, 0, 0), fDotGoal(0),
-    fAngRight(0)
+plAvBrainCritter::plAvBrainCritter()
+    : fWalkingStrategy(), fCurMode(kIdle), fNextMode(kIdle),
+      fFadingNextBehavior(true), fAvoidingAvatars(), fDotGoal(),
+      fAngRight()
 {
-    SightCone(M_PI/2); // 90deg
-    StopDistance(1);
-    SightDistance(10);
-    HearingDistance(10);
+    SightCone(hsConstants::half_pi<float>); // 90deg
+    StopDistance(1.f);
+    SightDistance(10.f);
+    HearingDistance(10.f);
 }
 
 plAvBrainCritter::~plAvBrainCritter()
@@ -302,7 +303,7 @@ std::string plAvBrainCritter::BehaviorName(int behavior) const
 ST::string plAvBrainCritter::AnimationName(int behavior) const
 {
     if ((behavior >= fBehaviors.Count()) || (behavior < 0))
-        return ST::null;
+        return ST::string();
     return ((CritterBehavior*)fBehaviors[behavior])->AnimName();
 }
 
@@ -343,7 +344,9 @@ void plAvBrainCritter::SightCone(float coneRad)
     fSightConeAngle = coneRad;
 
     // calculate the minimum dot product for the cone of sight (angle/2 vector dotted with straight ahead)
-    hsVector3 straightVector(1, 0, 0), viewVector(1, 0, 0), up(0, 1, 0);
+    hsVector3 straightVector(1.f, 0.f, 0.f);
+    hsVector3 viewVector(1.f, 0.f, 0.f);
+    hsVector3 up(0.f, 1.f, 0.f);
     hsQuat rotation(fSightConeAngle/2, &up);
     viewVector = hsVector3(rotation.Rotate(&viewVector));
     viewVector.Normalize();
@@ -401,7 +404,7 @@ hsVector3 plAvBrainCritter::VectorToPlayer(unsigned long id) const
 {
     plArmatureMod* avatar = plAvatarMgr::GetInstance()->FindAvatarByPlayerID(id);
     if (!avatar)
-        return hsVector3(0, 0, 0);
+        return {};
 
     hsPoint3 avPos;
     hsQuat avRot;

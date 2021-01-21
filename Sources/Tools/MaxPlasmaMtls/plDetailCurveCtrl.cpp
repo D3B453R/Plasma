@@ -62,7 +62,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "hsWindows.h"
 
 #include "resource.h"
-#pragma hdrstop
 
 #include "plDetailCurveCtrl.h"
 
@@ -122,7 +121,7 @@ void    plDetailCurveCtrl::IRegisterCtrl( HINSTANCE instance )
     fClassRefCnt++;
 }
 
-void    plDetailCurveCtrl::IUnregisterCtrl( void )
+void    plDetailCurveCtrl::IUnregisterCtrl()
 {
     fClassRefCnt--;
     if( fClassRefCnt == 0 )
@@ -192,7 +191,7 @@ plDetailCurveCtrl::~plDetailCurveCtrl()
 //  any good, 'cause it's black-and-white (right, THAT makes sense). Grabbing
 //  the desktop DC works, however.
 
-void    plDetailCurveCtrl::IInitDblBuffer( void )
+void    plDetailCurveCtrl::IInitDblBuffer()
 {
     if( fDblDC == NULL )
     {
@@ -220,7 +219,7 @@ void    plDetailCurveCtrl::IInitDblBuffer( void )
 
 //// IRefreshDblBuffer ////////////////////////////////////////////////////////
 
-void    plDetailCurveCtrl::IRefreshDblBuffer( void )
+void    plDetailCurveCtrl::IRefreshDblBuffer()
 {
     HDC         hBgndDC;
     RECT        clientRect, r;

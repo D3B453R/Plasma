@@ -77,7 +77,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plSurface/plLayerOr.h"
 #include "plAudio/plAudioSystem.h"
 #include "plAudio/plVoiceChat.h"
-#include "plAudio/plWinMicLevel.h"
 #include "plPipeline/plFogEnvironment.h"
 #include "plPipeline/plPlates.h"
 #include "plPipeline/plDynamicEnvMap.h"
@@ -291,7 +290,7 @@ plKey FindObjectByName(const ST::string& name, int type, const ST::string& ageNa
         ST::string thisAge = plAgeLoader::GetInstance()->GetCurrAgeDesc().GetAgeName();
         if (!thisAge.empty())
         {
-            key = plKeyFinder::Instance().StupidSearch(thisAge, ST::null, type, name, subString);
+            key = plKeyFinder::Instance().StupidSearch(thisAge, ST::string(), type, name, subString);
             if (key != nil)
             {
                 if (statusStr)
@@ -301,7 +300,7 @@ plKey FindObjectByName(const ST::string& name, int type, const ST::string& ageNa
         }
     }
     // Fallback
-    key = plKeyFinder::Instance().StupidSearch(ageName, ST::null, type, name, subString);
+    key = plKeyFinder::Instance().StupidSearch(ageName, ST::string(), type, name, subString);
 
     if (!key)
     {
@@ -1277,7 +1276,7 @@ PF_CONSOLE_CMD( Graphics_Renderer, Gamma2, "float g", "Set gamma value (alternat
     for( i = 0; i < 256; i++ )
     {
         float t = float(i) / 255.f;
-        float sinT = sin(t * M_PI / 2.f);
+        float sinT = std::sin(t * hsConstants::pi<float> / 2.f);
 
         float remap = t + (sinT - t) * g;
         if( remap < 0 )
@@ -3077,7 +3076,7 @@ PF_CONSOLE_CMD(Logic, ResponderNoLog, "string prefix", "Don't log responders tha
 #include "plModifier/plDetectorLog.h"
 PF_CONSOLE_CMD(Logic, WriteDetectorLog, "", "Write detector log to logfile")
 {
-    DetectorDoLogfile();
+    plDetectorLog::Output();
 }
 
 PF_CONSOLE_CMD(Logic,
@@ -3087,567 +3086,6 @@ PF_CONSOLE_CMD(Logic,
 {
     int ms = params[0];
     plLogicModBase::SetArbitrationDelay(ms);
-}
-
-#endif // LIMIT_CONSOLE_COMMANDS
-
-////////////////////////////////////////////////////////////////////////
-//// Audio System Group Commands ///////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-PF_CONSOLE_GROUP( Audio )
-
-PF_CONSOLE_CMD( Audio, Enable, "bool on", "Switch DirectX Audio on or off at runtime")
-{
-    bool on = params[0];
-    plgAudioSys::Activate( on );
-}
-
-PF_CONSOLE_CMD( Audio, UseHardware, "bool on", "Enable audio hardware acceleration")
-{
-    bool on = params[0];
-    plgAudioSys::SetUseHardware( on );
-}
-
-PF_CONSOLE_CMD( Audio, UseEAX, "bool on", "Enable EAX sound acceleration (requires hardware acceleration)")
-{
-    bool on = params[0];
-    plgAudioSys::EnableEAX( on );
-}
-
-PF_CONSOLE_CMD( Audio, Initialize, "bool on", "Set to false to completely disable audio playback in plasma")
-{ 
-    bool on = params[0];
-    plgAudioSys::SetActive(on);
-}
-
-PF_CONSOLE_CMD( Audio, Restart, "", "Restarts the audio system" )
-{ 
-    plgAudioSys::Restart();
-}
-
-PF_CONSOLE_CMD( Audio, MuteAll, "bool on", "Mute or unmute all sounds")
-{
-    plgAudioSys::SetMuted( (bool)params[ 0 ] );
-}
-
-PF_CONSOLE_CMD( Audio, SetDistanceModel, "int type", "Sets the distance model for all 3d sounds")
-{
-    if(plgAudioSys::Sys())
-    {
-        plgAudioSys::Sys()->SetDistanceModel((int) params[0]);
-    }
-}
-
-PF_CONSOLE_CMD( Audio, LogStreamingUpdates, "bool on", "Logs every buffer fill for streaming sounds")
-{
-    plgAudioSys::SetLogStreamingUpdates((bool) params[0]);
-}
-
-PF_CONSOLE_CMD( Audio, SetAllChannelVolumes, "float soundFX, float music, float ambience, float voice, float gui", "Sets the master volume of all the given audio channels.")
-{
-    plgAudioSys::ASChannel  chans[ 6 ] = { plgAudioSys::kSoundFX, plgAudioSys::kBgndMusic, plgAudioSys::kAmbience, plgAudioSys::kVoice, plgAudioSys::kGUI, plgAudioSys::kNPCVoice };
-
-
-    int i;
-
-    for( i = 0; i < 5; i++ )
-    {
-        float    vol = (float)(float)params[ i ];
-        if( vol > 1.f )
-            vol = 1.f;
-        else if( vol < 0.f )
-            vol = 0.f;
-
-        plgAudioSys::SetChannelVolume( chans[ i ], vol );
-    }
-}
-
-PF_CONSOLE_CMD( Audio, SetChannelVolume, "string channel, float percentage", "Sets the master volume of a given audio channel\n\
-Valid channels are: SoundFX, BgndMusic, Voice, GUI, NPCVoice and Ambience.")
-{
-    plgAudioSys::ASChannel  chan;
-
-
-    if( stricmp( params[ 0 ], "SoundFX" ) == 0 )
-        chan = plgAudioSys::kSoundFX;
-    else if( stricmp( params[ 0 ], "BgndMusic" ) == 0 )
-        chan = plgAudioSys::kBgndMusic;
-    else if( stricmp( params[ 0 ], "Voice" ) == 0 )
-        chan = plgAudioSys::kVoice;
-    else if( stricmp( params[ 0 ], "Ambience" ) == 0 )
-        chan = plgAudioSys::kAmbience;
-    else if( stricmp( params[ 0 ], "GUI" ) == 0 )
-        chan = plgAudioSys::kGUI;
-    else if( stricmp( params[ 0 ], "NPCVoice" ) == 0 )
-        chan = plgAudioSys::kNPCVoice;
-    else
-    {
-        PrintString( "Invalid channel specified. Use SoundFX, BgndMusic, Voice, Ambience or GUI." );
-        return;
-    }
-
-    float    vol = (float)(float)params[ 1 ];
-    if( vol > 1.f )
-        vol = 1.f;
-    else if( vol < 0.f )
-        vol = 0.f;
-
-    plgAudioSys::SetChannelVolume( chan, vol );
-
-    ST::string msg;
-    switch( chan )
-    {
-        case plgAudioSys::kSoundFX:     msg = ST::format("Setting SoundFX master volume to {4.2f}", vol); break;
-        case plgAudioSys::kBgndMusic:   msg = ST::format("Setting BgndMusic master volume to {4.2f}", vol); break;
-        case plgAudioSys::kVoice:       msg = ST::format("Setting Voice master volume to {4.2f}", vol); break;
-        case plgAudioSys::kAmbience:    msg = ST::format("Setting Ambience master volume to {4.2f}", vol); break;
-        case plgAudioSys::kGUI:         msg = ST::format("Setting GUI master volume to {4.2f}", vol); break;
-        case plgAudioSys::kNPCVoice:    msg = ST::format("Setting NPC Voice master volume to {4.2f}", vol); break;
-        default: break;
-    }
-    PrintString(msg.c_str());
-}
-
-PF_CONSOLE_CMD( Audio, Set2D3DBias, "float bias", "Sets the 2D/3D bias when not using hardware acceleration.")
-{
-
-    float    bias = (float)(float)params[ 0 ];
-    plgAudioSys::Set2D3DBias( bias );
-
-}
-
-PF_CONSOLE_CMD( Audio, ShowNumActiveBuffers, "bool b", "Shows the number of Direct sounds buffers in use")
-{
-    plgAudioSys::ShowNumBuffers((bool)params[0]);
-}
-
-PF_CONSOLE_CMD( Audio, SetDeviceName, "string deviceName", "Meant for plClient init only")
-{
-    plgAudioSys::SetDeviceName(params[0]);      // this will set the name of the audio system device without actually reseting it
-}
-
-PF_CONSOLE_CMD( Audio,      // groupName
-               ShowIcons,       // fxnName
-               "bool b", // paramList
-               "turn voice recording icons on and off" )    // helpString
-{
-    bool b = params[0];
-    plVoiceRecorder::EnableIcons(b);
-
-}
-
-PF_CONSOLE_CMD( Audio,      // groupName
-               SquelchLevel,        // fxnName
-               "float f", // paramList
-               "Set the squelch level" )    // helpString
-{
-    float f = params[0];
-    plVoiceRecorder::SetSquelch(f);
-
-}
-
-
-PF_CONSOLE_CMD( Audio,      // groupName
-               PushToTalk,      // fxnName
-               "bool b", // paramList
-               "turn push-to-talk on or off" )  // helpString
-{
-    bool b = params[0];
-    plVoiceRecorder::EnablePushToTalk(b);
-
-}
-
-PF_CONSOLE_CMD(Audio,                                // groupName
-               SetVoiceCodec,                        // fxnName
-               "string codec",                       // paramList
-               "Sets the codec used for voice chat") // helpString
-{
-    const char* codec = params[0];
-    if (stricmp(codec, "none") == 0)
-        plVoiceRecorder::SetVoiceFlags(0);
-    else if (stricmp(codec, "speex") == 0)
-        plVoiceRecorder::SetVoiceFlags(plVoiceFlags::kEncoded | plVoiceFlags::kEncodedSpeex);
-    else if (stricmp(codec, "opus") == 0)
-        plVoiceRecorder::SetVoiceFlags(plVoiceFlags::kEncoded | plVoiceFlags::kEncodedOpus);
-    else
-        PrintString("Invalid codec specified");
-}
-
-PF_CONSOLE_CMD(Audio,                                // groupName
-               SetVoiceSampleRate,                   // fxnName
-               "int rate",                           // paramList
-               "Sets the voice chat sampling rate")  // helpString
-{
-    plVoiceRecorder::SetSampleRate((int)params[0]);
-}
-
-PF_CONSOLE_CMD( Audio,                              // groupName
-               SetVoiceQuality,                     // fxnName
-               "int q",                             // paramList
-               "Set quality of voice encoding" )    // helpString
-{
-    int q = params[0];
-    plVoiceRecorder::SetQuality(q);
-}
-
-
-PF_CONSOLE_CMD( Audio,      // groupName
-               SetVBR,      // fxnName
-               "bool q",    // paramList
-               "Toggle variable bit rate" ) // helpString
-{
-    bool q = params[0];
-    plVoiceRecorder::SetVBR(q);
-}
-
-PF_CONSOLE_CMD( Audio,      // groupName
-               EnableVoiceRecording,        // fxnName
-               "bool b", // paramList
-               "turn voice recording on or off" )   // helpString
-{
-    bool b = params[0];
-    plVoiceRecorder::EnableRecording(b);
-
-}
-
-PF_CONSOLE_CMD( Audio,
-                EnableVoiceChat,
-                "bool b",
-                "Enable Voice chat" )
-{
-    plVoicePlayer::Enable((bool) params[0]);
-    plVoiceRecorder::EnableRecording((bool) params[0]);
-}
-
-#ifndef LIMIT_CONSOLE_COMMANDS
-
-PF_CONSOLE_CMD(Audio,
-               ShowVoiceGraph,
-               "bool b",
-               "Show voice chat graph")
-{
-    plVoiceRecorder::ShowGraph((bool)params[0]);
-}
-
-PF_CONSOLE_CMD( Audio, NextDebugPlate, "", "Cycles through the volume displays for all registered sounds" )
-{
-    plgAudioSys::NextDebugSound();
-}
-
-PF_CONSOLE_CMD(Audio, ShowDebugPlate, "string object, int soundIdx", "Shows the volume display for a registered sound")
-{
-    plKey key = FindSceneObjectByName(ST::string::from_utf8(params[0]), "", nullptr);
-    if (!key) {
-        plSound::SetCurrDebugPlate(nullptr);
-        return;
-    }
-
-    plSceneObject* so = plSceneObject::ConvertNoRef(key->GetObjectPtr());
-    if (!so) {
-        PrintString("Invalid SceneObject");
-        return;
-    }
-
-    const plAudioInterface* ai = so->GetAudioInterface();
-    if (ai) {
-        plSound* sound = ai->GetSound(params[1]);
-        // sue me
-        plSound::SetCurrDebugPlate(sound->GetKey());
-    } else {
-        PrintString("SceneObject has no AudioInterface");
-    }
-}
-
-#endif // LIMIT_CONSOLE_COMMANDS
-
-PF_CONSOLE_CMD( Audio, SetLoadOnDemand, "bool on", "Enable or disable load-on-demand for sounds")
-{
-    plSound::SetLoadOnDemand( (bool)params[ 0 ] );
-}
-
-PF_CONSOLE_CMD( Audio, SetTwoStageLOD, "bool on", "Enables or disables two-stage LOD, where sounds can be loaded into RAM but not into sound buffers. Less of a performance hit, harder on memory.")
-{
-    // For two-stage LOD, we want to disable LoadFromDiskOnDemand, so that we'll load into RAM at startup but not
-    // into sound buffers until demanded to do so. Enabling LoadFromDiskOnDemand basically conserves as much memory
-    // as possible
-    plSound::SetLoadFromDiskOnDemand( !(bool)params[ 0 ] );
-}
-
-PF_CONSOLE_CMD( Audio, SetVolume,
-                "string obj, float vol", "Sets the volume on a given object. 1 is max volume, 0 is silence" )
-{
-    plKey key = FindSceneObjectByName(ST::string::from_utf8(params[ 0 ]), "", nullptr);
-    if( key == nil )
-        return;
-
-    plSceneObject* obj = plSceneObject::ConvertNoRef(key->GetObjectPtr());
-    if( !obj )
-        return;
-
-    const plAudioInterface  *ai = obj->GetAudioInterface();
-    plKey   aiKey = ai->GetKey();
-
-    plSoundMsg* cmd = new plSoundMsg;
-    cmd->SetSender( plClient::GetInstance()->GetKey() );
-    cmd->SetCmd( plSoundMsg::kSetVolume );
-    cmd->fVolume = params[ 1 ];
-    cmd->AddReceiver( key );
-    plgDispatch::MsgSend(cmd);
-}
-
-
-#ifndef LIMIT_CONSOLE_COMMANDS
-
-PF_CONSOLE_CMD( Audio, IsolateSound,
-                "string soundComponentName", "Mutes all sounds except the given sound. Use Audio.MuteAll false to remove the isolation." )
-{
-    plKey           key;
-    plAudioSysMsg   *asMsg;
-
-    key = FindSceneObjectByName(ST::string::from_utf8(params[0]), "", nullptr);
-    if( key == nil )
-    {
-        pfConsolePrintF(PrintString, "Cannot find sound {}", (char *)params[0]);
-        return;
-    }
-
-    plSceneObject *obj = plSceneObject::ConvertNoRef( key->GetObjectPtr() );
-    if( !obj )
-    {
-        pfConsolePrintF(PrintString, "Cannot get sceneObject {}", (char *)params[0]);
-        return;
-    }
-
-    const plAudioInterface  *ai = obj->GetAudioInterface();
-    if( ai == nil )
-    {
-        pfConsolePrintF(PrintString, "sceneObject {} has no audio interface", (char *)params[0]);
-        return;
-    }
-
-    asMsg = new plAudioSysMsg( plAudioSysMsg::kMuteAll );
-    plgDispatch::MsgSend( asMsg );
-
-    asMsg = new plAudioSysMsg( plAudioSysMsg::kUnmuteAll );
-    asMsg->AddReceiver( ai->GetKey() );
-    asMsg->SetBCastFlag( plMessage::kBCastByExactType, false );
-    plgDispatch::MsgSend( asMsg );
-
-
-    pfConsolePrintF(PrintString, "Sounds on sceneObject {} isolated.", (char *)params[0]);
-}
-
-#endif // LIMIT_CONSOLE_COMMANDS
-
-PF_CONSOLE_CMD( Audio, SetMicVolume, "float volume", "Sets the microphone volume, in the range of 0 to 1" )
-{
-    if( !plWinMicLevel::CanSetLevel() )
-        PrintString( "Unable to set microphone level" );
-    else
-    {
-        plWinMicLevel::SetLevel( (float)params[ 0 ] );
-    }
-}
-
-#ifndef LIMIT_CONSOLE_COMMANDS
-
-PF_CONSOLE_CMD( Audio, MCNTest, "int which", "" )
-{
-    if( (int)params[ 0 ] == 0 )
-        plgAudioSys::ClearDebugFlags();
-    else if( (int)params[ 0 ] == 1 )
-        plgAudioSys::SetDebugFlag( plgAudioSys::kDisableRightSelect );
-    else if( (int)params[ 0 ] == 2 )
-        plgAudioSys::SetDebugFlag( plgAudioSys::kDisableLeftSelect );
-}
-
-PF_CONSOLE_CMD( Audio, Mark, "", "" )
-{
-    static int markNum = 0;
-    plStatusLog::AddLineS( "threadfun.log", "******* Mark #%d *******", markNum++ );
-}
-
-#endif // LIMIT_CONSOLE_COMMANDS
-
-PF_CONSOLE_CMD( Audio, SetStreamingBufferSize, "float sizeInSecs", "Sets the size of the streaming buffer for each streaming sound." )
-{
-    plgAudioSys::SetStreamingBufferSize( (float)params[ 0 ] );
-    PrintString( "Changes won't take effect until you restart the audio system." );
-}
-
-PF_CONSOLE_CMD( Audio, SetStreamFromRAMCutoff, "float cutoffInSecs", "Sets the cutoff between streaming from RAM and streaming directly from disk." )
-{
-    plgAudioSys::SetStreamFromRAMCutoff( (float)params[ 0 ] );
-    PrintString( "Changes won't take effect until you restart the audio system." );
-}
-
-PF_CONSOLE_CMD( Audio, SetPriorityCutoff, "int cutoff", "Stops sounds from loading whose priority is greater than this cutoff." )
-{
-    plgAudioSys::SetPriorityCutoff( (int)params[ 0 ] );
-}
-
-PF_CONSOLE_CMD( Audio, EnableExtendedLogs, "bool enable", "Enables or disables the extended audio logs." )
-{
-    plgAudioSys::EnableExtendedLogs( (bool)params[ 0 ] );
-}
-
-PF_CONSOLE_GROUP( Listener )
-
-#ifndef LIMIT_CONSOLE_COMMANDS
-
-PF_CONSOLE_CMD( Listener, ShowDebugInfo, "bool show", "Shows or hides debugging info")
-{
-    plListener::ShowDebugInfo( (bool)params[ 0 ] );
-}
-
-#endif // LIMIT_CONSOLE_COMMANDS
-
-PF_CONSOLE_CMD( Listener, UseCameraOrientation, "", "Use the camera's orientation to orient the listener")
-{
-    plSetListenerMsg *set = new plSetListenerMsg( plSetListenerMsg::kVCam | plSetListenerMsg::kFacing, nil, true );
-    set->Send();
-}
-
-PF_CONSOLE_CMD( Listener, UseCameraPosition, "", "Use the canera's position to position the listener")
-{
-    plSetListenerMsg *set = new plSetListenerMsg( plSetListenerMsg::kVCam | plSetListenerMsg::kPosition, nil, true );
-    set->Send();
-}
-
-PF_CONSOLE_CMD( Listener, UseCameraVelocity, "", "Use the camera's velocity to set the listener velocity")
-{
-    plSetListenerMsg *set = new plSetListenerMsg( plSetListenerMsg::kVCam | plSetListenerMsg::kVelocity, nil, true );
-    set->Send();
-}
-
-PF_CONSOLE_CMD( Listener, UsePlayerOrientation, "", "Use the player's orientation to orient the listener")
-{
-    plKey pKey = plNetClientMgr::GetInstance()->GetLocalPlayerKey();
-    if( pKey )
-    {
-        plSetListenerMsg *set = new plSetListenerMsg( plSetListenerMsg::kFacing, pKey, true );
-        set->Send();
-    }
-}
-PF_CONSOLE_CMD( Listener, UsePlayerPosition, "", "Use the player's position to position the listener")
-{
-    plKey pKey = plNetClientMgr::GetInstance()->GetLocalPlayerKey();
-    if (pKey)
-    {
-        plSetListenerMsg *set = new plSetListenerMsg( plSetListenerMsg::kPosition, pKey, true );
-        set->Send();
-    }
-}
-
-PF_CONSOLE_CMD( Listener, UsePlayerVelocity, "", "Use the player's velocity to set the listener velocity")
-{
-    plKey pKey = plNetClientMgr::GetInstance()->GetLocalPlayerKey();
-    if (pKey)
-    {
-        plSetListenerMsg *set = new plSetListenerMsg( plSetListenerMsg::kVelocity, pKey, true );
-        set->Send();
-    }
-}
-
-PF_CONSOLE_CMD( Listener, XMode, "bool b", "Sets velocity and position to avatar, and orientation to camera")
-{
-    static uint32_t oldPosType = 0, oldFacingType = 0, oldVelType = 0;
-    
-    plSetListenerMsg *set = nil;
-    plKey pKey = plNetClientMgr::GetInstance()->GetLocalPlayerKey();
-    plListener* pListener = nullptr;
-
-    if( (bool)params[ 0 ] )
-    {
-        // Get the listener object
-        plUoid lu(kListenerMod_KEY);
-        plKey pLKey = hsgResMgr::ResMgr()->FindKey(lu);
-        if (pLKey)
-        {   
-            pListener = plListener::ConvertNoRef(pLKey->GetObjectPtr());
-        }
-
-        if(pListener)
-        {
-            // Save old types
-            oldPosType = pListener->GetAttachedPosType();
-            oldFacingType = pListener->GetAttachedFacingType();
-            oldVelType = pListener->GetAttachedVelType();
-        }
-        
-        plStatusLog::AddLineS("audio.log", "XMode on");
-        
-        plSetListenerMsg *set = new plSetListenerMsg( plSetListenerMsg::kVCam | plSetListenerMsg::kFacing, nil, true );
-        set->Send();
-        if (pKey)
-        {
-            set = new plSetListenerMsg( plSetListenerMsg::kVelocity, pKey, true );
-            set->Send();
-            set = new plSetListenerMsg( plSetListenerMsg::kPosition, pKey, true );
-            set->Send();
-        }
-    }
-    else 
-    {
-        if(oldPosType == plListener::kCamera)
-        {
-            plSetListenerMsg *set = new plSetListenerMsg( plSetListenerMsg::kVCam | plSetListenerMsg::kPosition, nil, true );
-            set->Send();
-        }
-        else
-        {
-            set = new plSetListenerMsg( plSetListenerMsg::kPosition, pKey, true );
-            set->Send();
-        }
-        if(oldFacingType == plListener::kCamera)
-        {
-            set = new plSetListenerMsg( plSetListenerMsg::kVCam | plSetListenerMsg::kFacing, nil, true );
-            set->Send();
-        }
-        else
-        {
-            set = new plSetListenerMsg( plSetListenerMsg::kFacing, pKey, true );
-            set->Send();
-        }
-        if(oldVelType == plListener::kCamera)
-        {
-            set = new plSetListenerMsg( plSetListenerMsg::kVCam | plSetListenerMsg::kVelocity, nil, true );
-            set->Send();
-        }
-        else
-        {
-            set = new plSetListenerMsg( plSetListenerMsg::kVelocity, pKey, true );
-            set->Send();
-        }
-        plStatusLog::AddLineS("audio.log", "%s, %d, %d, %d", "XMode off", oldPosType, oldFacingType, oldVelType);
-    }
-}
-
-
-
-////////////////////////////////////////////////////////////////////////
-//// Input System Group Commands ///////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
-
-#ifndef LIMIT_CONSOLE_COMMANDS
-
-PF_CONSOLE_GROUP( DInput )
-
-PF_CONSOLE_CMD( DInput, UseDInput, "bool on", "Turns off DirectInput")
-{
-    bool on = params[0];
-    plInputManager::UseDInput(on);
-}
-
-
-PF_CONSOLE_CMD( DInput, Config, "", "Launch DInput configuration screen")
-{
-    plgAudioSys::Activate(false);
-    plInputEventMsg* pMsg = new plInputEventMsg;
-    pMsg->fEvent = plInputEventMsg::kConfigure;
-    pMsg->AddReceiver( plInputManager::GetInstance()->GetKey() );
-    pMsg->SetBCastFlag(plMessage::kBCastByType, false);
-    plgDispatch::MsgSend(pMsg);
 }
 
 #endif // LIMIT_CONSOLE_COMMANDS
@@ -4640,11 +4078,8 @@ namespace plWaveCmd {
 
 typedef void PrintFunk(const char* str);
 
-static inline float FracToPercent(float f) { return (float)(1.e2 * f); }
-static inline float PercentToFrac(float f) { return (float)(1.e-2 * f); }
-
-static inline float RadToDeg(float r) { return r * 180.f / M_PI; }
-static inline float DegToRad(float d) { return d * M_PI / 180.f; }
+static constexpr float FracToPercent(float f) { return 100.f * f; }
+static constexpr float PercentToFrac(float f) { return f / 100.f; }
 
 static void IDisplayWaveVal(PrintFunk PrintString, plWaveSet7* wave, plWaveCmd::Cmd cmd)
 {
@@ -4659,7 +4094,6 @@ static void IDisplayWaveVal(PrintFunk PrintString, plWaveSet7* wave, plWaveCmd::
     hsVector3 vec;
     hsColorRGBA col;
 
-    plFixedWaterState7 state = wave->State();
     switch( cmd )
     {
     case kGeoLen:
@@ -4672,7 +4106,7 @@ static void IDisplayWaveVal(PrintFunk PrintString, plWaveSet7* wave, plWaveCmd::
         msg = ST::format("Geo Wave Amplitude to Length Ratio (%) = {f}", FracToPercent(wave->GetGeoAmpOverLen()));
         break;
     case kGeoAngle:
-        msg = ST::format("Geo Spread of waves about Wind Dir = {f} degrees", RadToDeg(wave->GetGeoAngleDev()));
+        msg = ST::format("Geo Spread of waves about Wind Dir = {f} degrees", hsRadiansToDegrees(wave->GetGeoAngleDev()));
         break;
 
     case kTexLen:
@@ -4685,7 +4119,7 @@ static void IDisplayWaveVal(PrintFunk PrintString, plWaveSet7* wave, plWaveCmd::
         msg = ST::format("Tex Wave Amplitude to Length Ratio = {f}%", FracToPercent(wave->GetTexAmpOverLen()));
         break;
     case kTexAngle:
-        msg = ST::format("Tex Spread of waves about Wind Dir = {f} degrees", RadToDeg(wave->GetTexAngleDev()));
+        msg = ST::format("Tex Spread of waves about Wind Dir = {f} degrees", hsRadiansToDegrees(wave->GetTexAngleDev()));
         break;
     
     case kNoise:
@@ -4804,21 +4238,6 @@ static plWaveSet7* ICheckWaveParams(PrintFunk PrintString, const ST::string& nam
     return waveSet;
 }
 
-static float LimitVal(float val, float lo, float hi, PrintFunk PrintString)
-{
-    if( val < lo )
-    {
-        pfConsolePrintF(PrintString, "{f} too low, clamped to {f}", val, lo);
-        val = lo;
-    }
-    else if( val > hi )
-    {
-        pfConsolePrintF(PrintString, "{f} too high, clamped to {f}", val, hi);
-        val = hi;
-    }
-    return val;
-}
-
 static bool ISendWaveCmd1f(PrintFunk PrintString, pfConsoleCmdParam* params, int numParams, plWaveCmd::Cmd cmd)
 {
     plWaveSet7* wave = ICheckWaveParams(PrintString, ST::string::from_utf8(params[0]), numParams, 2, cmd);
@@ -4840,7 +4259,7 @@ static bool ISendWaveCmd1f(PrintFunk PrintString, pfConsoleCmdParam* params, int
         wave->SetGeoAmpOverLen(PercentToFrac(val), secs);
         break;
     case kGeoAngle:
-        wave->SetGeoAngleDev(DegToRad(val), secs);
+        wave->SetGeoAngleDev(hsDegreesToRadians(val), secs);
         break;
 
     case kTexChop:
@@ -4850,7 +4269,7 @@ static bool ISendWaveCmd1f(PrintFunk PrintString, pfConsoleCmdParam* params, int
         wave->SetTexAmpOverLen(PercentToFrac(val), secs);
         break;
     case kTexAngle:
-        wave->SetTexAngleDev(DegToRad(val), secs);
+        wave->SetTexAngleDev(hsDegreesToRadians(val), secs);
         break;
 
     case kNoise:
@@ -4909,7 +4328,6 @@ static bool ISendWaveCmd2f(PrintFunk PrintString, pfConsoleCmdParam* params, int
     float secs = ( numParams > 3 ) ? params[3] : 0.f;
 
     hsVector3 vec;
-    plFixedWaterState7 state = wave->State();
     switch( cmd )
     {
     case kWindDir:
@@ -5420,25 +4838,15 @@ PF_CONSOLE_CMD( SceneObject, Detach,            // Group name, Function name
 #endif // LIMIT_CONSOLE_COMMANDS
 
 //////////////////////////////////////////////////////////////
-// PHYSICS (The Havok Flavour)
+// PHYSICS
 //////////////////////////////////////////////////////////////
 
 #ifndef LIMIT_CONSOLE_COMMANDS
 
 #include "plPhysX/plPXPhysicalControllerCore.h"
+#include "plPhysX/plSimulationMgr.h"
 
 PF_CONSOLE_GROUP( Physics )
-
-PF_CONSOLE_CMD( Physics, Rebuild, "", "Rebuilds the avatars collision cache")
-{
-    plPXPhysicalControllerCore::RebuildCache();
-}
-
-PF_CONSOLE_CMD(Physics, MaxPhysicalAvatars, "int max", "Set the maximum number of avatar physicals allowed. Default = 0 (meaning no limit)")
-{
-    int max = params[0];
-    plPXPhysicalControllerCore::SetMaxNumberOfControllers(max);
-}
 
 /*
 PF_CONSOLE_CMD( Physics, SetStepsPerSecond, "int steps", "Sets the number of physics substeps per second, regardless of rendering framerate.")
@@ -5681,36 +5089,6 @@ PF_CONSOLE_CMD(Physics, ExtraProfile, "", "Toggle extra simulation profiling")
     }
     PrintString(str);
 }
-PF_CONSOLE_CMD(Physics, SubworldOptimization, "", "Toggle subworld optimization")
-{
-    const char *str;
-    if (plSimulationMgr::fSubworldOptimization)
-    {
-        plSimulationMgr::fSubworldOptimization = false;
-        str = "Stop subworld optimization";
-    }
-    else
-    {
-        plSimulationMgr::fSubworldOptimization = true;
-        str = "Start subworld optimization";
-    }
-    PrintString(str);
-}
-PF_CONSOLE_CMD(Physics, ClampingOnStep, "", "Toggle whether to clamp the step size on advance")
-{
-    const char *str;
-    if (plSimulationMgr::fDoClampingOnStep)
-    {
-        plSimulationMgr::fDoClampingOnStep = false;
-        str = "Stop clamping the step size";
-    }
-    else
-    {
-        plSimulationMgr::fDoClampingOnStep = true;
-        str = "Start clamping the step size";
-    }
-    PrintString(str);
-}
 
 PF_CONSOLE_CMD(Physics, 
                ShowControllerDebugDisplay,
@@ -5719,21 +5097,15 @@ PF_CONSOLE_CMD(Physics,
 {
     plPXPhysicalControllerCore::fDebugDisplay = !plPXPhysicalControllerCore::fDebugDisplay;
 }
-PF_CONSOLE_CMD(Physics, 
-               ListAwakeActors,
-               "", 
-               "Toggles displaying the list of awake actors")
+
+PF_CONSOLE_CMD(Physics,
+               ResetKickables,
+               "",
+               "Reset kickables in this Age to their default poses")
 {
-    plSimulationMgr::fDisplayAwakeActors= !plSimulationMgr::fDisplayAwakeActors;
+    plSimulationMgr::GetInstance()->ResetKickables();
 }
 
-/*
-PF_CONSOLE_CMD( Physics, PlayPhysicsSounds, "bool b", "Turn physics sounds on/off.")
-{
-    bool b = params[0];
-    plHKCollision::TogglePhysicsSounds(b);
-}
-*/
 #endif // LIMIT_CONSOLE_COMMANDS
 
 
@@ -5831,7 +5203,7 @@ PF_CONSOLE_CMD(Age, ShowSDL, "", "Prints the age SDL values")
                 line += ",";
             }
             PrintString(line.c_str());
-            plStatusLog::AddLineS("ShowSDL.log", "%s", line.c_str());
+            plStatusLog::AddLineS("ShowSDL.log", line);
         }
     }   
     
@@ -6266,7 +5638,7 @@ PF_CONSOLE_CMD( Animation,                          // Group name
 {
     plAnimCmdMsg *msg = new plAnimCmdMsg();
     msg->SetCmd(plAnimCmdMsg::kContinue);
-    msg->SetAnimName(ST::null);
+    msg->SetAnimName(ST::string());
     msg->SetBCastFlag(plMessage::kPropagateToModifiers);
     SendAnimCmdMsg(ST::string::from_utf8(params[0]), msg);
 }
@@ -6278,7 +5650,7 @@ PF_CONSOLE_CMD( Animation,                          // Group name
 {
     plAnimCmdMsg *msg = new plAnimCmdMsg();
     msg->SetCmd(plAnimCmdMsg::kStop);
-    msg->SetAnimName(ST::null);
+    msg->SetAnimName(ST::string());
     msg->SetBCastFlag(plMessage::kPropagateToModifiers);
     SendAnimCmdMsg(ST::string::from_utf8(params[0]), msg);
 }
@@ -6519,7 +5891,7 @@ PF_CONSOLE_CMD( Clothing,
             plPlateManager::Instance().CreatePlate( &avatarTargetTexturePlate );
             avatarTargetTexturePlate->SetMaterial(avMod->GetClothingOutfit()->fMaterial);
             avatarTargetTexturePlate->SetPosition(0,0);
-            avatarTargetTexturePlate->SetSize(1.9, 1.9);
+            avatarTargetTexturePlate->SetSize(1.9f, 1.9f);
             avatarTargetTexturePlate->SetVisible(true);
         }
     }

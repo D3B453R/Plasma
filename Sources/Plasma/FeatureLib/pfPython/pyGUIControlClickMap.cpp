@@ -42,7 +42,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <Python.h>
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "pfGameGUIMgr/pfGUIClickMapCtrl.h"
 #include "pfGameGUIMgr/pfGUIDialogMod.h"
@@ -68,7 +67,7 @@ bool pyGUIControlClickMap::IsGUIControlClickMap(pyKey& gckey)
 }
 
 
-PyObject* pyGUIControlClickMap::GetLastMousePt( void )
+PyObject* pyGUIControlClickMap::GetLastMousePt()
 {
     if ( fGCkey )
     {
@@ -80,7 +79,7 @@ PyObject* pyGUIControlClickMap::GetLastMousePt( void )
     PYTHON_RETURN_NONE;
 }
 
-PyObject* pyGUIControlClickMap::GetLastMouseUpPt( void )
+PyObject* pyGUIControlClickMap::GetLastMouseUpPt()
 {
     if ( fGCkey )
     {
@@ -92,7 +91,7 @@ PyObject* pyGUIControlClickMap::GetLastMouseUpPt( void )
     PYTHON_RETURN_NONE;
 }
 
-PyObject* pyGUIControlClickMap::GetLastMouseDragPt( void )
+PyObject* pyGUIControlClickMap::GetLastMouseDragPt()
 {
     if ( fGCkey )
     {

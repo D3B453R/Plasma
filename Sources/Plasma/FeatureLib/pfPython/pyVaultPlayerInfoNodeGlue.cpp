@@ -41,7 +41,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 
 #include <Python.h>
-#pragma hdrstop
 
 #include "pyVaultPlayerInfoNode.h"
 #include "pnUUID/pnUUID.h"
@@ -89,7 +88,7 @@ PYTHON_METHOD_DEFINITION(ptVaultPlayerInfoNode, playerSetName, args)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultPlayerInfoNode, playerGetName)
 {
-    return PyString_FromSTString(self->fThis->Player_GetPlayerName());
+    return PyUnicode_FromSTString(self->fThis->Player_GetPlayerName());
 }
 
 PYTHON_METHOD_DEFINITION(ptVaultPlayerInfoNode, playerSetAgeInstanceName, args)
@@ -106,7 +105,7 @@ PYTHON_METHOD_DEFINITION(ptVaultPlayerInfoNode, playerSetAgeInstanceName, args)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultPlayerInfoNode, playerGetAgeInstanceName)
 {
-    return PyString_FromSTString(self->fThis->Player_GetAgeInstanceName());
+    return PyUnicode_FromSTString(self->fThis->Player_GetAgeInstanceName());
 }
 
 PYTHON_METHOD_DEFINITION(ptVaultPlayerInfoNode, playerSetAgeGuid, args)
@@ -123,7 +122,7 @@ PYTHON_METHOD_DEFINITION(ptVaultPlayerInfoNode, playerSetAgeGuid, args)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultPlayerInfoNode, playerGetAgeGuid)
 {
-    return PyString_FromSTString(self->fThis->Player_GetAgeGuid().AsString());
+    return PyUnicode_FromSTString(self->fThis->Player_GetAgeGuid().AsString());
 }
 
 PYTHON_METHOD_DEFINITION(ptVaultPlayerInfoNode, playerSetOnline, args)
@@ -145,7 +144,7 @@ PYTHON_METHOD_DEFINITION_NOARGS(ptVaultPlayerInfoNode, playerIsOnline)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultPlayerInfoNode, playerGetCCRLevel)
 {
-    return PyInt_FromLong(self->fThis->Player_GetCCRLevel());
+    return PyLong_FromLong(self->fThis->Player_GetCCRLevel());
 }
 
 PYTHON_START_METHODS_TABLE(ptVaultPlayerInfoNode)
@@ -166,14 +165,7 @@ PYTHON_END_METHODS_TABLE;
 PLASMA_DEFAULT_TYPE_WBASE(ptVaultPlayerInfoNode, pyVaultNode, "Plasma vault folder node");
 
 // required functions for PyObject interoperability
-PYTHON_CLASS_NEW_IMPL(ptVaultPlayerInfoNode, pyVaultPlayerInfoNode)
-
-PyObject *pyVaultPlayerInfoNode::New(RelVaultNode* nfsNode)
-{
-    ptVaultPlayerInfoNode *newObj = (ptVaultPlayerInfoNode*)ptVaultPlayerInfoNode_type.tp_new(&ptVaultPlayerInfoNode_type, NULL, NULL);
-    newObj->fThis->fNode = nfsNode;
-    return (PyObject*)newObj;
-}
+PYTHON_CLASS_VAULT_NODE_NEW_IMPL(ptVaultPlayerInfoNode, pyVaultPlayerInfoNode)
 
 PYTHON_CLASS_CHECK_IMPL(ptVaultPlayerInfoNode, pyVaultPlayerInfoNode)
 PYTHON_CLASS_CONVERT_FROM_IMPL(ptVaultPlayerInfoNode, pyVaultPlayerInfoNode)

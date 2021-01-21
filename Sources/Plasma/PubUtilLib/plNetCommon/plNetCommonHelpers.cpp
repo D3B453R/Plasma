@@ -50,7 +50,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 
 ////////////////////////////////////////////////////////////////////
-#ifndef SERVER
 const uint8_t plNetCoreStatsSummary::StreamVersion = 1;
 
 plNetCoreStatsSummary::plNetCoreStatsSummary()
@@ -89,7 +88,6 @@ void plNetCoreStatsSummary::Write(hsStream* s, hsResMgr*)
     s->WriteLE(fDLPeakPktsPS);
     s->WriteLE(fDLDroppedPackets);
 }
-#endif // SERVER
 
 ////////////////////////////////////////////////////////////////////
 
@@ -201,7 +199,8 @@ void plCreatableListHelper::AddDouble( uint16_t id, double value )
 ST::string plCreatableListHelper::GetString( uint16_t id )
 {
     plCreatableGenericValue * V = plCreatableGenericValue::ConvertNoRef( GetItem( id ) );
-    if ( !V ) return ST::null;
+    if (!V)
+        return ST::string();
     return (ST::string)V->Value();
 }
 
@@ -243,7 +242,7 @@ void plCreatableListHelper::Read( hsStream* s, hsResMgr* mgr )
         s->LogSubStreamPushDesc("Compressed Data");
         s->Read( zBufSz, (void*)zBuf.data() );
         plZlibCompress compressor;
-        uint32_t tmp;
+        uint32_t tmp = bufSz;
         bool ans = compressor.Uncompress( (uint8_t*)buf.data(), &tmp, (uint8_t*)zBuf.data(), zBufSz );
         hsAssert( ans!=0, "plCreatableListHelper: Failed to uncompress buffer." );
         hsAssert( tmp==bufSz, "compression size mismatch" );
@@ -283,12 +282,12 @@ void plCreatableListHelper::Write( hsStream* s, hsResMgr* mgr )
     {
         // write items to ram stream
         hsRAMStream ram;
-        uint16_t nItems = fItems.size();
-        ram.WriteLE( nItems );
-        for ( std::map<uint16_t,plCreatable*>::iterator ii=fItems.begin(); ii!=fItems.end(); ++ii )
-        {
-            uint16_t id = ii->first;
-            plCreatable * item = ii->second;
+        size_t nItems = fItems.size();
+        hsAssert(nItems < std::numeric_limits<uint16_t>::max(), "Too many items");
+        ram.WriteLE(uint16_t(nItems));
+        for (const auto& ii : fItems) {
+            uint16_t id = ii.first;
+            plCreatable* item = ii.second;
             uint16_t classIdx = item->ClassIndex();
             ram.WriteLE( id );
             ram.WriteLE( classIdx );

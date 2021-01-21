@@ -187,7 +187,7 @@ plSpaceTree* plSceneNode::IBuildSpaceTree()
     maker.Reset();
     
     hsBounds3Ext bnd;
-    hsPoint3 zero(0, 0, 0);
+    hsPoint3 zero;
     bnd.Reset(&zero);
     
     int i;
@@ -213,7 +213,8 @@ plSpaceTree* plSceneNode::ITrashSpaceTree()
 
 void plSceneNode::IDirtySpaceTree()
 {
-    for (size_t i = 0; i < fDrawPool.size(); ++i)
+    hsAssert(fDrawPool.size() < std::numeric_limits<uint16_t>::max(), "Too many nodes");
+    for (uint16_t i = 0; i < fDrawPool.size(); ++i)
     {
         plDrawable* drawable = fDrawPool[i];
         if (drawable && drawable->GetSpaceTree()->IsDirty() )
@@ -400,8 +401,6 @@ bool plSceneNode::IOnRemove(plNodeRefMsg* refMsg)
 
 bool plSceneNode::IOnAdd(plNodeRefMsg* refMsg)
 {
-    int which = refMsg->fWhich;
-
     switch( refMsg->fType )
     {
     case plNodeRefMsg::kDrawable:
@@ -455,7 +454,7 @@ bool plSceneNode::MsgReceive(plMessage* msg)
 //// ICleanUp ////////////////////////////////////////////////////////////////
 //  Export only: Clean up the scene node (i.e. make sure drawables optimize)
 
-void    plSceneNode::ICleanUp( void )
+void    plSceneNode::ICleanUp()
 {
     /// Go find drawables to delete
     for (auto draw : fDrawPool)
@@ -497,7 +496,7 @@ plDrawable  *plSceneNode::GetMatchingDrawable( const plDrawableCriteria& crit )
 //  Loops through all the drawables and calls Optimize on each one. For the
 //  export side, to be called right before writing the drawables to disk.
 
-void    plSceneNode::OptimizeDrawables( void )
+void    plSceneNode::OptimizeDrawables()
 {
     for (auto draw : fDrawPool)
         draw->Optimize();

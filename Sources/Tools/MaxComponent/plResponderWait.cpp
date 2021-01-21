@@ -45,7 +45,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "MaxMain/MaxCompat.h"
 #include <iparamm2.h>
 #include "resource.h"
-#pragma hdrstop
 
 #include "plResponderWait.h"
 #include "plResponderComponentPriv.h"
@@ -149,7 +148,7 @@ ST::string ResponderWait::GetWaitPoint(IParamBlock2* waitPB)
 {
     const char* point = waitPB->GetStr(kWaitPoint);
     if (point && *point == '\0')
-        return ST::null;
+        return ST::string();
     return ST::string::from_utf8(point);
 }
 

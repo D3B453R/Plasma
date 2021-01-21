@@ -88,7 +88,7 @@ plEAXListenerMod::~plEAXListenerMod()
     delete fListenerProps;
 }
 
-void    plEAXListenerMod::IRegister( void )
+void    plEAXListenerMod::IRegister()
 {
     if( !fGetsMessages )
     {
@@ -102,13 +102,13 @@ void    plEAXListenerMod::IRegister( void )
     plKey sysKey = hsgResMgr::ResMgr()->FindKey( plUoid( kAudioSystem_KEY ) );
     if( sysKey != nil )
     {
-        plGenRefMsg *refMsg = new plGenRefMsg( sysKey, plRefMsg::kOnCreate, 0, plAudioSystem::kRefEAXRegion );
+        plGenRefMsg *refMsg = new plGenRefMsg( sysKey, plRefMsg::kOnCreate, 0, 0 );
         hsgResMgr::ResMgr()->AddViaNotify( GetKey(), refMsg, plRefFlags::kPassiveRef );
         fRegistered = true;
     }
 }
 
-void    plEAXListenerMod::IUnRegister( void )
+void    plEAXListenerMod::IUnRegister()
 {
     if( !fRegistered || GetKey() == nil )
         return;
@@ -244,7 +244,7 @@ void    plEAXListenerMod::SetFromPreset( uint32_t preset )
 #endif
 }
 
-float   plEAXListenerMod::GetStrength( void )
+float   plEAXListenerMod::GetStrength()
 {
     if( fSoftRegion == nil )
         return 0.f;

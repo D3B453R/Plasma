@@ -41,7 +41,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 
 #include <Python.h>
-#pragma hdrstop
 
 #include "pyVaultImageNode.h"
 #include "pyImage.h"
@@ -80,7 +79,7 @@ PYTHON_METHOD_DEFINITION(ptVaultImageNode, imageSetTitle, args)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultImageNode, imageGetTitle)
 {
-    return PyString_FromString(self->fThis->Image_GetTitle().c_str());
+    return PyUnicode_FromSTString(self->fThis->Image_GetTitle());
 }
 
 PYTHON_METHOD_DEFINITION(ptVaultImageNode, imageSetImage, args)
@@ -128,19 +127,9 @@ PYTHON_METHOD_DEFINITION(ptVaultImageNode, setTitleW, args)
     }
     if (PyUnicode_Check(textObj))
     {
-        int strLen = PyUnicode_GetSize(textObj);
-        wchar_t* title = new wchar_t[strLen + 1];
-        PyUnicode_AsWideChar((PyUnicodeObject*)textObj, title, strLen);
-        title[strLen] = L'\0';
+        wchar_t* title = PyUnicode_AsWideCharString(textObj, nullptr);
         self->fThis->Image_SetTitleW(title);
-        delete [] title;
-        PYTHON_RETURN_NONE;
-    }
-    else if (PyString_Check(textObj))
-    {
-        // we'll allow this, just in case something goes weird
-        char* title = PyString_AsString(textObj);
-        self->fThis->Image_SetTitle(title);
+        PyMem_Free(title);
         PYTHON_RETURN_NONE;
     }
     PyErr_SetString(PyExc_TypeError, "setTitleW expects a unicode string");
@@ -149,7 +138,7 @@ PYTHON_METHOD_DEFINITION(ptVaultImageNode, setTitleW, args)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultImageNode, getTitle)
 {
-    return PyString_FromString(self->fThis->Image_GetTitle().c_str());
+    return PyUnicode_FromSTString(self->fThis->Image_GetTitle());
 }
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultImageNode, getTitleW)
@@ -216,19 +205,7 @@ PYTHON_END_METHODS_TABLE;
 PLASMA_DEFAULT_TYPE_WBASE(ptVaultImageNode, pyVaultNode, "Params: n=0\nPlasma vault image node");
 
 // required functions for PyObject interoperability
-PyObject *pyVaultImageNode::New(RelVaultNode* nfsNode)
-{
-    ptVaultImageNode *newObj = (ptVaultImageNode*)ptVaultImageNode_type.tp_new(&ptVaultImageNode_type, NULL, NULL);
-    newObj->fThis->fNode = nfsNode;
-    return (PyObject*)newObj;
-}
-
-PyObject *pyVaultImageNode::New(int n /* =0 */)
-{
-    ptVaultImageNode *newObj = (ptVaultImageNode*)ptVaultImageNode_type.tp_new(&ptVaultImageNode_type, NULL, NULL);
-    // oddly enough, nothing to do here
-    return (PyObject*)newObj;
-}
+PYTHON_CLASS_VAULT_NODE_NEW_IMPL(ptVaultImageNode, pyVaultImageNode)
 
 PYTHON_CLASS_CHECK_IMPL(ptVaultImageNode, pyVaultImageNode)
 PYTHON_CLASS_CONVERT_FROM_IMPL(ptVaultImageNode, pyVaultImageNode)

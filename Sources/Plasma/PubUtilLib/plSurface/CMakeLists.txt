@@ -1,8 +1,3 @@
-include_directories("../../CoreLib")
-include_directories("../../NucleusLib/inc")
-include_directories("../../NucleusLib")
-include_directories("../../PubUtilLib")
-
 set(plSurface_SOURCES
     hsGMaterial.cpp
     plGrassShaderMod.cpp
@@ -75,6 +70,15 @@ set(plSurface_SHADERS
 )
 
 add_library(plSurface STATIC ${plSurface_SOURCES} ${plSurface_HEADERS} ${plSurface_SHADERS})
+
+target_link_libraries(plSurface
+    PUBLIC
+        CoreLib
+        pnKeyedObject
+        plGImage
+        plInterp
+        plMessage
+)
 
 source_group("Source Files" FILES ${plSurface_SOURCES})
 source_group("Header Files" FILES ${plSurface_HEADERS})

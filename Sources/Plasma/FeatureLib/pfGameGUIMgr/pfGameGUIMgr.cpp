@@ -98,14 +98,14 @@ class pfGameUIInputInterface : public plInputInterface
 
         pfGameUIInputInterface( pfGameGUIMgr * const mgr );
 
-        virtual uint32_t  GetPriorityLevel( void ) const { return kGUISystemPriority; }
+        virtual uint32_t  GetPriorityLevel() const { return kGUISystemPriority; }
         virtual bool    InterpretInputEvent( plInputEventMsg *pMsg );
-        virtual uint32_t  GetCurrentCursorID( void ) const;
-        virtual float GetCurrentCursorOpacity( void ) const;
-        virtual bool    HasInterestingCursorID( void ) const { return fHaveInterestingCursor; }
-        virtual bool    SwitchInterpretOrder( void ) const { return true; }
+        virtual uint32_t  GetCurrentCursorID() const;
+        virtual float GetCurrentCursorOpacity() const;
+        virtual bool    HasInterestingCursorID() const { return fHaveInterestingCursor; }
+        virtual bool    SwitchInterpretOrder() const { return true; }
 
-        virtual void    RestoreDefaultKeyMappings( void )
+        virtual void    RestoreDefaultKeyMappings()
         {
             if( fControlMap != nil )
             {
@@ -126,18 +126,11 @@ pfGameGUIMgr    *pfGameGUIMgr::fInstance = nil;
 //// Constructor & Destructor ////////////////////////////////////////////////
 
 pfGameGUIMgr::pfGameGUIMgr()
+    : fActivated(), fInputCtlIndex(), fActiveDialogs(), fInputConfig(),
+      fDefaultCursor(plInputInterface::kCursorUp), fCursorOpacity(1.f), fAspectRatio(),
+      fActiveDlgCount()
 {
-    fActivated = false;
-    fInputCtlIndex = 0;
-    fActiveDialogs = nil;
-
-    fInputConfig = nil;
-
     fInstance = this;
-    
-    fDefaultCursor = plInputInterface::kCursorUp;
-    fCursorOpacity = 1.f;
-    fAspectRatio = 0;
 }
 
 pfGameGUIMgr::~pfGameGUIMgr()
@@ -162,7 +155,7 @@ pfGameGUIMgr::~pfGameGUIMgr()
 
 //// Init ////////////////////////////////////////////////////////////////////
 
-bool    pfGameGUIMgr::Init( void )
+bool    pfGameGUIMgr::Init()
 {
     return true;
 }
@@ -489,7 +482,7 @@ pfGUIPopUpMenu  *pfGameGUIMgr::FindPopUpMenu( const char *name )
     return nil;
 }
 
-std::vector<plPostEffectMod*> pfGameGUIMgr::GetDlgRenderMods( void ) const
+std::vector<plPostEffectMod*> pfGameGUIMgr::GetDlgRenderMods() const
 {
     std::vector<plPostEffectMod*> retVal;
     pfGUIDialogMod* curDialog = fActiveDialogs;
@@ -630,7 +623,7 @@ bool    pfGameGUIMgr::IHandleKeyPress( wchar_t key, uint8_t modifiers )
 //  Looks at the chain of active dialogs and determines if there's any modals
 //  blocking input. Returns true if so.
 
-bool    pfGameGUIMgr::IModalBlocking( void )
+bool    pfGameGUIMgr::IModalBlocking()
 {
     return ( IGetTopModal() != nil ) ? true : false;
 }
@@ -638,7 +631,7 @@ bool    pfGameGUIMgr::IModalBlocking( void )
 //// IGetTopModal ////////////////////////////////////////////////////////////
 //  Returns the topmost (visible) modal dialog, nil if none.
 
-pfGUIDialogMod  *pfGameGUIMgr::IGetTopModal( void ) const
+pfGUIDialogMod  *pfGameGUIMgr::IGetTopModal() const
 {
     pfGUIDialogMod  *dlg;
 
@@ -836,7 +829,7 @@ bool    pfGameUIInputInterface::InterpretInputEvent( plInputEventMsg *pMsg )
     return false;
 }   
 
-uint32_t  pfGameUIInputInterface::GetCurrentCursorID( void ) const
+uint32_t  pfGameUIInputInterface::GetCurrentCursorID() const
 {
     if( fCurrentCursor == 0 )
     {
@@ -849,7 +842,7 @@ uint32_t  pfGameUIInputInterface::GetCurrentCursorID( void ) const
     return fCurrentCursor;
 }
 
-float pfGameUIInputInterface::GetCurrentCursorOpacity( void ) const
+float pfGameUIInputInterface::GetCurrentCursorOpacity() const
 {
     if ( pfGameGUIMgr::GetInstance() )
         return pfGameGUIMgr::GetInstance()->GetCursorOpacity();
@@ -904,7 +897,7 @@ pfGUIControlMod *pfGameGUIMgr::GetControlFromTag( pfGUIDialogMod *dlg, uint32_t 
 
 //// GetNumTags //////////////////////////////////////////////////////////////
 
-uint32_t          pfGameGUIMgr::GetNumTags( void )
+uint32_t          pfGameGUIMgr::GetNumTags()
 {
     uint32_t      count;
 
@@ -926,7 +919,7 @@ pfGUITag        *pfGameGUIMgr::GetTag( uint32_t tagIndex )
     return &gGUITags[ tagIndex ];
 }
 
-uint32_t      pfGameGUIMgr::GetHighestTag( void )
+uint32_t      pfGameGUIMgr::GetHighestTag()
 {
     uint32_t  i, id = 1;
 

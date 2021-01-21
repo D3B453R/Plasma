@@ -42,7 +42,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <Python.h>
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "pfGameGUIMgr/pfGUIMultiLineEditCtrl.h"
 
@@ -116,7 +115,7 @@ void pyGUIControlMultiLineEdit::MoveCursor( int32_t dir)
 }
 
 
-void pyGUIControlMultiLineEdit::ClearBuffer( void )
+void pyGUIControlMultiLineEdit::ClearBuffer()
 {
     if ( fGCkey )
     {
@@ -155,7 +154,7 @@ void pyGUIControlMultiLineEdit::SetTextW( const wchar_t *asciiText )
     }
 }
 
-const char* pyGUIControlMultiLineEdit::GetText( void )
+const char* pyGUIControlMultiLineEdit::GetText()
 {
     // up to the caller to free the string... but when?
     if ( fGCkey )
@@ -173,7 +172,7 @@ const char* pyGUIControlMultiLineEdit::GetText( void )
     return nil;
 }
 
-const wchar_t* pyGUIControlMultiLineEdit::GetTextW( void )
+const wchar_t* pyGUIControlMultiLineEdit::GetTextW()
 {
     // up to the caller to free the string... but when?
     if ( fGCkey )
@@ -203,9 +202,12 @@ void pyGUIControlMultiLineEdit::SetEncodedBuffer( PyObject* buffer_object )
         if ( pbmod )
         {
             // something to do here... later
-            uint8_t* daBuffer = nil;
-            Py_ssize_t length;
-            PyObject_AsReadBuffer( buffer_object, (const void**)&daBuffer, &length);
+            Py_buffer view;
+            PyObject_GetBuffer(buffer_object, &view, PyBUF_SIMPLE);
+            uint8_t* daBuffer = (uint8_t*)view.buf;
+            Py_ssize_t length = view.len;
+            PyBuffer_Release(&view);
+
             if ( daBuffer != nil )
             {
                 // don't alter the user's buffer... but into a copy of our own
@@ -239,9 +241,12 @@ void pyGUIControlMultiLineEdit::SetEncodedBufferW( PyObject* buffer_object )
         if ( pbmod )
         {
             // something to do here... later
-            uint16_t* daBuffer = nil;
-            Py_ssize_t length;
-            PyObject_AsReadBuffer( buffer_object, (const void**)&daBuffer, &length);
+            Py_buffer view;
+            PyObject_GetBuffer(buffer_object, &view, PyBUF_SIMPLE);
+            uint16_t* daBuffer = (uint16_t*)view.buf;
+            Py_ssize_t length = view.len;
+            PyBuffer_Release(&view);
+
             if ( daBuffer != nil )
             {
                 // don't alter the user's buffer... but into a copy of our own
@@ -433,7 +438,7 @@ void pyGUIControlMultiLineEdit::InsertStyle( uint8_t fontStyle )
     }
 }
 
-void pyGUIControlMultiLineEdit::DeleteChar( void )
+void pyGUIControlMultiLineEdit::DeleteChar()
 {
     if ( fGCkey )
     {
@@ -446,7 +451,7 @@ void pyGUIControlMultiLineEdit::DeleteChar( void )
     }
 }
 
-void pyGUIControlMultiLineEdit::Lock( void )
+void pyGUIControlMultiLineEdit::Lock()
 {
     if ( fGCkey )
     {
@@ -457,7 +462,7 @@ void pyGUIControlMultiLineEdit::Lock( void )
     }
 }
 
-void pyGUIControlMultiLineEdit::Unlock( void )
+void pyGUIControlMultiLineEdit::Unlock()
 {
     if ( fGCkey )
     {
@@ -468,7 +473,7 @@ void pyGUIControlMultiLineEdit::Unlock( void )
     }
 }
 
-bool pyGUIControlMultiLineEdit::IsLocked( void )
+bool pyGUIControlMultiLineEdit::IsLocked()
 {
     if ( fGCkey )
     {
@@ -481,7 +486,7 @@ bool pyGUIControlMultiLineEdit::IsLocked( void )
     return false;
 }
 
-void pyGUIControlMultiLineEdit::Clickable( void )
+void pyGUIControlMultiLineEdit::Clickable()
 {
     if ( fGCkey )
     {
@@ -492,7 +497,7 @@ void pyGUIControlMultiLineEdit::Clickable( void )
     }
 }
 
-void pyGUIControlMultiLineEdit::Unclickable( void )
+void pyGUIControlMultiLineEdit::Unclickable()
 {
     if ( fGCkey )
     {

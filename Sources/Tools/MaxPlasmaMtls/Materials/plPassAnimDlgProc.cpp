@@ -51,7 +51,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <iparamm2.h>
 #include <stdmat.h>
-#pragma hdrstop
 
 #include "plPassAnimDlgProc.h"
 
@@ -85,7 +84,7 @@ plPassAnimDlgProc::~plPassAnimDlgProc()
     }
 }
 
-plPassAnimDlgProc   &plPassAnimDlgProc::Get( void )
+plPassAnimDlgProc   &plPassAnimDlgProc::Get()
 {
     static plPassAnimDlgProc    instance;
     return instance;
@@ -192,7 +191,7 @@ BOOL plPassAnimDlgProc::DlgProc(TimeValue t, IParamMap2 *pMap, HWND hWnd, UINT m
     return FALSE;
 }
 
-void    plPassAnimDlgProc::SegmentListChanged( void )
+void    plPassAnimDlgProc::SegmentListChanged()
 {
     if( fCurrParamMap != nil )
         ILoadNames( fCurrParamMap->GetParamBlock() );

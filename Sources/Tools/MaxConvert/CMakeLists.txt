@@ -1,11 +1,3 @@
-include_directories("../")
-include_directories("../../Plasma/CoreLib")
-include_directories("../../Plasma/FeatureLib")
-include_directories("../../Plasma/FeatureLib/inc")
-include_directories("../../Plasma/NucleusLib")
-include_directories("../../Plasma/NucleusLib/inc")
-include_directories("../../Plasma/PubUtilLib")
-include_directories("../../Plasma/PubUtilLib/inc")
 include_directories(${3dsm_INCLUDE_DIR})
 
 set(MaxConvert_HEADERS
@@ -48,8 +40,8 @@ set(MaxConvert_SOURCES
     UserPropMgr.cpp
 )
 
-use_precompiled_header(Pch.h Pch.cpp MaxConvert_HEADERS MaxConvert_SOURCES)
 add_library(MaxConvert STATIC ${MaxConvert_HEADERS} ${MaxConvert_SOURCES})
+plasma_optimize_target(MaxConvert PRECOMPILED_HEADERS Pch.h)
 
 source_group("Header Files" FILES ${MaxConvert_HEADERS})
 source_group("Source Files" FILES ${MaxConvert_SOURCES})

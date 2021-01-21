@@ -53,7 +53,7 @@ class plEventCallbackMsg;
 class plWin32StaticSound : public plWin32Sound
 {
 public:
-    plWin32StaticSound();
+    plWin32StaticSound() : fRegisteredOnThread() { }
     ~plWin32StaticSound();
 
     CLASSNAME_REGISTER( plWin32StaticSound );
@@ -69,7 +69,7 @@ public:
 protected:
     bool            fRegisteredOnThread;
 
-    virtual void    IDerivedActuallyPlay( void );
+    virtual void    IDerivedActuallyPlay();
     virtual void    ISetActualTime( double t );
     virtual float   GetActualTimeSec();
 

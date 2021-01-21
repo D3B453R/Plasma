@@ -1,10 +1,3 @@
-include_directories("../../CoreLib")
-include_directories("../../NucleusLib/inc")
-include_directories("../../NucleusLib")
-include_directories("../../PubUtilLib")
-
-include_directories(${OPENAL_INCLUDE_DIR})
-
 set(plAudible_SOURCES
     plAudibleNull.cpp
     plWinAudible.cpp

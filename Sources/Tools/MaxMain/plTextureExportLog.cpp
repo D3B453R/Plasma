@@ -51,7 +51,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "HeadSpin.h"
 #include "pnKeyedObject/plKey.h"
 #include "hsStream.h"
-#pragma hdrstop
 
 #include "plTextureExportLog.h"
 #include "plGImage/plCubicEnvironmap.h"
@@ -117,7 +116,7 @@ void    plTextureExportLog::AddTexture( plBitmap *texture )
     IAddBMapNode( texture->GetTotalSize(), texture );
 }
 
-void    plTextureExportLog::Write( void )
+void    plTextureExportLog::Write()
 {
     plBMapNode      *node;
     hsUNIXStream    *stream = new hsUNIXStream;
@@ -249,7 +248,7 @@ void    plTextureExportLog::Write( void )
     fFileName = nil;
 }
 
-void    plTextureExportLog::IWriteTabbedString( hsStream *stream, const char *string, int8_t numTabs )
+void    plTextureExportLog::IWriteTabbedString( hsStream *stream, const char *string, int numTabs )
 {
     static char tabs[ 64 ];
     int         i;

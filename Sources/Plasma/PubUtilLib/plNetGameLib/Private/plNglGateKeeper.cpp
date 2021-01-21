@@ -46,7 +46,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 ***/
 
 #include "../Pch.h"
-#pragma hdrstop
 
 namespace Ngl { namespace GateKeeper {
 
@@ -107,7 +106,7 @@ struct PingRequestTrans : NetGateKeeperTrans {
     void *                                  m_param;
     unsigned                                m_pingAtMs;
     unsigned                                m_replyAtMs;
-    ARRAY(uint8_t)                             m_payload;
+    std::vector<uint8_t>                    m_payload;
     
     PingRequestTrans (
         FNetCliGateKeeperPingRequestCallback    callback,
@@ -240,22 +239,10 @@ static void UnlinkAndAbandonConn_CS (CliGkConn * conn) {
 }
 
 //============================================================================
-static void SendClientRegisterRequest (CliGkConn * conn) {
-/*    const uintptr_t msg[] = {
-        kCli2GateKeeper_ClientRegisterRequest,
-        BuildId(),
-    };
-
-    conn->Send(msg, arrsize(msg));*/
-}
-
-//============================================================================
 static bool ConnEncrypt (ENetError error, void * param) {
     CliGkConn * conn = (CliGkConn *) param;
         
     if (IS_NET_SUCCESS(error)) {
-
-        //SendClientRegisterRequest(conn);
 
         if (!s_perf[kPingDisabled])
             conn->AutoPing();
@@ -404,6 +391,11 @@ static bool SocketNotifyCallback (
         case kNotifySocketRead:
             conn = (CliGkConn *) *userState;
             result = NotifyConnSocketRead(conn, (AsyncNotifySocketRead *) notify);
+        break;
+
+        case kNotifySocketListenSuccess:
+        case kNotifySocketWrite:
+            // No action
         break;
     }
     
@@ -565,7 +557,7 @@ void CliGkConn::StartAutoReconnect () {
             remainingMs = reconnectStartMs - GetNonZeroTimeMs();
             if ((signed)remainingMs < 0)
                 remainingMs = 0;
-            LogMsg(kLogPerf, L"GateKeeper auto-reconnecting in %u ms", remainingMs);
+            LogMsg(kLogPerf, "GateKeeper auto-reconnecting in {} ms", remainingMs);
         }
         AsyncTimerUpdate(reconnectTimer, remainingMs);
     }
@@ -638,7 +630,7 @@ void CliGkConn::TimerPing () {
         reinterpret_cast<uintptr_t>(nullptr)
     };
 
-    Send(msg, arrsize(msg));
+    Send(msg, std::size(msg));
 }
 
 //============================================================================
@@ -739,8 +731,8 @@ PingRequestTrans::PingRequestTrans (
 ,   m_callback(callback)
 ,   m_param(param)
 ,   m_pingAtMs(pingAtMs)
+,   m_payload((const uint8_t *)payload, (const uint8_t *)payload + payloadBytes)
 {
-    m_payload.Set((const uint8_t *)payload, payloadBytes);
 }
 
 //============================================================================
@@ -753,11 +745,11 @@ bool PingRequestTrans::Send () {
         kCli2GateKeeper_PingRequest,
                         m_pingAtMs,
                         m_transId,
-                        m_payload.Count(),
-        (uintptr_t)  m_payload.Ptr(),
+                        m_payload.size(),
+        (uintptr_t)  m_payload.data(),
     };
     
-    m_conn->Send(msg, arrsize(msg));
+    m_conn->Send(msg, std::size(msg));
     
     return true;
 }
@@ -770,8 +762,8 @@ void PingRequestTrans::Post () {
         m_param,
         m_pingAtMs,
         m_replyAtMs,
-        m_payload.Count(),
-        m_payload.Ptr()
+        m_payload.size(),
+        m_payload.data()
     );
 }
 
@@ -782,7 +774,7 @@ bool PingRequestTrans::Recv (
 ) {
     const GateKeeper2Cli_PingReply & reply = *(const GateKeeper2Cli_PingReply *)msg;
 
-    m_payload.Set(reply.payload, reply.payloadBytes);
+    m_payload.assign(reply.payload, reply.payload + reply.payloadBytes);
     m_replyAtMs     = hsTimer::GetMilliSeconds<uint32_t>();
     m_result        = kNetSuccess;
     m_state         = kTransStateComplete;
@@ -822,7 +814,7 @@ bool FileSrvIpAddressRequestTrans::Send () {
                         (uintptr_t)(m_isPatcher == true ? 1 : 0)
     };
     
-    m_conn->Send(msg, arrsize(msg));
+    m_conn->Send(msg, std::size(msg));
     
     return true;
 }
@@ -880,7 +872,7 @@ bool AuthSrvIpAddressRequestTrans::Send () {
                         m_transId,
     };
     
-    m_conn->Send(msg, arrsize(msg));
+    m_conn->Send(msg, std::size(msg));
     
     return true;
 }
@@ -959,8 +951,8 @@ void GateKeeperInitialize () {
     NetMsgProtocolRegister(
         kNetProtocolCli2GateKeeper,
         false,
-        s_send, arrsize(s_send),
-        s_recv, arrsize(s_recv),
+        s_send, std::size(s_send),
+        s_recv, std::size(s_recv),
         kGateKeeperDhGValue,
         plBigNum(sizeof(kGateKeeperDhXData), kGateKeeperDhXData),
         plBigNum(sizeof(kGateKeeperDhNData), kGateKeeperDhNData)

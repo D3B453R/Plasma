@@ -185,7 +185,7 @@ void    plAvatarInputInterface::Init( plInputInterfaceMgr *manager )
     plInputInterface::Init( manager );
 }
 
-void    plAvatarInputInterface::Shutdown( void )
+void    plAvatarInputInterface::Shutdown()
 {
 }
 
@@ -302,7 +302,7 @@ void plAvatarInputInterface::ClearKeyMap()
 
 //// RestoreDefaultKeyMappings ///////////////////////////////////////////////
 
-void    plAvatarInputInterface::RestoreDefaultKeyMappings( void )
+void    plAvatarInputInterface::RestoreDefaultKeyMappings()
 {
     if( fControlMap == nil )
         return;
@@ -598,6 +598,9 @@ plVirtualCam::Instance()->GetPipeline()->SetDrawableTypeMask(plVirtualCam::Insta
             }
             break;
     */
+
+        default:
+            break;
     } 
 
     return false;

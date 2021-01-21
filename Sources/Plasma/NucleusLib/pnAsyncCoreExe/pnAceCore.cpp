@@ -46,7 +46,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 ***/
 
 #include "Pch.h"
-#pragma hdrstop
 
 #include <atomic>
 
@@ -94,18 +93,7 @@ static void IAsyncInitUseUnix () {
 }
 
 //===========================================================================
-static void IAsyncInitForClient () {
-#ifdef HS_BUILD_FOR_WIN32
-    IAsyncInitUseNt();
-#elif HS_BUILD_FOR_UNIX
-    IAsyncInitUseUnix();
-#else
-    ErrorAssert("AsyncCore: No default implementation for this platform");
-#endif    
-}
-
-//===========================================================================
-static void IAsyncInitForServer () {
+static void IAsyncInit () {
 #ifdef HS_BUILD_FOR_WIN32
     IAsyncInitUseNt();
 #elif HS_BUILD_FOR_UNIX
@@ -160,14 +148,8 @@ void AsyncCoreInitialize () {
         ErrorAssert(__LINE__, __FILE__, "WSA version failed");
 #endif
 
-#ifdef CLIENT
-    IAsyncInitForClient();
-#elif SERVER
-    IAsyncInitForServer();
-#else
-# error "Neither CLIENT nor SERVER defined. Cannot configure AsyncCore for target"
-#endif
-    
+    IAsyncInit();
+
     ASSERT(g_api.initialize);
     g_api.initialize();
 }
@@ -205,7 +187,7 @@ void AsyncSleep (unsigned sleepMs) {
 
 //============================================================================
 long AsyncPerfGetCounter (unsigned id) {
-    static_assert(arrsize(s_perf) == kNumAsyncPerfCounters, "Max async counters and array size do not match.");
+    static_assert(std::size(s_perf) == kNumAsyncPerfCounters, "Max async counters and array size do not match.");
     ASSERT(id < kNumAsyncPerfCounters);
     return s_perf[id];
 }

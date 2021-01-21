@@ -83,7 +83,7 @@ plGeometrySpan::~plGeometrySpan()
     ClearBuffers();
 }
 
-void    plGeometrySpan::IClearMembers( void )
+void    plGeometrySpan::IClearMembers()
 {
     fVertexData = nil; 
     fIndexData = nil; 
@@ -115,12 +115,12 @@ void    plGeometrySpan::IClearMembers( void )
 
     fDecalLevel = 0;
 
-    fMaxOwner = ST::null;
+    fMaxOwner = ST::string();
 }
 
 //// ClearBuffers ////////////////////////////////////////////////////////////
 
-void    plGeometrySpan::ClearBuffers( void )
+void    plGeometrySpan::ClearBuffers()
 {
     // If UserOwned, the actual buffer data belongs to someone else (like a BufferGroup).
     // Just erase our knowledge of it and move on.
@@ -303,7 +303,7 @@ void plGeometrySpan::UnInstance()
 //  Static function that allocates a new groupID by finding an empty slot in
 //  the bitVector, then marking it as used and returning that bit #
 
-uint32_t  plGeometrySpan::IAllocateNewGroupID( void )
+uint32_t  plGeometrySpan::IAllocateNewGroupID()
 {
     uint32_t          id;
 
@@ -724,7 +724,7 @@ uint16_t  plGeometrySpan::AddVertex( hsPoint3 *position, hsPoint3 *normal, uint3
                                     hsPoint3 **uvPtrArray, float weight1, float weight2, float weight3, uint32_t indices )
 {
     TempVertex      vert;
-    int             i, numWeights;
+    int             i;
 
 
     hsAssert( fCreating, "Calling AddVertex() on a non-creating plGeometrySpan!" );
@@ -746,26 +746,22 @@ uint16_t  plGeometrySpan::AddVertex( hsPoint3 *position, hsPoint3 *normal, uint3
     switch( fFormat & kSkinWeightMask )
     {
     case kSkin3Weights:
-        numWeights = 3;
         vert.fWeights[ 0 ] = weight1;
         vert.fWeights[ 1 ] = weight2;
         vert.fWeights[ 2 ] = weight3;
         vert.fIndices = indices;
         break;
     case kSkin2Weights:
-        numWeights = 2;
         vert.fWeights[ 0 ] = weight1;
         vert.fWeights[ 1 ] = weight2;
         vert.fIndices = indices;
         break;
     case kSkin1Weight:
-        numWeights = 1;
         vert.fWeights[ 0 ] = weight1;
         vert.fIndices = indices;
         break;
     default:
     case kSkinNoWeights:
-        numWeights = 0;
         break;
     }
 
@@ -802,19 +798,13 @@ void    plGeometrySpan::AddTriIndices( uint16_t index1, uint16_t index2, uint16_
 
 void    plGeometrySpan::AddTriangle( hsPoint3 *vert1, hsPoint3 *vert2, hsPoint3 *vert3, uint32_t color )
 {
-    hsVector3       twoTo1, twoTo3, normal;
-    hsPoint3        normalPt;
-
-
     hsAssert( fCreating, "Calling AddTriangle() on a non-creating plGeometrySpan!" );
 
-    twoTo1.Set( vert1, vert2 );
-    twoTo3.Set( vert3, vert2 );
+    hsVector3 twoTo1(vert1, vert2);
+    hsVector3 twoTo3(vert3, vert2);
 
-    normal = twoTo1 % twoTo3;
-    normalPt.fX = normal.fX;
-    normalPt.fY = normal.fY;
-    normalPt.fZ = normal.fZ;
+    hsVector3 normal = twoTo1 % twoTo3;
+    hsPoint3 normalPt(normal);
 
     AddIndex( AddVertex( vert1, &normalPt, color, 0 ) );
     AddIndex( AddVertex( vert2, &normalPt, color, 0 ) );
@@ -882,7 +872,7 @@ void    plGeometrySpan::AddIndexArray( uint32_t count, uint16_t *indices )
 
 //// EndCreate ////////////////////////////////////////////////////////////////
 
-void    plGeometrySpan::EndCreate( void )
+void    plGeometrySpan::EndCreate()
 {
     hsBounds3Ext    bounds;
     uint32_t          i, size;

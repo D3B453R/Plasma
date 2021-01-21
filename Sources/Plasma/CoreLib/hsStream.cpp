@@ -45,7 +45,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #   include <io.h>
 #endif
 #include <algorithm>
-#pragma hdrstop
 
 #include "hsStream.h"
 #include "hsMemory.h"
@@ -175,7 +174,7 @@ ST::string hsStream::ReadSafeWStringLong()
             retVal[i] = ReadLE16();
         ReadLE16(); // we wrote the null out, read it back in
 
-        if (retVal[0]* 0x80)
+        if (retVal[0] & 0x80)
         {
             for (int i=0; i<numChars; i++)
                 retVal[i] = ~retVal[i];
@@ -271,7 +270,7 @@ ST::string hsStream::ReadSafeWString()
             retVal[i] = ReadLE16();
         ReadLE16(); // we wrote the null out, read it back in
 
-        if (retVal[0]* 0x80)
+        if (retVal[0] & 0x80)
         {
             for (int i=0; i<numChars; i++)
                 retVal[i] = ~retVal[i];
@@ -763,7 +762,7 @@ void    plReadOnlySubStream::Open( hsStream *base, uint32_t offset, uint32_t len
     IFixPosition();
 }
 
-void    plReadOnlySubStream::IFixPosition( void )
+void    plReadOnlySubStream::IFixPosition()
 {
     fPosition = fBase->GetPosition() - fOffset;
 }
@@ -1028,8 +1027,8 @@ hsQueueStream::~hsQueueStream()
 
 uint32_t hsQueueStream::Read(uint32_t byteCount, void * buffer)
 {
-    hsAssert(fWriteCursor >= 0 && fWriteCursor < fSize,"hsQueueStream: WriteCursor out of range.");
-    hsAssert(fReadCursor >= 0 && fReadCursor < fSize,"hsQueueStream: ReadCursor out of range.");
+    hsAssert(fWriteCursor < fSize,"hsQueueStream: WriteCursor out of range.");
+    hsAssert(fReadCursor < fSize,"hsQueueStream: ReadCursor out of range.");
 
     int32_t limit, length, total;
     
@@ -1054,8 +1053,8 @@ uint32_t hsQueueStream::Read(uint32_t byteCount, void * buffer)
 
 uint32_t hsQueueStream::Write(uint32_t byteCount, const void* buffer)
 {
-    hsAssert(fWriteCursor >= 0 && fWriteCursor < fSize,"hsQueueStream: WriteCursor out of range.");
-    hsAssert(fReadCursor >= 0 && fReadCursor < fSize,"hsQueueStream: ReadCursor out of range.");
+    hsAssert(fWriteCursor < fSize,"hsQueueStream: WriteCursor out of range.");
+    hsAssert(fReadCursor < fSize,"hsQueueStream: ReadCursor out of range.");
 
     int32_t length;
 

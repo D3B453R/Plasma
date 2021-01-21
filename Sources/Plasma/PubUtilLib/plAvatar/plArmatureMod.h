@@ -376,7 +376,6 @@ public:
     ST::string GetUserStr() const { return fUserStr; }
 
 protected:
-    void IInitDefaults();
     virtual void IFinalize();   
     virtual void ICustomizeApplicator();
     virtual void ISetupMarkerCallbacks(plATCAnim *anim, plAnimTimeConvert *atc);
@@ -386,7 +385,7 @@ protected:
     void    IFireBehaviorNotify(uint32_t type, bool behaviorStart = true);
     void    IHandleInputStateMsg(plAvatarInputStateMsg *msg);
     void    ILinkToPersonalAge();
-    int     IFindSpawnOverride(void);
+    int     IFindSpawnOverride();
     void    ISetTransparentDrawOrder(bool val);
     plLayerLinkAnimation *IFindLayerLinkAnim();
 
@@ -482,7 +481,5 @@ protected:
     class BoneMapImp;       // forward declaration to keep the header clean: see .cpp for implementation
     BoneMapImp *fImp;       // the thing that actually holds our map
 };
-
-#define TWO_PI (M_PI * 2)
 
 #endif //plArmatureMod_inc

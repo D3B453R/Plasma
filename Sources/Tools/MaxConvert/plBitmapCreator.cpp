@@ -46,7 +46,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <Max.h>
 #include <commdlg.h>
 #include <bmmlib.h>
-#pragma hdrstop
 
 #include "plGImage/plMipmap.h"
 #include "hsExceptionStack.h"
@@ -109,12 +108,12 @@ void    plBitmapCreator::Init( bool save, plErrorMsg *msg )
     fErrorMsg = msg;
 }
 
-void    plBitmapCreator::DeInit( void )
+void    plBitmapCreator::DeInit()
 {
     CleanUpMaps();
 }
 
-void    plBitmapCreator::CleanUpMaps( void )
+void    plBitmapCreator::CleanUpMaps()
 {
     sCommonBitmapLib.ClearObjectList();
 }

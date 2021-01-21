@@ -45,7 +45,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 ///////////////////////////////////////////////
 
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "pfGameGUIMgr/pfGUIDragBarCtrl.h"
 #include "pyGUIControlDragBar.h"
@@ -71,7 +70,7 @@ bool pyGUIControlDragBar::IsGUIControlDragBar(pyKey& gckey)
 }
 
 
-void pyGUIControlDragBar::Anchor( void )
+void pyGUIControlDragBar::Anchor()
 {
     if ( fGCkey )
     {
@@ -82,7 +81,7 @@ void pyGUIControlDragBar::Anchor( void )
     }
 }
 
-void pyGUIControlDragBar::Unanchor( void )
+void pyGUIControlDragBar::Unanchor()
 {
     if ( fGCkey )
     {

@@ -46,7 +46,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plComponentBase.h"
 #include "MaxMain/plMaxNode.h"
-#pragma hdrstop
 
 #include "plAutoUIParams.h"
 
@@ -1616,7 +1615,7 @@ void plPickMaterialAnimationButtonParam::CreateKeyArray(IParamBlock2* pb)
 
     Mtl* mtl = (Mtl*)pb->GetReferenceTarget(fID);
 
-    int bob = GetMatAnimModKey(mtl, nil, ST::null, fKeys);
+    int bob = GetMatAnimModKey(mtl, nil, ST::string(), fKeys);
 }
 
 void plPickMaterialAnimationButtonParam::DestroyKeyArray()

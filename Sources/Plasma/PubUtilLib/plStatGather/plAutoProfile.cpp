@@ -98,7 +98,9 @@ protected:
     void IShutdown();
 
 public:
-    plAutoProfileImp();
+    plAutoProfileImp()
+        : fNextAge(), fNextSpawnPoint(), fLinkedToSingleAge(), fJustLinkToAges(), fLinkTime()
+    { }
 
     virtual void StartProfile(const char* ageName);
     virtual void LinkToAllAges();
@@ -113,10 +115,6 @@ plAutoProfile* plAutoProfile::Instance()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-plAutoProfileImp::plAutoProfileImp() : fNextAge(0), fNextSpawnPoint(0), fLinkedToSingleAge(false), fJustLinkToAges(false)
-{
-}
 
 void plAutoProfileImp::StartProfile(const char* ageName)
 {
@@ -224,7 +222,7 @@ void plAutoProfileImp::INextProfile()
                 plJPEG::Instance().WriteToFile(fileName.c_str(), &mipmap);
             }
 
-            fLastSpawnPointName = ST::null;
+            fLastSpawnPointName = ST::string();
         }
 
         // Try to go to the next spawn point
@@ -302,7 +300,7 @@ bool plAutoProfileImp::INextSpawnPoint()
 
     if (!foundGood)
     {
-        fLastSpawnPointName = ST::null;
+        fLastSpawnPointName = ST::string();
         fStatusMessage = "No profile spawn point found";
         return false;
     }
@@ -354,7 +352,7 @@ bool plAutoProfileImp::MsgReceive(plMessage* msg)
                 fAges[fNextAge-1].c_str(),
                 ms);
 
-            plStatusLog::AddLineS("agetimings.log", "Age %s took %.1f ms",
+            plStatusLog::AddLineSF("agetimings.log", "Age {} took {.1f} ms",
                 fAges[fNextAge-1].c_str(),
                 ms);
         }

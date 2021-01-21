@@ -55,20 +55,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "hsWindows.h"
 
 #include <d3d9.h>
-#include <d3dx9mesh.h>
+#include <DirectXMath.h>
 #include "hsGDirect3D.h"
-
-#if defined(DX_OLD_SDK) || defined(__MINGW32__)
-    #include <dxerr9.h>
-    #ifndef DXGetErrorString9
-        #define DXGetErrorString9 DXGetErrorString
-    #endif
-    #ifdef __MINGW32__ // UGH!
-        #define DXGetErrorString DXGetErrorString9
-    #endif
-#else
-    #include <dxerr.h>
-#endif
 
 #include "plPipeline/hsWinRef.h"
 
@@ -272,10 +260,10 @@ inline DWORD F2DW( FLOAT f )
 #define WEAK_ERROR_CHECK( cond )    cond
 #endif
 
-static D3DXMATRIX d3dIdentityMatrix( 1.0f, 0.0f, 0.0f, 0.0f,
-                                     0.0f, 1.0f, 0.0f, 0.0f,
-                                     0.0f, 0.0f, 1.0f, 0.0f,
-                                     0.0f, 0.0f, 0.0f, 1.0f );
+static D3DMATRIX d3dIdentityMatrix{ 1.0f, 0.0f, 0.0f, 0.0f,
+                                    0.0f, 1.0f, 0.0f, 0.0f,
+                                    0.0f, 0.0f, 1.0f, 0.0f,
+                                    0.0f, 0.0f, 0.0f, 1.0f };
 
 static const enum _D3DTRANSFORMSTATETYPE    sTextureStages[ 8 ] =
 {
@@ -472,13 +460,13 @@ void plDXPipeline::ProfilePoolMem(D3DPOOL poolType, uint32_t size, bool add, con
         if (add)
         {
             plProfile_NewMem(ManagedMem, size);
-            //plStatusLog::AddLineS("pipeline.log", 0xffff0000, "Adding   MANAGED mem. Size: %10d, Total: %10d ID: %s",
+            //plStatusLog::AddLineSF("pipeline.log", 0xffff0000, "Adding   MANAGED mem. Size: {10d}, Total: {10d} ID: {}",
             //                    size, gProfileVarManagedMem.GetValue(), id);
         }
         else
         {
             plProfile_DelMem(ManagedMem, size);
-            //plStatusLog::AddLineS("pipeline.log", 0xffff0000, "Deleting MANAGED mem. Size: %10d, Total: %10d ID: %s",
+            //plStatusLog::AddLineSF("pipeline.log", 0xffff0000, "Deleting MANAGED mem. Size: {10d}, Total: {10d} ID: {}",
             //                    size, gProfileVarManagedMem.GetValue(), id);
         }
         break;
@@ -486,13 +474,13 @@ void plDXPipeline::ProfilePoolMem(D3DPOOL poolType, uint32_t size, bool add, con
         if (add)
         {
             plProfile_NewMem(DefaultMem, size);
-            //plStatusLog::AddLineS("pipeline.log", 0xffff0000, "Adding   DEFAULT mem. Size: %10d, Total: %10d ID: %s",
+            //plStatusLog::AddLineSF("pipeline.log", 0xffff0000, "Adding   DEFAULT mem. Size: {10d}, Total: {10d} ID: {}",
             //                    size, gProfileVarDefaultMem.GetValue(), id);
         }
         else
         {
             plProfile_DelMem(DefaultMem, size);
-            //plStatusLog::AddLineS("pipeline.log", 0xffff0000, "Deleting DEFAULT mem. Size: %10d, Total: %10d ID: %s",
+            //plStatusLog::AddLineSF("pipeline.log", 0xffff0000, "Deleting DEFAULT mem. Size: {10d}, Total: {10d} ID: {}",
             //                    size, gProfileVarDefaultMem.GetValue(), id);
         }
         break;
@@ -2388,7 +2376,7 @@ struct plSortFace
     float    fDist;
 };
 
-struct plCompSortFace : public std::binary_function<plSortFace, plSortFace, bool>
+struct plCompSortFace
 {
     bool operator()( const plSortFace& lhs, const plSortFace& rhs) const
     {
@@ -2623,7 +2611,7 @@ void plDXPipeline::ISetupTransforms(plDrawableSpans* drawable, const plSpan& spa
 
     if( span.fNumMatrices == 2 )
     {
-        D3DXMATRIX  mat;
+        D3DMATRIX  mat;
         IMatrix44ToD3DMatrix(mat, drawable->GetPaletteMatrix(span.fBaseMatrix+1));
         fD3DDevice->SetTransform(D3DTS_WORLDMATRIX(1), &mat);
         fD3DDevice->SetRenderState(D3DRS_VERTEXBLEND, D3DVBF_1WEIGHTS);
@@ -4798,7 +4786,7 @@ void    plDXPipeline::ISelectLights( plSpan *span, int numLights, bool proj )
     static hsBitVector  newFlags;   
     static hsTArray<plLightInfo*>   onLights;
     plDXLightRef        *ref;
-    float               threshhold, overHold = 0.3, scale;
+    float               threshhold, overHold = 0.3f, scale;
 
     /// Build new flags
 
@@ -5235,12 +5223,6 @@ void    plDXPipeline::ICalcLighting( const plLayerInterface *currLayer, const pl
 //// plDXLightSettings Functions /////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-plDXLightSettings::plDXLightSettings()
-:   fActiveList(nil),
-    fRefList(nil),
-    fPipeline(nil)
-{
-}
 
 //// Reset ////////////////////////////////////////////////////////////////////
 //  Sets member variables to initial states. 
@@ -6820,7 +6802,7 @@ void    plDXPipeline::IHandleStageTransform( int stage, plLayerInterface *layer 
         || !(layer->GetTransform().fFlags & hsMatrix44::kIsIdent) 
         || (fLayerState[stage].fMiscFlags & (hsGMatState::kMiscUseReflectionXform|hsGMatState::kMiscUseRefractionXform|hsGMatState::kMiscProjection|hsGMatState::kMiscBumpChans)) )
     {
-        D3DXMATRIX tXfm;
+        D3DMATRIX tXfm;
 
         if( fLayerState[stage].fMiscFlags & (hsGMatState::kMiscUseReflectionXform | hsGMatState::kMiscUseRefractionXform) )
         {
@@ -7328,9 +7310,9 @@ IDirect3DTexture9   *plDXPipeline::IMakeD3DTexture( plDXTextureRef *ref, D3DFORM
                                           &texPtr, NULL ) ) )
     {
         IGetD3DError();
-        plStatusLog::AddLineS( "pipeline.log", 0xffff0000, "Unable to create texture (%s) Owner: %s "
-                                            "Size: %d x %d NumLvls: %d Flags: %x",
-                                            fSettings.fErrorStr, ref->fOwner ? ref->fOwner->GetKey() ? ref->fOwner->GetKey()->GetUoid().GetObjectName().c_str() : "" : "",
+        plStatusLog::AddLineSF( "pipeline.log", 0xffff0000, "Unable to create texture ({}) Owner: {} "
+                                            "Size: {} x {} NumLvls: {} Flags: {x}",
+                                            fSettings.fErrorStr, ref->fOwner ? ref->fOwner->GetKey() ? ref->fOwner->GetKey()->GetUoid().GetObjectName() : ST_LITERAL("") : ST_LITERAL(""),
                                             ref->fMaxWidth, ref->fMaxHeight, ref->fMMLvs, ref->GetFlags() );
         return nil;
     }
@@ -7351,8 +7333,8 @@ void    plDXPipeline::IFillD3DTexture( plDXTextureRef *ref )
 
     if( pTexDat == nil )
     {
-        plStatusLog::AddLineS( "pipeline.log", 0xffff0000, "Unable to fill texture ref (data is nil) Owner: %s",
-                                            ref->fOwner ? ref->fOwner->GetKey() ? ref->fOwner->GetKey()->GetUoid().GetObjectName().c_str() : "" : "" );
+        plStatusLog::AddLineSF( "pipeline.log", 0xffff0000, "Unable to fill texture ref (data is nil) Owner: {}",
+                                            ref->fOwner ? ref->fOwner->GetKey() ? ref->fOwner->GetKey()->GetUoid().GetObjectName() : ST_LITERAL("") : ST_LITERAL("") );
         return;
     }
 
@@ -7365,9 +7347,9 @@ void    plDXPipeline::IFillD3DTexture( plDXTextureRef *ref )
         if( FAILED( fSettings.fDXError = lpDst->LockRect( i, &lockInfo, nil, 0 ) ) )
         {
             IGetD3DError();
-            plStatusLog::AddLineS( "pipeline.log", 0xffff0000, "Unable to lock texture level %d for filling (%s) Owner: %s "
-                                                "Size: %d x %d NumLvls: %d Flags: %x",
-                                                i, fSettings.fErrorStr, ref->fOwner ? ref->fOwner->GetKey() ? ref->fOwner->GetKey()->GetUoid().GetObjectName().c_str() : "" : "",
+            plStatusLog::AddLineSF( "pipeline.log", 0xffff0000, "Unable to lock texture level {} for filling ({}) Owner: {} "
+                                                "Size: {} x {} NumLvls: {} Flags: {x}",
+                                                i, fSettings.fErrorStr, ref->fOwner ? ref->fOwner->GetKey() ? ref->fOwner->GetKey()->GetUoid().GetObjectName() : ST_LITERAL("") : ST_LITERAL(""),
                                                 ref->fMaxWidth, ref->fMaxHeight, ref->fMMLvs, ref->GetFlags() );
             return;
         }
@@ -7684,10 +7666,9 @@ bool  plDXPipeline::IProcessMipmapLevels( plMipmap *mipmap, uint32_t &numLevels,
             if( mipmap->IsCompressed() || !( fSettings.fD3DCaps & kCapsDoesSmallTextures ) )
             {
                 mipmap->SetCurrLevel( maxLevel );
-                while( ( mipmap->GetCurrWidth() | mipmap->GetCurrHeight() ) & sizeMask )
+                while (maxLevel && (mipmap->GetCurrWidth() | mipmap->GetCurrHeight()) & sizeMask)
                 {
                     maxLevel--;
-                    hsAssert( maxLevel >= 0, "How was this ever compressed?" );
                     mipmap->SetCurrLevel( maxLevel );
                 }
             }
@@ -8068,33 +8049,30 @@ bool  plDXPipeline::IIsViewLeftHanded()
 
 //// IMatrix44ToD3DMatrix /////////////////////////////////////////////////////
 // Make a D3DXMATRIX matching the input plasma matrix. Mostly a transpose.
-D3DXMATRIX&     plDXPipeline::IMatrix44ToD3DMatrix( D3DXMATRIX& dst, const hsMatrix44& src )
+D3DMATRIX&     plDXPipeline::IMatrix44ToD3DMatrix( D3DMATRIX& dst, const hsMatrix44& src )
 {
-    if( src.fFlags & hsMatrix44::kIsIdent )
-    {
+    if (src.fFlags & hsMatrix44::kIsIdent) {
         dst = d3dIdentityMatrix;
-    }
-    else
-    {
-        dst(0,0) = src.fMap[0][0];
-        dst(1,0) = src.fMap[0][1];
-        dst(2,0) = src.fMap[0][2];
-        dst(3,0) = src.fMap[0][3];
+    } else {
+        dst.m[0][0] = src.fMap[0][0];
+        dst.m[1][0] = src.fMap[0][1];
+        dst.m[2][0] = src.fMap[0][2];
+        dst.m[3][0] = src.fMap[0][3];
 
-        dst(0,1) = src.fMap[1][0];
-        dst(1,1) = src.fMap[1][1];
-        dst(2,1) = src.fMap[1][2];
-        dst(3,1) = src.fMap[1][3];
+        dst.m[0][1] = src.fMap[1][0];
+        dst.m[1][1] = src.fMap[1][1];
+        dst.m[2][1] = src.fMap[1][2];
+        dst.m[3][1] = src.fMap[1][3];
 
-        dst(0,2) = src.fMap[2][0];
-        dst(1,2) = src.fMap[2][1];
-        dst(2,2) = src.fMap[2][2];
-        dst(3,2) = src.fMap[2][3];
+        dst.m[0][2] = src.fMap[2][0];
+        dst.m[1][2] = src.fMap[2][1];
+        dst.m[2][2] = src.fMap[2][2];
+        dst.m[3][2] = src.fMap[2][3];
 
-        dst(0,3) = src.fMap[3][0];
-        dst(1,3) = src.fMap[3][1];
-        dst(2,3) = src.fMap[3][2];
-        dst(3,3) = src.fMap[3][3];
+        dst.m[0][3] = src.fMap[3][0];
+        dst.m[1][3] = src.fMap[3][1];
+        dst.m[2][3] = src.fMap[3][2];
+        dst.m[3][3] = src.fMap[3][3];
     }
 
     return dst;
@@ -9876,9 +9854,8 @@ void    plDXPlateManager::IDrawToDevice( plPipeline *pipe )
 {
     plDXPipeline    *dxPipe = (plDXPipeline *)pipe;
     plPlate         *plate;
-    uint32_t          scrnWidthDiv2 = fOwner->Width() >> 1;
-    uint32_t          scrnHeightDiv2 = fOwner->Height() >> 1;
-    D3DXMATRIX      mat;
+    uint32_t        scrnWidthDiv2 = fOwner->Width() >> 1;
+    uint32_t        scrnHeightDiv2 = fOwner->Height() >> 1;
     D3DCULL         oldCullMode;
     
     if( !fVertBuffer )
@@ -9890,11 +9867,12 @@ void    plDXPlateManager::IDrawToDevice( plPipeline *pipe )
     fD3DDevice->SetFVF(dxPipe->fSettings.fCurrFVFFormat = PLD3D_PLATEFVF);
     fD3DDevice->SetStreamSource( 0, fVertBuffer, 0, sizeof( plPlateVertex ) );  
     plProfile_Inc(VertexChange);
+
     // To get plates properly pixel-aligned, we need to compensate for D3D9's weird half-pixel
     // offset (see http://drilian.com/2008/11/25/understanding-half-pixel-and-half-texel-offsets/
     // or http://msdn.microsoft.com/en-us/library/bb219690(VS.85).aspx).
-    D3DXMatrixTranslation(&mat, -0.5f/scrnWidthDiv2, -0.5f/scrnHeightDiv2, 0.0f);
-    fD3DDevice->SetTransform( D3DTS_VIEW, &mat );
+    auto viewMat = DirectX::XMMatrixTranslation(-0.5f/scrnWidthDiv2, -0.5f/scrnHeightDiv2, 0.0f);
+    fD3DDevice->SetTransform( D3DTS_VIEW, (D3DMATRIX*)&viewMat );
     oldCullMode = dxPipe->fDevice.fCurrCullMode;
 
     for( plate = fPlates; plate != nil; plate = plate->GetNext() )
@@ -9963,18 +9941,18 @@ void    plDXPipeline::IDrawPlate( plPlate *plate )
 {
     int         i;
     hsGMaterial *material = plate->GetMaterial();
-    D3DXMATRIX  mat;
+    D3DMATRIX  mat;
 
 
     /// Set up the D3D transform directly
     IMatrix44ToD3DMatrix( mat, plate->GetTransform() );
     fD3DDevice->SetTransform( D3DTS_WORLD, &mat );
     mat = d3dIdentityMatrix;
-    mat(1,1) = -1.0f;
-    mat(2,2) = 2.0f;
-    mat(2,3) = 1.0f;
-    mat(3,2) = -2.0f;
-    mat(3,3) = 0.0f;
+    mat.m[1][1] = -1.0f;
+    mat.m[2][2] = 2.0f;
+    mat.m[2][3] = 1.0f;
+    mat.m[3][2] = -2.0f;
+    mat.m[3][3] = 0.0f;
 
     IPushPiggyBacks(material);
 
@@ -10036,7 +10014,7 @@ void    plDXPipeline::ISetErrorMessage( char *errStr )
 // Convert the last D3D error code to a string (probably "Conflicting Render State").
 void    plDXPipeline::IGetD3DError()
 {
-    sprintf( fSettings.fErrorStr, "D3DError : %s", (char *)DXGetErrorString( fSettings.fDXError ) );
+    sprintf( fSettings.fErrorStr, "D3DError : %s", fSettings.fDXError.ToString().c_str() );
 }
 
 // IShowErrorMessage /////////////////////////////////////////////////////////////
@@ -10556,9 +10534,9 @@ void plDXPipeline::IRenderBlurFromShadowMap(plRenderTarget* scratchRT, plRenderT
         int j;
         for( j = 0; j < nSamplesPerPass; j++ )
         {
-            D3DXMATRIX offXfm = d3dIdentityMatrix;
-            offXfm(2,0) = offsets[iSample].fU * offsetScale.fU;
-            offXfm(2,1) = offsets[iSample].fV * offsetScale.fV;
+            D3DMATRIX offXfm = d3dIdentityMatrix;
+            offXfm.m[2][0] = offsets[iSample].fU * offsetScale.fU;
+            offXfm.m[2][1] = offsets[iSample].fV * offsetScale.fV;
             fD3DDevice->SetTransform(sTextureStages[j], &offXfm);
             fLayerTransform[j] = true;
             
@@ -10597,7 +10575,7 @@ void plDXPipeline::IRenderBlurBackToShadowMap(plRenderTarget* smap, plRenderTarg
 
     // Set Stage0 texture transform
     // Clamp still on (from RBFSM)
-    D3DXMATRIX offXfm = d3dIdentityMatrix;
+    D3DMATRIX offXfm = d3dIdentityMatrix;
     fD3DDevice->SetTransform(sTextureStages[0], &offXfm);
     fD3DDevice->SetTransform(sTextureStages[1], &offXfm);
     fLayerTransform[0] = false;
@@ -11092,7 +11070,7 @@ bool plDXPipeline::IPushShadowCastState(plShadowSlave* slave)
         castLUT = castLUT * c2w;
     }
 
-    D3DXMATRIX tXfm;
+    D3DMATRIX tXfm;
     IMatrix44ToD3DMatrix(tXfm, castLUT);
 
     fD3DDevice->SetTransform( sTextureStages[0], &tXfm );
@@ -11930,7 +11908,7 @@ void plDXPipeline::ISetupShadowRcvTextureStages(hsGMaterial* mat)
 // shadow map onto the surface.
 void plDXPipeline::ISetupShadowSlaveTextures(plShadowSlave* slave)
 {
-    D3DXMATRIX tXfm;
+    D3DMATRIX tXfm;
 
     hsMatrix44 c2w = GetCameraToWorld();
 

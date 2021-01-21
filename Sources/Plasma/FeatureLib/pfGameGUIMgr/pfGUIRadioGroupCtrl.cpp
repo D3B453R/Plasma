@@ -123,6 +123,7 @@ class pfGroupProc : public pfGUICtrlProcObject
 //// Constructor/Destructor //////////////////////////////////////////////////
 
 pfGUIRadioGroupCtrl::pfGUIRadioGroupCtrl()
+    : fValue(), fDefaultValue()
 {
     fButtonProc = new pfGroupProc( this );
     fButtonProc->IncRef();
@@ -260,7 +261,7 @@ void    pfGUIRadioGroupCtrl::ClearControlsFlag( int flag )
 
 //// Export Functions ////////////////////////////////////////////////////////
 
-void    pfGUIRadioGroupCtrl::ClearControlList( void )
+void    pfGUIRadioGroupCtrl::ClearControlList()
 {
     fControls.Reset();
     fValue = -1;

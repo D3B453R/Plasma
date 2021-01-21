@@ -51,7 +51,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <notify.h>
 #include "resource.h"
 #include <vector>
-#pragma hdrstop
 
 #include "plMaxMenu.h"
 #include "plActionTableMgr.h"
@@ -325,7 +324,7 @@ void plCreateMenu()
 
         // Update the menu version
         wchar_t buf[12];
-        snwprintf(buf, arrsize(buf), L"%d", kMenuVersion);
+        swprintf(buf, std::size(buf), L"%d", kMenuVersion);
         WritePrivateProfileStringW(L"Menu", L"Version", buf, plMaxConfig::GetPluginIni().WideString().data());
     }
     

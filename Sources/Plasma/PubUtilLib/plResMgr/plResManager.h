@@ -156,7 +156,7 @@ public:
     // Single page version
     bool IterateKeys(plRegistryKeyIterator* iterator, const plLocation& pageToRestrictTo);
     // Iterate through loaded pages
-    bool IteratePages(plRegistryPageIterator* iterator, const ST::string& ageToRestrictTo = ST::null);
+    bool IteratePages(plRegistryPageIterator* iterator, const ST::string& ageToRestrictTo = {});
     // Iterate through ALL pages, loaded or not
     bool IterateAllPages(plRegistryPageIterator* iterator);
 
@@ -236,8 +236,9 @@ protected:
 
     typedef std::set<plRegistryPageNode*> PageSet;
     typedef std::map<plLocation, plRegistryPageNode*> PageMap;
-    PageMap fAllPages;      // All the pages, loaded or not
-    PageSet fLoadedPages;   // Just the loaded pages
+    PageMap fAllPages;         // All the pages, loaded or not
+    PageSet fLoadedPages;      // Just the loaded pages
+    PageSet fConflictingPages; // Pages whose sequence numbers conflict
 
     mutable plRegistryPageNode* fLastFoundPage;
 };

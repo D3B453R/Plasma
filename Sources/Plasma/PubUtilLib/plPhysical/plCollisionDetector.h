@@ -45,15 +45,15 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plDetectorModifier.h"
 #include "hsGeometry3.h"
-#include <list>
+
 #include <set>
+#include <vector>
+
 class plMessage;
 class plCameraMsg;
 class plArmatureMod;
 class plActivatorMsg;
 class plEvalMsg;
-
-#define USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
 
 class plCollisionDetector : public plDetectorModifier
 {
@@ -77,7 +77,7 @@ public:
 
     plCollisionDetector() : fType(0), fTriggered(false), fBumped(false){ }
     plCollisionDetector(int8_t type) : fType(type), fTriggered(false), fBumped(false) { }
-    virtual ~plCollisionDetector(){;}
+    virtual ~plCollisionDetector() { }
     
     virtual bool MsgReceive(plMessage* msg);
 
@@ -97,26 +97,21 @@ protected:
     class plCollisionBookKeepingInfo
     {
     public:
-        plCollisionBookKeepingInfo(const plKey& key, bool entering)
-            : fHitter(key), fEntering(entering) { }
+        plCollisionBookKeepingInfo(plKey key, bool entering)
+            : fHitter(std::move(key)), fEntering(entering) { }
 
         plKey fHitter;
-#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
-        uint32_t fLastStep;
-#endif // USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
         bool fEntering;
     };
 
-    void ITrigger(plKey hitter, bool entering);
+    void ITrigger(const plKey& hitter, bool entering);
     void ISendTriggerMsg(plKey hitter, bool entering);
     void IRegisterForEval();
     virtual void IHandleEval(plEvalMsg*);
     bool fWaitingForEval;
 
-    typedef std::list<plCollisionBookKeepingInfo*> bookKeepingList;
-    bookKeepingList fCollisionList;
-    typedef std::set<plKey> ResidentSet;
-    ResidentSet fCurrentResidents;
+    std::vector<plCollisionBookKeepingInfo> fCollisionList;
+    std::set<plKey> fCurrentResidents;
 
 public:
     
@@ -127,16 +122,16 @@ public:
         : plCollisionDetector(type), fWaitingForEval(false) { }
 
     virtual ~plObjectInVolumeDetector() { }
-    
-    virtual bool MsgReceive(plMessage* msg);
+
+    bool MsgReceive(plMessage* msg) override;
 
     CLASSNAME_REGISTER(plObjectInVolumeDetector);
     GETINTERFACE_ANY(plObjectInVolumeDetector, plCollisionDetector);
 
-    virtual void SetTarget(plSceneObject* so);
+    void SetTarget(plSceneObject* so) override;
 
-    void Read(hsStream* stream, hsResMgr* mgr);
-    void Write(hsStream* stream, hsResMgr* mgr);
+    void Read(hsStream* stream, hsResMgr* mgr) override;
+    void Write(hsStream* stream, hsResMgr* mgr) override;
 };
 
 class plObjectInVolumeAndFacingDetector : public plObjectInVolumeDetector
@@ -175,9 +170,6 @@ protected:
     typedef std::vector<plCameraMsg*> plCameraMsgVec;
 
     plCameraMsgVec  fMessages;
-#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
-    uint32_t fLastStep;
-#endif
     bool fIsInside;
     bool fEntering;
 
@@ -185,7 +177,8 @@ protected:
     virtual void IHandleEval(plEvalMsg*);
 public:
     plCameraRegionDetector()
-        : plObjectInVolumeDetector(), fIsInside(false) { }
+        : plObjectInVolumeDetector(), fIsInside(), fEntering()
+    { }
     ~plCameraRegionDetector();
 
     virtual bool MsgReceive(plMessage* msg);
@@ -212,7 +205,7 @@ public:
     {
         kSubworld = 0,
     };
-    plSubworldRegionDetector() : fSub(nil), fOnExit(false){;}
+    plSubworldRegionDetector() : fSub(nil), fOnExit(false) { }
     ~plSubworldRegionDetector();
     
     virtual bool MsgReceive(plMessage* msg);

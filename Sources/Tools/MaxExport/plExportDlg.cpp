@@ -51,7 +51,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <set>
 #include <string>
 #include <vector>
-#pragma hdrstop
 
 #include "plExportDlg.h"
 #include "MaxComponent/plComponentBase.h"
@@ -125,7 +124,7 @@ plExportDlgImp::plExportDlgImp() : fDlg(NULL), fPreshade(true), fPhysicalsOnly(f
 BOOL WritePrivateProfileIntW(LPCWSTR lpAppName, LPCWSTR lpKeyName, int val, LPCWSTR lpFileName)
 {
     wchar_t buf[12];
-    snwprintf(buf, 12, L"%d", val);
+    swprintf(buf, 12, L"%d", val);
 
     return WritePrivateProfileStringW(lpAppName, lpKeyName, buf, lpFileName);
 }
@@ -340,7 +339,7 @@ void plExportDlgImp::IDoExport()
 
     // Do the export
     wchar_t exportPathTEMP[MAX_PATH];
-    GetDlgItemTextW(fDlg, IDC_CLIENT_PATH, exportPathTEMP, arrsize(exportPathTEMP));
+    GetDlgItemTextW(fDlg, IDC_CLIENT_PATH, exportPathTEMP, std::size(exportPathTEMP));
     plFileName exportPath = plFileName::Join(ST::string::from_wchar(exportPathTEMP), "Export.prd");
 
     // For export time stats

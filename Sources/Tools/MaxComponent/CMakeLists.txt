@@ -1,14 +1,5 @@
-include_directories("../")
-include_directories("../../Plasma/CoreLib")
-include_directories("../../Plasma/FeatureLib")
-include_directories("../../Plasma/FeatureLib/inc")
-include_directories("../../Plasma/NucleusLib")
-include_directories("../../Plasma/NucleusLib/inc")
-include_directories("../../Plasma/PubUtilLib")
-include_directories("../../Plasma/PubUtilLib/inc")
 include_directories(${3dsm_INCLUDE_DIR})
 include_directories(${OPENAL_INCLUDE_DIR})
-include_directories(${PYTHON_INCLUDE_DIR})
 
 set(MaxComponent_HEADERS
     BipedKiller.h
@@ -28,7 +19,6 @@ set(MaxComponent_HEADERS
     plAvatarComponent.h
     plBehavioralComponents.h
     plBlowComponent.h
-    plCameraComponent.h
     plCameraComponents.h
     plCAnimParamBlock.h
     plClickableComponent.h
@@ -115,7 +105,6 @@ set(MaxComponent_SOURCES
     plBehavioralComponents.cpp
     plBipedKiller.cpp
     plBlowComponent.cpp
-    plCameraComponent.cpp
     plCameraComponents.cpp
     plCAnimParamBlock.cpp
     plClickableComponent.cpp
@@ -179,13 +168,13 @@ set(MaxComponent_SOURCES
     plXImposter.cpp
 )
 
-use_precompiled_header(Pch.h Pch.cpp MaxComponent_HEADERS MaxComponent_SOURCES)
 add_library(MaxComponent
             STATIC
             ${MaxComponent_HEADERS}
             ${MaxComponent_RESOURCES}
             ${MaxComponent_SOURCES}
 )
+plasma_optimize_target(MaxComponent UNITY_BUILD PRECOMPILED_HEADERS Pch.h)
 
 source_group("Header Files" FILES ${MaxComponent_HEADERS})
 source_group("Resource Files" FILES ${MaxComponent_RESOURCES})

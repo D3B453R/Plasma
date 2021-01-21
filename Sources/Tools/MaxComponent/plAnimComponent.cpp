@@ -49,7 +49,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "MaxMain/plMaxNode.h"
 #include "resource.h"
-#pragma hdrstop
 
 #include "MaxMain/plPhysicalProps.h"
 
@@ -616,7 +615,7 @@ ST::string plAnimComponentBase::GetAnimName()
 {
     const char *name = fCompPB->GetStr(kAnimName);
     if (!name || name[0] == '\0')
-        return ST::null;
+        return ST::string();
     return ST::string::from_utf8(name);
 }
 

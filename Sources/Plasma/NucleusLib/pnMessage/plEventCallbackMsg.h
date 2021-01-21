@@ -72,23 +72,23 @@ public:
     int16_t         fRepeats;   // -1 for infinite repeats, 0 for one call, no repeats
     int16_t         fUser;      // User defined data, useful for keeping track of multiple callbacks
 
-    plEventCallbackMsg() : fEventTime(0.0f), fEvent((CallbackEvent)0), fRepeats(-1), fUser(0), fIndex(0) {;}
+    plEventCallbackMsg() : fEventTime(0.0f), fEvent((CallbackEvent)0), fRepeats(-1), fUser(0), fIndex(0) { }
     plEventCallbackMsg (const plKey &s, 
                     const plKey &r, 
                     const double* t) : 
                         plMessage(s, r, t),
-                        fEventTime(0.0f), fEvent((CallbackEvent)0), fRepeats(-1), fUser(0), fIndex(0) {;}
+                        fEventTime(0.0f), fEvent((CallbackEvent)0), fRepeats(-1), fUser(0), fIndex(0) { }
 
     plEventCallbackMsg(const plKey &receiver, CallbackEvent e, int idx=0, float t=0, int16_t repeats=-1, uint16_t user=0) :
                         plMessage(nil, receiver, nil), fEvent(e), fIndex(idx), fEventTime(t), fRepeats(repeats), fUser(user) {}
 
-    ~plEventCallbackMsg(){;}
+    ~plEventCallbackMsg() { }
 
     CLASSNAME_REGISTER(plEventCallbackMsg);
     GETINTERFACE_ANY(plEventCallbackMsg, plMessage);
 
     // IO
-    void Read(hsStream* stream, hsResMgr* mgr) HS_OVERRIDE {
+    void Read(hsStream* stream, hsResMgr* mgr) override {
         plMessage::IMsgRead(stream, mgr);
         fEventTime = stream->ReadLEFloat();
         fEvent = (CallbackEvent)stream->ReadLE16();
@@ -96,7 +96,7 @@ public:
         fRepeats = stream->ReadLE16();
         fUser = stream->ReadLE16();
     }
-    void Write(hsStream* stream, hsResMgr* mgr) HS_OVERRIDE {
+    void Write(hsStream* stream, hsResMgr* mgr) override {
         plMessage::IMsgWrite(stream, mgr);
         stream->WriteLEFloat(fEventTime);
         stream->WriteLE16((int16_t)fEvent);

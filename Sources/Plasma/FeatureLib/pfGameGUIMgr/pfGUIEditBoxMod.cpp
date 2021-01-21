@@ -69,14 +69,12 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 //// Constructor/Destructor //////////////////////////////////////////////////
 
 pfGUIEditBoxMod::pfGUIEditBoxMod()
+    : fEscapedFlag(), fFirstHalfExitKeyPushed(), fSpecialCaptureKeyEventMode(),
+      fBuffer(), fSavedKey(), fSavedModifiers()
 {
-    SetFlag( kWantsInterest );
-    SetFlag( kTakesSpecialKeys );
-    fEscapedFlag = false;
-    fFirstHalfExitKeyPushed = false;
-    fSpecialCaptureKeyEventMode = false;
-    fBuffer = 0;
-    SetBufferSize( 128 );
+    SetFlag(kWantsInterest);
+    SetFlag(kTakesSpecialKeys);
+    SetBufferSize(128);
 }
 
 pfGUIEditBoxMod::~pfGUIEditBoxMod()
@@ -100,7 +98,7 @@ bool    pfGUIEditBoxMod::MsgReceive( plMessage *msg )
 
 //// IPostSetUpDynTextMap ////////////////////////////////////////////////////
 
-void    pfGUIEditBoxMod::IPostSetUpDynTextMap( void )
+void    pfGUIEditBoxMod::IPostSetUpDynTextMap()
 {
     pfGUIColorScheme *scheme = GetColorScheme();
     fDynTextMap->SetFont( scheme->fFontFace, scheme->fFontSize, scheme->fFontFlags, 
@@ -109,7 +107,7 @@ void    pfGUIEditBoxMod::IPostSetUpDynTextMap( void )
 
 //// IUpdate /////////////////////////////////////////////////////////////////
 
-void    pfGUIEditBoxMod::IUpdate( void )
+void    pfGUIEditBoxMod::IUpdate()
 {
     hsColorRGBA c;
 
@@ -458,7 +456,7 @@ bool    pfGUIEditBoxMod::HandleKeyEvent( pfGameGUIMgr::EventType event, plKeyDef
     }
 }
 
-std::string pfGUIEditBoxMod::GetBuffer( void )
+std::string pfGUIEditBoxMod::GetBuffer()
 {
     char* temp = hsWStringToString(fBuffer);
     std::string retVal = temp;
@@ -466,7 +464,7 @@ std::string pfGUIEditBoxMod::GetBuffer( void )
     return retVal;
 }
 
-void    pfGUIEditBoxMod::ClearBuffer( void )
+void    pfGUIEditBoxMod::ClearBuffer()
 {
     if( fBuffer != nil )
     {
@@ -513,12 +511,12 @@ void    pfGUIEditBoxMod::SetBufferSize( uint32_t size )
 }
 
 
-void    pfGUIEditBoxMod::SetCursorToHome( void )
+void    pfGUIEditBoxMod::SetCursorToHome()
 {
     fCursorPos = 0;
 }
 
-void    pfGUIEditBoxMod::SetCursorToEnd( void )
+void    pfGUIEditBoxMod::SetCursorToEnd()
 {
     if( fBuffer != nil )
         fCursorPos = wcslen( fBuffer );

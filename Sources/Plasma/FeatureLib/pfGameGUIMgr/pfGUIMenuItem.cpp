@@ -64,11 +64,9 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 //// Constructor/Destructor //////////////////////////////////////////////////
 
 pfGUIMenuItem::pfGUIMenuItem()
+    : fName(), fReportingHover(), fSkinBuffersUpdated(true), fHowToSkin()
 {
-    fName = nil;
-    fSkin = nil;
-    fReportingHover = false;
-    fSkinBuffersUpdated = true;
+    fSkin = nullptr;
 }
 
 pfGUIMenuItem::~pfGUIMenuItem()
@@ -117,7 +115,7 @@ void    pfGUIMenuItem::SetSkin( pfGUISkin *skin, HowToSkin s )
 //// IPostSetUpDynTextMap ////////////////////////////////////////////////////
 //  Draw our initial image on the dynTextMap
 
-void    pfGUIMenuItem::IPostSetUpDynTextMap( void )
+void    pfGUIMenuItem::IPostSetUpDynTextMap()
 {
 }
 
@@ -136,7 +134,7 @@ void    pfGUIMenuItem::IGrowDTMDimsToDesiredSize( uint16_t &width, uint16_t &hei
 //  DTMap, so we don't have to re-composite them every time we draw the
 //  control.
 
-void    pfGUIMenuItem::IUpdateSkinBuffers( void )
+void    pfGUIMenuItem::IUpdateSkinBuffers()
 {
     if( fSkinBuffersUpdated )
         return;
@@ -272,7 +270,7 @@ void    pfGUIMenuItem::IUpdateSingleSkinBuffer( uint16_t y, bool sel )
 
 //// IUpdate /////////////////////////////////////////////////////////////////
 
-void    pfGUIMenuItem::IUpdate( void )
+void    pfGUIMenuItem::IUpdate()
 {
     if( fDynTextMap == nil )
         return;

@@ -144,7 +144,7 @@ public:
         {
             MakeDirty();                        // dirty value
             if (GetSynchedObject())
-                GetSynchedObject()->DirtySynchState(ST::null, 0);    // dirty owner
+                GetSynchedObject()->DirtySynchState(ST::string(), 0);    // dirty owner
         }
     }
 
@@ -199,15 +199,9 @@ public:
 
     const T& operator=(const T& v){ return SetValue(v); }
 
-#if HS_BUILD_FOR_WIN32
-#pragma warning( push )
-#pragma warning( disable : 4284 )   // disable annoying warnings in release build for non pointer types
-#endif
     // for pointer types, which are allowed to change the object pointed to
-    T operator->(void) { return fValue; }
-#if HS_BUILD_FOR_WIN32
-#pragma warning( pop ) 
-#endif    
+    T operator->() { return fValue; }
+
     // asignment, can use instead of setvalue
     const T& operator=(const plSynchedValue<T>& pRHS )  { return SetValue(pRHS.GetValue()); }
 

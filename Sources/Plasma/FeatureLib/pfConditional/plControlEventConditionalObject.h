@@ -54,8 +54,8 @@ protected:
 
 public:
     
-    plControlEventConditionalObject();
-    ~plControlEventConditionalObject(){;}
+    plControlEventConditionalObject() : fControlEvent() { }
+    ~plControlEventConditionalObject() { }
     
     CLASSNAME_REGISTER( plControlEventConditionalObject );
     GETINTERFACE_ANY( plControlEventConditionalObject, plConditionalObject );
@@ -66,7 +66,7 @@ public:
 
     bool MsgReceive(plMessage* msg);
     
-    void Evaluate(){;}
+    void Evaluate() { }
     void Reset() { SetSatisfied(false); }
 
     ControlEventCode fControlEvent;

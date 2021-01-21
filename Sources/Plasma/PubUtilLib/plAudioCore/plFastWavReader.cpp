@@ -96,7 +96,7 @@ class plRIFFHeader
             }
         }
 
-        bool    IsValid( void )
+        bool    IsValid()
         {
             return fValid;
         }
@@ -109,7 +109,9 @@ class plRIFFHeader
 
 //// Constructor/Destructor //////////////////////////////////////////////////
 
-plFastWAV::plFastWAV( const plFileName &path, plAudioCore::ChannelSelect whichChan ) : fFileHandle( nil )
+plFastWAV::plFastWAV(const plFileName &path, plAudioCore::ChannelSelect whichChan)
+    : fFileHandle(), fHeader(), fFakeHeader(), fDataStartPos(), fDataSize(),
+      fCurrDataPos(), fChunkStart(), fChannelAdjust(), fChannelOffset()
 {
     hsAssert(path.IsValid(), "Invalid path specified in plFastWAV reader");
 
@@ -233,7 +235,7 @@ void plFastWAV::Open()
     fseek( fFileHandle, fDataStartPos, SEEK_SET );
 }
 
-void    plFastWAV::Close( void )
+void    plFastWAV::Close()
 {
     if( fFileHandle != nil )
     {
@@ -248,14 +250,14 @@ void    plFastWAV::IError( const char *msg )
     Close();
 }
 
-plWAVHeader &plFastWAV::GetHeader( void )
+plWAVHeader &plFastWAV::GetHeader()
 {
     hsAssert( IsValid(), "GetHeader() called on an invalid WAV file" );
 
     return fFakeHeader;
 }
 
-float   plFastWAV::GetLengthInSecs( void )
+float   plFastWAV::GetLengthInSecs()
 {
     hsAssert( IsValid(), "GetLengthInSecs() called on an invalid WAV file" );
 
@@ -338,7 +340,7 @@ bool    plFastWAV::Read( uint32_t numBytes, void *buffer )
     return true;
 }
 
-uint32_t  plFastWAV::NumBytesLeft( void )
+uint32_t  plFastWAV::NumBytesLeft()
 {
     hsAssert( IsValid(), "GetHeader() called on an invalid WAV file" );
     hsAssert( fCurrDataPos <= fDataSize, "Invalid current position while reading WAV file" );

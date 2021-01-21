@@ -54,7 +54,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 //// Singleton Instance ///////////////////////////////////////////////////////
 
-plClientResMgr& plClientResMgr::Instance(void)
+plClientResMgr& plClientResMgr::Instance()
 {
     static plClientResMgr theInstance;
     return theInstance;
@@ -76,7 +76,7 @@ void plClientResMgr::ILoadResources(const plFileName& resfile)
     hsUNIXStream in;
 
     if (in.Open(resfile, "rb")) {
-        uint32_t header = in.ReadLE32();
+        (void)in.ReadLE32();        // header
         uint32_t version = in.ReadLE32();
         uint32_t num_resources = 0;
 
@@ -133,4 +133,16 @@ plMipmap* plClientResMgr::getResource(const ST::string& resname)
     }
 
     return resmipmap;
+}
+
+
+std::vector<ST::string> plClientResMgr::getResourceNames()
+{
+    std::vector<ST::string> names;
+    names.reserve(ClientResources.size());
+
+    for (const auto& resource : ClientResources)
+        names.push_back(resource.first);
+
+    return names;
 }

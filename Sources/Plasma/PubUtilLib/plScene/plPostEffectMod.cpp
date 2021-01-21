@@ -64,8 +64,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 plPostEffectMod::plPostEffectMod()
 :   fHither(1.f),
     fYon(100.f),
-    fFovX(M_PI * 0.25f),
-    fFovY(M_PI * 0.25f * 0.75f),
+    fFovX(hsConstants::pi<float> * 0.25f),
+    fFovY(hsConstants::pi<float> * 0.25f * 0.75f),
     fPageMgr(nil),
     fRenderTarget(nil),
     fRenderRequest(nil)
@@ -83,16 +83,6 @@ plPostEffectMod::~plPostEffectMod()
 
 void plPostEffectMod::ISetupRenderRequest()
 {
-    uint32_t rtFlags = 0;
-
-    // If we go to rendering to sub-window, we'll want to explicitly set width and height
-    uint32_t width = 0;
-    uint32_t height = 0;
-
-    uint32_t colorDepth = 0;
-    uint32_t zDepth = 0;
-    uint32_t stencilDepth = 0;
-
     fRenderRequest = new plRenderRequest;
     uint32_t renderState = plPipeline::kRenderNormal
         | plPipeline::kRenderNoProjection
@@ -115,7 +105,7 @@ void plPostEffectMod::ISetupRenderRequest()
 
     IUpdateRenderRequest();
 }
-void        plPostEffectMod::EnableLightsOnRenderRequest( void )
+void        plPostEffectMod::EnableLightsOnRenderRequest()
 {
     fRenderRequest->SetRenderState( fRenderRequest->GetRenderState() & ~plPipeline::kRenderNoLights );
 }

@@ -47,6 +47,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "pfPatcher.h"
 
 #include "HeadSpin.h"
+#include "plAudioCore/plAudioFileReader.h"
 #include "plCompression/plZlibStream.h"
 #include "pnEncryption/plChecksum.h"
 #include "plFileSystem.h"
@@ -57,11 +58,89 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "hsThread.h"
 #include "hsTimer.h"
 
-// Some log helper defines
-#define PatcherLogGreen(...) pfPatcher::GetLog()->AddLineF(plStatusLog::kGreen, __VA_ARGS__)
-#define PatcherLogRed(...) pfPatcher::GetLog()->AddLineF(plStatusLog::kRed, __VA_ARGS__)
-#define PatcherLogWhite(...) pfPatcher::GetLog()->AddLineF(plStatusLog::kWhite, __VA_ARGS__)
-#define PatcherLogYellow(...) pfPatcher::GetLog()->AddLineF(plStatusLog::kYellow, __VA_ARGS__)
+
+template<typename... _Args>
+static inline void PatcherLogGreen(const char* format, _Args&&... args)
+{
+    pfPatcher::GetLog()->AddLineF(plStatusLog::kGreen, format, std::forward<_Args>(args)...);
+}
+
+template<typename... _Args>
+static inline void PatcherLogRed(const char* format, _Args&&... args)
+{
+    pfPatcher::GetLog()->AddLineF(plStatusLog::kRed, format, std::forward<_Args>(args)...);
+}
+
+template<typename... _Args>
+static inline void PatcherLogWhite(const char* format, _Args&&... args)
+{
+    pfPatcher::GetLog()->AddLineF(plStatusLog::kWhite, format, std::forward<_Args>(args)...);
+}
+
+template<typename... _Args>
+static inline void PatcherLogYellow(const char* format, _Args&&... args)
+{
+    pfPatcher::GetLog()->AddLineF(plStatusLog::kYellow, format, std::forward<_Args>(args)...);
+}
+
+// ===================================================
+
+/** Human readable file flags */
+enum FileFlags
+{
+    // Sound files only
+    kSndFlagCacheSplit          = 1<<0,
+    kSndFlagStreamCompressed    = 1<<1,
+    kSndFlagCacheStereo         = 1<<2,
+
+    // Any file
+    kFlagZipped                 = 1<<3,
+
+    // Executable flags
+    kRedistUpdate               = 1<<4,
+
+    // Begin internal flags
+    kLastManifestFlag           = 1<<5,
+    kSelfPatch                  = 1<<6,
+};
+
+// ===================================================
+
+struct pfPatcherQueuedFile
+{
+    enum class Type
+    {
+        kManifestHash,
+        kSoundDecompress,
+    };
+
+    Type fType;
+    plFileName fClientPath;
+    plFileName fServerPath;
+    plMD5Checksum fChecksum;
+    uint32_t fFileSize;
+    uint32_t fZipSize;
+    uint32_t fFlags;
+
+    pfPatcherQueuedFile(Type t, const NetCliFileManifestEntry& file)
+        : fType(t), fClientPath(ST::string::from_wchar(file.clientName)),
+          fServerPath(ST::string::from_wchar(file.downloadName)), fChecksum(),
+          fFileSize(file.fileSize), fZipSize(file.zipSize), fFlags(file.flags)
+    {
+        ST::string temp(file.md5, std::size(file.md5));
+        fChecksum.SetFromHexString(temp.c_str());
+    }
+
+    pfPatcherQueuedFile(Type t, plFileName path, uint32_t flags=0)
+        : fType(t), fClientPath(std::move(path)), fChecksum(), fFileSize(), fZipSize(), fFlags(flags)
+    { }
+
+    pfPatcherQueuedFile(const pfPatcherQueuedFile& copy) = delete;
+
+    pfPatcherQueuedFile& operator =(const pfPatcherQueuedFile& copy) = delete;
+};
+
+// ===================================================
 
 /** Patcher grunt work thread */
 struct pfPatcherWorker : public hsThread
@@ -80,27 +159,8 @@ struct pfPatcherWorker : public hsThread
         { }
     };
 
-    /** Human readable file flags */
-    enum FileFlags
-    {
-        // Sound files only
-        kSndFlagCacheSplit          = 1<<0,
-        kSndFlagStreamCompressed    = 1<<1,
-        kSndFlagCacheStereo         = 1<<2,
-
-        // Any file
-        kFlagZipped                 = 1<<3,
-
-        // Executable flags
-        kRedistUpdate               = 1<<4,
-
-        // Begin internal flags
-        kLastManifestFlag           = 1<<5,
-        kSelfPatch                  = 1<<6,
-    };
-
     std::deque<Request> fRequests;
-    std::deque<NetCliFileManifestEntry> fQueuedFiles;
+    std::deque<pfPatcherQueuedFile> fQueuedFiles;
 
     std::mutex fRequestMut;
     std::mutex fFileMut;
@@ -125,11 +185,13 @@ struct pfPatcherWorker : public hsThread
     pfPatcherWorker();
     ~pfPatcherWorker();
 
-    void OnQuit() HS_OVERRIDE;
+    void OnQuit() override;
 
-    void EndPatch(ENetError result, const ST::string& msg=ST::null);
+    void EndPatch(ENetError result, const ST::string& msg={});
     bool IssueRequest();
-    void Run() HS_OVERRIDE;
+    void Run() override;
+    void IHashFile(pfPatcherQueuedFile& file);
+    void IDecompressSound(const pfPatcherQueuedFile& sound) const;
     void ProcessFile();
     void WhitelistFile(const plFileName& file, bool justDownloaded, hsStream* s=nullptr);
 };
@@ -148,7 +210,7 @@ class pfPatcherStream : public plZlibStream
     ST::string IMakeStatusMsg() const
     {
         float secs = hsTimer::GetSeconds<float>() - fDLStartTime;
-        float bytesPerSec = fBytesWritten / secs;
+        auto bytesPerSec = uint64_t(fBytesWritten / secs);
         return plFileSystem::ConvertFileSize(bytesPerSec) + "/s";
     }
 
@@ -170,15 +232,16 @@ public:
         fOutput = new hsRAMStream;
     }
 
-    pfPatcherStream(pfPatcherWorker* parent, const plFileName& reqName, const plFileName& cliName, const NetCliFileManifestEntry& entry)
-        : fParent(parent), fFilename(cliName.Normalize()), fFlags(entry.flags), fBytesWritten(), fDLStartTime(), plZlibStream()
+    pfPatcherStream(pfPatcherWorker* parent, const pfPatcherQueuedFile& file)
+        : fParent(parent), fFilename(file.fClientPath.Normalize()), fFlags(file.fFlags), fBytesWritten(), fDLStartTime(), plZlibStream()
     {
         // ugh. eap removed the compressed flag in his fail manifests
-        if (reqName.GetFileExt().compare_i("gz") == 0) {
-            fFlags |= pfPatcherWorker::kFlagZipped;
-            parent->fTotalBytes += entry.zipSize;
-        } else
-            parent->fTotalBytes += entry.fileSize;
+        if (file.fServerPath.GetFileExt().compare_i("gz") == 0) {
+            fFlags |= kFlagZipped;
+            parent->fTotalBytes += file.fZipSize;
+        } else {
+            parent->fTotalBytes += file.fFileSize;
+        }
     }
 
     void Begin()
@@ -188,7 +251,7 @@ public:
             Open(fFilename, "wb");
     }
 
-    bool Open(const plFileName& filename, const char* mode) HS_OVERRIDE
+    bool Open(const plFileName& filename, const char* mode) override
     {
         hsAssert(filename == fFilename, "trying to save to a different file, eh?");
         bool retVal = plZlibStream::Open(filename, mode);
@@ -197,29 +260,31 @@ public:
         return retVal;
     }
 
-    uint32_t Write(uint32_t count, const void* buf) HS_OVERRIDE
+    uint32_t Write(uint32_t count, const void* buf) override
     {
         // tick whatever progress bar we have
         IUpdateProgress(count);
 
         // write the appropriate blargs
-        if (hsCheckBits(fFlags, pfPatcherWorker::kFlagZipped))
+        if (hsCheckBits(fFlags, kFlagZipped))
             return plZlibStream::Write(count, buf);
         else
             return fOutput->Write(count, buf);
     }
 
-    bool AtEnd() HS_OVERRIDE { return fOutput->AtEnd(); }
-    uint32_t GetEOF() HS_OVERRIDE { return fOutput->GetEOF(); }
-    uint32_t GetPosition() const HS_OVERRIDE { return fOutput->GetPosition(); }
-    uint32_t Read(uint32_t count, void* buf) HS_OVERRIDE { return fOutput->Read(count, buf); }
-    void Rewind() HS_OVERRIDE { fOutput->Rewind(); }
-    void SetPosition(uint32_t pos) HS_OVERRIDE { fOutput->SetPosition(pos); }
-    void Skip(uint32_t deltaByteCount) HS_OVERRIDE { fOutput->Skip(deltaByteCount); }
+    bool AtEnd() override { return fOutput->AtEnd(); }
+    uint32_t GetEOF() override { return fOutput->GetEOF(); }
+    uint32_t GetPosition() const override { return fOutput->GetPosition(); }
+    uint32_t Read(uint32_t count, void* buf) override { return fOutput->Read(count, buf); }
+    void Rewind() override { fOutput->Rewind(); }
+    void SetPosition(uint32_t pos) override { fOutput->SetPosition(pos); }
+    void Skip(uint32_t deltaByteCount) override { fOutput->Skip(deltaByteCount); }
 
+    uint32_t GetFlags() const { return fFlags; }
     plFileName GetFileName() const { return fFilename; }
-    bool IsRedistUpdate() const { return hsCheckBits(fFlags, pfPatcherWorker::kRedistUpdate); }
-    bool IsSelfPatch() const { return hsCheckBits(fFlags, pfPatcherWorker::kSelfPatch); }
+    bool IsRedistUpdate() const { return hsCheckBits(fFlags, kRedistUpdate); }
+    bool IsSelfPatch() const { return hsCheckBits(fFlags, kSelfPatch); }
+    bool RequiresSfxCache() const { return hsCheckBits(fFlags, kSndFlagCacheSplit) || hsCheckBits(fFlags, kSndFlagCacheStereo); }
     void Unlink() const { plFileSystem::Unlink(fFilename); }
 };
 
@@ -230,7 +295,7 @@ static void IAuthThingDownloadCB(ENetError result, void* param, const plFileName
     pfPatcherWorker* patcher = static_cast<pfPatcherWorker*>(param);
 
     if (IS_NET_SUCCESS(result)) {
-        PatcherLogGreen("\tDownloaded Legacy File '%s'", filename.AsString().c_str());
+        PatcherLogGreen("\tDownloaded Legacy File '{}'", filename);
         patcher->IssueRequest();
 
         // Now, we pass our RAM-backed file to the game code handlers. In the main client,
@@ -239,7 +304,7 @@ static void IAuthThingDownloadCB(ENetError result, void* param, const plFileName
         writer->Rewind();
         patcher->WhitelistFile(filename, true, writer);
     } else {
-        PatcherLogRed("\tDownloaded Failed: File '%s'", filename.AsString().c_str());
+        PatcherLogRed("\tDownloaded Failed: File '{}'", filename);
         patcher->EndPatch(result, filename.AsString());
     }
 }
@@ -254,7 +319,7 @@ static void IGotAuthFileList(ENetError result, void* param, const NetCliAuthFile
         {
             hsLockGuard(patcher->fRequestMut);
             for (unsigned i = 0; i < infoCount; ++i) {
-                PatcherLogYellow("\tEnqueuing Legacy File '%S'", infoArr[i].filename);
+                PatcherLogYellow("\tEnqueuing Legacy File '{}'", infoArr[i].filename);
 
                 plFileName fn = ST::string::from_wchar(infoArr[i].filename);
                 plFileSystem::CreateDir(fn.StripFileName());
@@ -274,11 +339,11 @@ static void IGotAuthFileList(ENetError result, void* param, const NetCliAuthFile
 
 static void IHandleManifestDownload(pfPatcherWorker* patcher, const wchar_t group[], const NetCliFileManifestEntry manifest[], unsigned entryCount)
 {
-    PatcherLogGreen("\tDownloaded Manifest '%S'", group);
+    PatcherLogGreen("\tDownloaded Manifest '{}'", group);
     {
         hsLockGuard(patcher->fFileMut);
         for (unsigned i = 0; i < entryCount; ++i)
-            patcher->fQueuedFiles.push_back(manifest[i]);
+            patcher->fQueuedFiles.emplace_back(pfPatcherQueuedFile::Type::kManifestHash, manifest[i]);
         patcher->fFileSignal.Signal();
     }
     patcher->IssueRequest();
@@ -296,8 +361,8 @@ static void IPreloaderManifestDownloadCB(ENetError result, void* param, const wc
         // so, we need to ask the AuthSrv about our game code
         {
             hsLockGuard(patcher->fRequestMut);
-            patcher->fRequests.emplace_back(ST::null, pfPatcherWorker::Request::kPythonList);
-            patcher->fRequests.emplace_back(ST::null, pfPatcherWorker::Request::kSdlList);
+            patcher->fRequests.emplace_back(ST::string(), pfPatcherWorker::Request::kPythonList);
+            patcher->fRequests.emplace_back(ST::string(), pfPatcherWorker::Request::kSdlList);
         }
 
         // continue pumping requests
@@ -312,7 +377,7 @@ static void IFileManifestDownloadCB(ENetError result, void* param, const wchar_t
     if (IS_NET_SUCCESS(result))
         IHandleManifestDownload(patcher, group, manifest, entryCount);
     else {
-        PatcherLogRed("\tDownload Failed: Manifest '%S'", group);
+        PatcherLogRed("\tDownload Failed: Manifest '{}'", group);
         patcher->EndPatch(result, ST::string::from_wchar(group));
     }
 }
@@ -324,15 +389,23 @@ static void IFileThingDownloadCB(ENetError result, void* param, const plFileName
     stream->Close();
 
     if (IS_NET_SUCCESS(result)) {
-        PatcherLogGreen("\tDownloaded File '%s'", stream->GetFileName().AsString().c_str());
+        PatcherLogGreen("\tDownloaded File '{}'", stream->GetFileName());
         patcher->WhitelistFile(stream->GetFileName(), true);
         if (patcher->fSelfPatch && stream->IsSelfPatch())
             patcher->fSelfPatch(stream->GetFileName());
         if (patcher->fRedistUpdateDownloaded && stream->IsRedistUpdate())
             patcher->fRedistUpdateDownloaded(stream->GetFileName());
+
+        // Punt the SFX decompression to the patcher thread (this is the main/draw thread)
+        if (stream->RequiresSfxCache()) {
+            hsLockGuard(patcher->fFileMut);
+            patcher->fQueuedFiles.emplace_back(pfPatcherQueuedFile::Type::kSoundDecompress,
+                                               stream->GetFileName(), stream->GetFlags());
+            patcher->fFileSignal.Signal();
+        }
         patcher->IssueRequest();
     } else {
-        PatcherLogRed("\tDownloaded Failed: File '%s'", stream->GetFileName().AsString().c_str());
+        PatcherLogRed("\tDownloaded Failed: File '{}'", stream->GetFileName());
         stream->Unlink();
         patcher->EndPatch(result, filename.AsString());
     }
@@ -383,7 +456,7 @@ void pfPatcherWorker::EndPatch(ENetError result, const ST::string& msg)
         if (IS_NET_SUCCESS(result))
             PatcherLogWhite("--- Patch Complete ---");
         else {
-            PatcherLogRed("\tNetwork Error: %S", NetErrorToString(result));
+            PatcherLogRed("\tNetwork Error: {}", NetErrorToString(result));
             PatcherLogWhite("--- Patch Killed by Error ---");
         }
     }
@@ -450,8 +523,7 @@ void pfPatcherWorker::Run()
     // If there is no net request from ME when we find a file, we issue the request
     // Once a file is downloaded, the next request is issued.
     // When there are no files in my deque and no requests in my deque, we exit without errors.
-
-    PatcherLogWhite("--- Patch Started (%i requests) ---", fRequests.size());
+    PatcherLogWhite("--- Patch Started ({} requests) ---", fRequests.size());
     fStarted = true;
     IssueRequest();
 
@@ -474,55 +546,66 @@ void pfPatcherWorker::Run()
     EndPatch(kNetSuccess);
 }
 
+void pfPatcherWorker::IHashFile(pfPatcherQueuedFile& file)
+{
+    // Check to see if ours matches
+    plFileInfo mine(file.fClientPath);
+    if (mine.FileSize() == file.fFileSize) {
+        plMD5Checksum cliMD5(file.fClientPath);
+        if (cliMD5 == file.fChecksum) {
+            WhitelistFile(file.fClientPath, false);
+            return;
+        }
+    }
+
+    // It's different... but do we want it?
+    if (fFileDownloadDesired) {
+        if (!fFileDownloadDesired(file.fClientPath)) {
+            PatcherLogRed("\tDeclined '{}'", file.fClientPath);
+            return;
+        }
+    }
+
+    // If you got here, they're different and we want it.
+    PatcherLogYellow("\tEnqueuing '{}'", file.fServerPath);
+    plFileSystem::CreateDir(file.fClientPath.StripFileName());
+
+    // If someone registered for SelfPatch notifications, then we should probably
+    // let them handle the gruntwork... Otherwise, go nuts!
+    if (fSelfPatch) {
+        if (file.fClientPath == plFileSystem::GetCurrentAppPath().GetFileName()) {
+            file.fClientPath += ".tmp"; // don't overwrite myself!
+            file.fFlags |= kSelfPatch;
+        }
+    }
+
+    pfPatcherStream* s = new pfPatcherStream(this, file);
+    {
+        hsLockGuard(fRequestMut);
+        fRequests.emplace_back(file.fServerPath.AsString(), Request::kFile, s);
+    }
+}
+
+void pfPatcherWorker::IDecompressSound(const pfPatcherQueuedFile& file) const
+{
+    PatcherLogGreen("\tDecompressing SFX '{}'", file.fClientPath);
+    if (hsCheckBits(file.fFlags, kSndFlagCacheSplit))
+        plAudioFileReader::CacheFile(file.fClientPath, true);
+    if (hsCheckBits(file.fFlags, kSndFlagCacheStereo))
+        plAudioFileReader::CacheFile(file.fClientPath, false);
+}
+
 void pfPatcherWorker::ProcessFile()
 {
     do {
-        NetCliFileManifestEntry& entry = fQueuedFiles.front();
-
-        // eap sucks
-        plFileName clName = ST::string::from_wchar(entry.clientName);
-        ST::string dlName = ST::string::from_wchar(entry.downloadName);
-
-        // Check to see if ours matches
-        plFileInfo mine(clName);
-        if (mine.FileSize() == entry.fileSize) {
-            plMD5Checksum cliMD5(clName);
-            plMD5Checksum srvMD5;
-            srvMD5.SetFromHexString(ST::string::from_wchar(entry.md5, 32).c_str());
-
-            if (cliMD5 == srvMD5) {
-                WhitelistFile(clName, false);
-                fQueuedFiles.pop_front();
-                continue;
-            }
-        }
-
-        // It's different... but do we want it?
-        if (fFileDownloadDesired) {
-            if (!fFileDownloadDesired(clName)) {
-                PatcherLogRed("\tDeclined '%S'", entry.clientName);
-                fQueuedFiles.pop_front();
-                continue;
-            }
-        }
-
-        // If you got here, they're different and we want it.
-        PatcherLogYellow("\tEnqueuing '%S'", entry.downloadName);
-        plFileSystem::CreateDir(plFileName(clName).StripFileName());
-
-        // If someone registered for SelfPatch notifications, then we should probably
-        // let them handle the gruntwork... Otherwise, go nuts!
-        if (fSelfPatch) {
-            if (clName == plFileSystem::GetCurrentAppPath().GetFileName()) {
-                clName += ".tmp"; // don't overwrite myself!
-                entry.flags |= kSelfPatch;
-            }
-        }
-
-        pfPatcherStream* s = new pfPatcherStream(this, dlName, clName, entry);
-        {
-            hsLockGuard(fRequestMut);
-            fRequests.emplace_back(dlName, Request::kFile, s);
+        pfPatcherQueuedFile& file = fQueuedFiles.front();
+        switch (file.fType) {
+        case pfPatcherQueuedFile::Type::kManifestHash:
+            IHashFile(file);
+            break;
+        case pfPatcherQueuedFile::Type::kSoundDecompress:
+            IDecompressSound(file);
+            break;
         }
         fQueuedFiles.pop_front();
 

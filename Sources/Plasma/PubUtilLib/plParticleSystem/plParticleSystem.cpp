@@ -69,10 +69,6 @@ plProfile_CreateCounter("Num Particles", "Particles", NumParticles);
 
 const float plParticleSystem::GRAVITY_ACCEL_FEET_PER_SEC2 = 32.0f;
 
-plParticleSystem::plParticleSystem() : fParticleSDLMod(nil), fAttachedToAvatar(false)
-{
-}
-
 plParticleSystem::~plParticleSystem()
 {
     int i;
@@ -147,7 +143,7 @@ plParticleEmitter* plParticleSystem::GetAvailEmitter()
     if( !fNumValidEmitters ) // got to start with at least one.
         return nil;
 
-    float minTTL = 1.e33;
+    float minTTL = 1.e33f;
     int iMinTTL = -1;
     int i;
     for( i = 0; i < fNumValidEmitters; i++ )
@@ -167,8 +163,9 @@ plParticleEmitter* plParticleSystem::GetAvailEmitter()
             fEmitters[iMinTTL] = new plParticleEmitter();
             fEmitters[iMinTTL]->Clone(fEmitters[0], iMinTTL);
 
+            hsAssert(fMaxTotalParticlesLeft >= fEmitters[iMinTTL]->fMaxParticles,
+                     "Should have planned better");
             fMaxTotalParticlesLeft -= fEmitters[iMinTTL]->fMaxParticles;
-            hsAssert(fMaxTotalParticlesLeft >= 0, "Should have planned better");
 
             // Don't really use this. fEmitters[i]->GetSpanIndex() always == i.
             fNextEmitterToGo = (fNextEmitterToGo + 1) % fMaxEmitters; 
@@ -204,8 +201,6 @@ uint32_t plParticleSystem::AddEmitter(uint32_t maxParticles, plParticleGenerator
 
     if (maxParticles > fMaxTotalParticlesLeft)
         maxParticles = fMaxTotalParticlesLeft;
-    if (maxParticles < 0)
-        maxParticles = 0;
 
     fEmitters[currEmitter] = new plParticleEmitter();
     fEmitters[currEmitter]->Init(this, maxParticles, fNextEmitterToGo, emitterFlags, gen);

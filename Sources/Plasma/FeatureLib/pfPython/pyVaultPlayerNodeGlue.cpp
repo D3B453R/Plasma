@@ -41,7 +41,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 
 #include <Python.h>
-#pragma hdrstop
 
 #include "pyVaultPlayerNode.h"
 #include "pyAgeInfoStruct.h"
@@ -206,7 +205,7 @@ PYTHON_METHOD_DEFINITION(ptVaultPlayerNode, setPlayerName, args)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultPlayerNode, getPlayerName)
 {
-    return PyString_FromString(self->fThis->GetPlayerName().c_str());
+    return PyUnicode_FromSTString(self->fThis->GetPlayerName());
 }
 
 PYTHON_METHOD_DEFINITION(ptVaultPlayerNode, setAvatarShapeName, args)
@@ -223,7 +222,7 @@ PYTHON_METHOD_DEFINITION(ptVaultPlayerNode, setAvatarShapeName, args)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultPlayerNode, getAvatarShapeName)
 {
-    return PyString_FromString(self->fThis->GetAvatarShapeName().c_str());
+    return PyUnicode_FromSTString(self->fThis->GetAvatarShapeName());
 }
 
 PYTHON_METHOD_DEFINITION(ptVaultPlayerNode, setDisabled, args)
@@ -316,14 +315,7 @@ PYTHON_END_METHODS_TABLE;
 PLASMA_DEFAULT_TYPE_WBASE(ptVaultPlayerNode, pyVaultNode, "Plasma vault player node");
 
 // required functions for PyObject interoperability
-PYTHON_CLASS_NEW_IMPL(ptVaultPlayerNode, pyVaultPlayerNode)
-
-PyObject *pyVaultPlayerNode::New(RelVaultNode* nfsNode)
-{
-    ptVaultPlayerNode *newObj = (ptVaultPlayerNode*)ptVaultPlayerNode_type.tp_new(&ptVaultPlayerNode_type, NULL, NULL);
-    newObj->fThis->fNode = nfsNode;
-    return (PyObject*)newObj;
-}
+PYTHON_CLASS_VAULT_NODE_NEW_IMPL(ptVaultPlayerNode, pyVaultPlayerNode)
 
 PYTHON_CLASS_CHECK_IMPL(ptVaultPlayerNode, pyVaultPlayerNode)
 PYTHON_CLASS_CONVERT_FROM_IMPL(ptVaultPlayerNode, pyVaultPlayerNode)

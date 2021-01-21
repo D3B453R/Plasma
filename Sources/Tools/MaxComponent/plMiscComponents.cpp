@@ -53,7 +53,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <iparamm2.h>
 #include <memory>
 #include <notify.h>
-#pragma hdrstop
 
 #ifdef MAXASS_AVAILABLE
 #   include "../../AssetMan/PublicInterface/MaxAssInterface.h"
@@ -158,13 +157,13 @@ ParamBlockDesc2 gInterestBk
     kInteresting,       _T("interesting"),      TYPE_STRING,        0, 0,   
         end,
     
-    kCamInterestRadius, _T("CamIntersestRadius"),   TYPE_FLOAT,     P_ANIMATABLE, 0,    
+    kCamInterestRadius, _T("CamInterestRadius"),   TYPE_FLOAT,     P_ANIMATABLE, 0,
         p_default, 100.0f,
         p_ui,   TYPE_SPINNER,   EDITTYPE_POS_FLOAT, 
         IDC_COMP_INTEREST_EDIT1, IDC_COMP_INTEREST_SPIN1, 1.0f,
         end,
 
-    kCamInterestWeight, _T("CamIntersestWeight"),   TYPE_FLOAT, P_ANIMATABLE, 0,    
+    kCamInterestWeight, _T("CamInterestWeight"),   TYPE_FLOAT, P_ANIMATABLE, 0,
         p_range, 0.0, 1.0,
         p_default, 1.0,
         p_ui,   TYPE_SPINNER,   EDITTYPE_POS_FLOAT,
@@ -1123,8 +1122,7 @@ bool plViewFacingComponent::Convert(plMaxNode *node, plErrorMsg *pErrMsg)
     {
         pMod->SetFlag(plViewFaceModifier::kScale);
         
-        hsVector3 scale;
-        scale.Set(1.f, 1.f, 1.f);
+        hsVector3 scale(1.f, 1.f, 1.f);
         scale.fX = fCompPB->GetFloat(kViewFaceScaleX);
         scale.fY = fCompPB->GetFloat(kViewFaceScaleY);
         scale.fZ = fCompPB->GetFloat(kViewFaceScaleZ);
@@ -1400,8 +1398,8 @@ bool plCamViewComponent::Convert(plMaxNode *node, plErrorMsg *pErrMsg)
         }
         break;
     }
-    fovX *= 180.f / M_PI;
-    fovY *= 180.f / M_PI;
+    fovX = hsRadiansToDegrees(fovX);
+    fovY = hsRadiansToDegrees(fovY);
     mod->SetFovX(fovX);
     mod->SetFovY(fovY);
 
@@ -2466,7 +2464,7 @@ void pfImageLibComponent::Validate()
         fCompPB->SetCount(kCompressImage, fCompPB->Count(kRefImageList));
 }
 
-int pfImageLibComponent::GetNumBitmaps( void ) const
+int pfImageLibComponent::GetNumBitmaps() const
 {
     return fCompPB->Count( (ParamID)kRefImageList );
 }

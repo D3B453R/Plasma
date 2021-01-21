@@ -87,59 +87,27 @@ float plCameraBrain1::fFallPOAVelocity   = 50.0f;
 
 // the avatar and drive cameras are subclasses of the basic brain.
 
-plCameraBrain1::plCameraBrain1() :
-fCurCamSpeed(0.0f),
-fCurViewSpeed(0.0f),
-fVelocity(30.0f),
-fAccel(30.0f),
-fDecel(30.0f),  
-fPOAVelocity(30.0f),
-fPOAAccel(30.0f),
-fPOADecel(30.0f),
-fSubjectKey(nil),
-fRail(nil),
-fXPanLimit(0.0f),
-fZPanLimit(0.0f),
-fPanSpeed(0.5f),
-fZoomMin(0.0f),
-fZoomMax(0.0f),
-fZoomRate(0.0f),
-fOffsetLength(0.0f),
-fOffsetPct(1.0f)
-{
-}
+plCameraBrain1::plCameraBrain1()
+    : fCurCamSpeed(), fCurViewSpeed(), fVelocity(30.f), fAccel(30.f), fDecel(30.f),
+      fPOAVelocity(30.f), fPOAAccel(30.f), fPOADecel(30.f), fSubjectKey(), fRail(),
+      fXPanLimit(), fZPanLimit(), fPanSpeed(0.5f), fZoomMin(), fZoomMax(), fZoomRate(),
+      fOffsetLength(), fOffsetPct(1.f), fCamera(), fGoal(1.f, 1.f, 1.f),
+      fLastTime(), fFOVwGoal(), fFOVhGoal(), fFOVStartTime(), fFOVEndTime(),
+      fFOVwAnimRate(), fFOVhAnimRate(), fFallTimer()
+{ }
 
-plCameraBrain1::plCameraBrain1(plCameraModifier1* pMod) :
-fCurCamSpeed(0.0f),
-fCurViewSpeed(0.0f),
-fVelocity(30.0f),
-fAccel(30.0f),
-fDecel(30.0f),  
-fPOAVelocity(30.0f),
-fPOAAccel(30.0f),
-fPOADecel(30.0f),
-fSubjectKey(nil),
-fRail(nil),
-fXPanLimit(0.0f),
-fZPanLimit(0.0f),
-fZoomMin(0.0f),
-fZoomMax(0.0f),
-fZoomRate(0.0f),
-fOffsetLength(0.0f),
-fOffsetPct(1.0f)
+plCameraBrain1::plCameraBrain1(plCameraModifier1* pMod)
+    : fCurCamSpeed(), fCurViewSpeed(), fVelocity(30.f), fAccel(30.f), fDecel(30.f),
+      fPOAVelocity(30.f), fPOAAccel(30.f), fPOADecel(30.f), fSubjectKey(), fRail(),
+      fXPanLimit(), fZPanLimit(), fPanSpeed(0.5f), fZoomMin(), fZoomMax(), fZoomRate(),
+      fOffsetLength(), fOffsetPct(1.f), fCamera(pMod), fGoal(1.f, 1.f, 1.f),
+      fLastTime(), fFOVwGoal(), fFOVhGoal(), fFOVStartTime(), fFOVEndTime(),
+      fFOVwAnimRate(), fFOVhAnimRate(), fFallTimer()
 {
-    fCamera = pMod;
     pMod->SetBrain(this);
-    fPOAGoal.Set(0,0,0);
-    fGoal.Set(1,1,1);
-    fPOAOffset.Set(0,0,0);
-    hsVector3 up(0, 0, 1);
+    hsVector3 up(0.f, 0.f, 1.f);
     fTargetMatrix.Make(&fGoal, &fPOAGoal, &up);
     fFlags.Clear();
-}
-
-plCameraBrain1::~plCameraBrain1()
-{
 }
 
 void plCameraBrain1::AddTarget()
@@ -750,31 +718,27 @@ float plCameraBrain1_Drive::fMaxVelocity = 100.0f;
 
 
 // constructor
-plCameraBrain1_Drive::plCameraBrain1_Drive() : plCameraBrain1()
+plCameraBrain1_Drive::plCameraBrain1_Drive()
+    : plCameraBrain1(), fUp(0.f, 0.f, 1.f), bUseDesiredFacing(),
+      deltaX(), deltaY(), bDisregardX(), bDisregardY()
 {
     fGoal.Set(100,100,100);
     fPOAGoal.Set(0,0,0);
-    fUp.Set(0,0,1);
     fCamera->SetTargetPos(fGoal);
     fCamera->SetTargetPOA(fPOAGoal);
     fLastTime = 0.f;
 }
 
-plCameraBrain1_Drive::plCameraBrain1_Drive(plCameraModifier1* pMod) : plCameraBrain1(pMod)
+plCameraBrain1_Drive::plCameraBrain1_Drive(plCameraModifier1* pMod)
+    : plCameraBrain1(pMod), fUp(0.f, 0.f, 1.f), bUseDesiredFacing(),
+      deltaX(), deltaY(), bDisregardX(), bDisregardY()
 {   
     fGoal.Set(100,100,100);
     fPOAGoal.Set(0,0,0);
-    fUp.Set(0,0,1);
     fCamera->SetTargetPos(fGoal);
     fCamera->SetTargetPOA(fPOAGoal);
     fLastTime = 0.f;
 }
-
-// destructor
-plCameraBrain1_Drive::~plCameraBrain1_Drive()
-{
-}
-
 
 void plCameraBrain1_Drive::Push(bool recenter)
 {
@@ -981,22 +945,15 @@ bool plCameraBrain1_Drive::MsgReceive(plMessage* msg)
 // new simplified avatar camera
 
 // constructor
-plCameraBrain1_Avatar::plCameraBrain1_Avatar() : plCameraBrain1()
+plCameraBrain1_Avatar::plCameraBrain1_Avatar()
+    : plCameraBrain1(), bObscured(), fFaded(), fObstacle()
 {
-    bObscured = false;
-    fOffset.Set(0,0,0);
-    fPOAOffset.Set(0,0,0);
-    fFaded = false;
 }
 
-plCameraBrain1_Avatar::plCameraBrain1_Avatar(plCameraModifier1* pMod) : plCameraBrain1(pMod)
+plCameraBrain1_Avatar::plCameraBrain1_Avatar(plCameraModifier1* pMod)
+    : plCameraBrain1(pMod), bObscured(), fFaded(), fObstacle()
 {
-    bObscured = false;
-    fOffset.Set(0,0,0);
-    fPOAOffset.Set(0,0,0);
-    fFaded = false;
 }
-    
 
 // destructor
 plCameraBrain1_Avatar::~plCameraBrain1_Avatar()
@@ -1137,6 +1094,7 @@ void plCameraBrain1_Avatar::CalculatePosition()
     {
         plLOSRequestMsg* pMsg = new plLOSRequestMsg( GetCamera()->GetKey(), fPOAGoal, fGoal, plSimDefs::kLOSDBCameraBlockers,
             plLOSRequestMsg::kTestClosest, plLOSRequestMsg::kReportHitOrMiss);
+        pMsg->SetRequestName(ST::format("Camera Brain [{}]: Find Blockers", GetKeyName()));
         plgDispatch::MsgSend( pMsg );
     }
     
@@ -1314,20 +1272,6 @@ void plCameraBrain1_Avatar::Write(hsStream* stream, hsResMgr* mgr)
 // only difference is push() & pop() fade avatar in/out
 //
 
-plCameraBrain1_FirstPerson::plCameraBrain1_FirstPerson() : plCameraBrain1_Avatar()
-{
-    fPosNode = nil;
-}
-
-plCameraBrain1_FirstPerson::plCameraBrain1_FirstPerson(plCameraModifier1* pMod) : plCameraBrain1_Avatar(pMod)
-{
-}   
-
-// destructor
-plCameraBrain1_FirstPerson::~plCameraBrain1_FirstPerson()
-{
-}
-
 bool plCameraBrain1_FirstPerson::MsgReceive(plMessage* msg)
 {
 
@@ -1355,8 +1299,8 @@ bool plCameraBrain1_FirstPerson::MsgReceive(plMessage* msg)
                             if (name.compare("FPCameraOrigin", ST::case_insensitive) == 0)
                             {
                                 fPosNode = child;
-                                SetOffset(hsVector3(0,0,0));
-                                SetPOAOffset(hsVector3(0,-10,0));
+                                SetOffset({});
+                                SetPOAOffset(hsVector3(0.f, -10.f, 0.f));
                                 return true;
                             }
                         }
@@ -1385,11 +1329,8 @@ bool plCameraBrain1_FirstPerson::MsgReceive(plMessage* msg)
 void plCameraBrain1_FirstPerson::CalculatePosition()
 {
     // get target pos
-    hsPoint3 targetFrom;
-    if (fPosNode)
-        targetFrom = fPosNode->GetCoordinateInterface()->GetLocalToWorld().GetTranslate();
-    else
-        targetFrom = GetSubject()->GetCoordinateInterface()->GetLocalToWorld().GetTranslate();
+    const plSceneObject* target = fPosNode ? fPosNode : GetSubject();
+    hsPoint3 targetFrom = target->GetCoordinateInterface()->GetLocalToWorld().GetTranslate();
 
     // get view normal
     hsVector3 view = GetSubject()->GetCoordinateInterface()->GetLocalToWorld().GetAxis(hsMatrix44::kView);
@@ -1432,6 +1373,7 @@ void plCameraBrain1_FirstPerson::CalculatePosition()
     {
         plLOSRequestMsg* pMsg = new plLOSRequestMsg( GetCamera()->GetKey(), fPOAGoal, fGoal, plSimDefs::kLOSDBCameraBlockers,
             plLOSRequestMsg::kTestClosest, plLOSRequestMsg::kReportHitOrMiss);
+        pMsg->SetRequestName(ST::format("Camera Brain [{}]: Find Blockers", GetKeyName()));
         plgDispatch::MsgSend( pMsg );
     }
     
@@ -1615,30 +1557,6 @@ bool plCameraBrain1_Fixed::MsgReceive(plMessage* msg)
 //
 //
 // circle camera crap
-static const float kTwoPI    = 2.0f*M_PI;
-
-plCameraBrain1_Circle::plCameraBrain1_Circle() : plCameraBrain1_Fixed()
-{ 
-    fCircleFlags = 0;
-    fCenterObject = nil;
-    fCenter.Set(0,0,0);
-    fCurRad = fGoalRad = 1;
-    fPOAObj = nil;
-    fCirPerSec = 0.25f;
-}
-plCameraBrain1_Circle::plCameraBrain1_Circle(plCameraModifier1* pMod) : plCameraBrain1_Fixed(pMod)
-{ 
-    fCircleFlags = 0;
-    fCenterObject = nil;
-    fCenter.Set(0,0,0);
-    fCurRad = fGoalRad = 1;
-    fPOAObj = nil;
-    fCirPerSec = 0.25f;
-}
-
-plCameraBrain1_Circle::~plCameraBrain1_Circle() 
-{ 
-}
 
 //
 //
@@ -1690,18 +1608,18 @@ hsPoint3 plCameraBrain1_Circle::MoveTowardsFromGoal(const hsPoint3* fromGoal, do
     {
         float dist = fabs(fGoalRad-fCurRad);
     
-        hsAssert(dist>=0 && dist<=kTwoPI, "illegal radian diff");
-        bool mustWrap = (dist > M_PI);  // go opposite direction for shortcut and wrap
+        hsAssert(dist >= 0.f && dist <= hsConstants::two_pi<float>, "illegal radian diff");
+        bool mustWrap = (dist > hsConstants::pi<float>);  // go opposite direction for shortcut and wrap
 
         // compute speed
         float speed; 
         if (warp)
-            speed = (float)(kTwoPI * 100 * secs);
+            speed = (float)(hsConstants::two_pi<float> * 100 * secs);
         else
-            speed = (float)(kTwoPI * fCirPerSec * secs);
+            speed = (float)(hsConstants::two_pi<float> * fCirPerSec * secs);
 
         // move towards goalRad
-        hsAssert(fCurRad>=0 && fCurRad<=kTwoPI, "illegal radian value");
+        hsAssert(fCurRad >= 0.f && fCurRad <= hsConstants::two_pi<float>, "illegal radian value");
 
         if (fCurRad<fGoalRad)
         {
@@ -1712,7 +1630,7 @@ hsPoint3 plCameraBrain1_Circle::MoveTowardsFromGoal(const hsPoint3* fromGoal, do
                 while(fCurRad<0)
                 {
                     didWrap=true;
-                    fCurRad+=kTwoPI;
+                    fCurRad += hsConstants::two_pi<float>;
                 }
                 if (fCurRad<fGoalRad && didWrap)
                     fCurRad=fGoalRad;
@@ -1730,10 +1648,10 @@ hsPoint3 plCameraBrain1_Circle::MoveTowardsFromGoal(const hsPoint3* fromGoal, do
             {
                 fCurRad+=speed;
                 bool didWrap=false;
-                while(fCurRad>kTwoPI)
+                while (fCurRad > hsConstants::two_pi<float>)
                 {
                     didWrap=true;
-                    fCurRad-=kTwoPI;
+                    fCurRad -= hsConstants::two_pi<float>;
                 }
                 if (fCurRad>fGoalRad && didWrap)
                     fCurRad=fGoalRad;
@@ -1746,10 +1664,9 @@ hsPoint3 plCameraBrain1_Circle::MoveTowardsFromGoal(const hsPoint3* fromGoal, do
             }
         }
     }
-    hsAssert(fCurRad>=0 && fCurRad<=kTwoPI, "illegal radian value");
+    hsAssert(fCurRad >= 0.f && fCurRad <= hsConstants::two_pi<float>, "illegal radian value");
     
-    hsPoint3 x;
-    x = GetCenterPoint() + hsVector3((float)cos(fCurRad)*fRadius, (float)sin(fCurRad)*fRadius, 0.0f);
+    hsPoint3 x = GetCenterPoint() + hsVector3((float)cos(fCurRad)*fRadius, (float)sin(fCurRad)*fRadius, 0.0f);
     x.fZ = fCamera->GetTargetPos().fZ;
     return x;
 }
@@ -1770,10 +1687,11 @@ hsPoint3 plCameraBrain1_Circle::IGetClosestPointOnCircle(const hsPoint3* toThis)
     }
     v.Normalize();
     fGoalRad = (float)atan2(v.fY, v.fX); // -pi to pi
-    hsAssert(fGoalRad>=-M_PI && fGoalRad<=M_PI, "Illegal atan2 val");
+    hsAssert(fGoalRad >= -hsConstants::pi<float> && fGoalRad <= hsConstants::pi<float>,
+             "Illegal atan2 val");
     if (fGoalRad<0)
-        fGoalRad = kTwoPI + fGoalRad;   // 0 to 2pi
-    hsAssert(fGoalRad>=0 && fGoalRad<=kTwoPI, "Illegal atan2 val");
+        fGoalRad = hsConstants::two_pi<float> + fGoalRad;   // 0 to 2pi
+    hsAssert(fGoalRad >= 0.f && fGoalRad <= hsConstants::two_pi<float>, "Illegal atan2 val");
     v = v * fRadius;
     center = center + v;
     center.fZ = fCamera->GetTargetPos().fZ;

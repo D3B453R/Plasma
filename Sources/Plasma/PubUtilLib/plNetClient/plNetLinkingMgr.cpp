@@ -82,19 +82,21 @@ enum ENlmOp {
 struct NlmOp {
     ENlmOp  opcode;
     NlmOp (const ENlmOp & op)
-    : opcode(op)
+        : opcode(op)
     { }
+
+    virtual ~NlmOp() = default;
 };
 
 struct NlmNoOpOp : NlmOp {
     NlmNoOpOp ()
-    : NlmOp(kNlmOpNoOp)
+        : NlmOp(kNlmOpNoOp)
     { }
 };
 
 struct NlmOpWaitOp : NlmOp {
     NlmOpWaitOp ()
-    : NlmOp(kNlmOpWaitOp)
+        : NlmOp(kNlmOpWaitOp)
     { }
 };
 
@@ -102,7 +104,7 @@ struct NlmJoinAgeOp : NlmOp {
     NetCommAge  age;
     bool muteSfx;
     NlmJoinAgeOp ()
-    : NlmOp(kNlmOpJoinAgeOp)
+        : NlmOp(kNlmOpJoinAgeOp), muteSfx()
     { }
 };
 
@@ -110,7 +112,7 @@ struct NlmLeaveAgeOp : NlmOp {
     bool    quitting;
     bool    muteSfx;
     NlmLeaveAgeOp ()
-    : NlmOp(kNlmOpLeaveAgeOp), quitting(false)
+        : NlmOp(kNlmOpLeaveAgeOp), quitting(), muteSfx()
     { }
 };
 
@@ -279,12 +281,6 @@ void plNetLinkingMgr::ExecNextOp () {
 
 ////////////////////////////////////////////////////////////////////
 
-plNetLinkingMgr::plNetLinkingMgr()
-:   fLinkingEnabled(true)
-,   fLinkedIn (false)
-{
-}
-
 plNetLinkingMgr::~plNetLinkingMgr()
 {
     std::for_each(s_opqueue.begin(), s_opqueue.end(),
@@ -438,7 +434,7 @@ void plNetLinkingMgr::IDoLink(plLinkToAgeMsg* msg)
     StrCopy(
         joinAgeOp->age.spawnPtName,
         GetAgeLink()->SpawnPoint().GetName().c_str(),
-        arrsize(joinAgeOp->age.spawnPtName)
+        std::size(joinAgeOp->age.spawnPtName)
         );
     QueueOp(joinAgeOp);
 
@@ -760,15 +756,13 @@ void plNetLinkingMgr::OfferLinkToPlayer( const plAgeInfoStruct * inInfo, uint32_
 
 ////////////////////////////////////////////////////////////////////
 
-void plNetLinkingMgr::IPostProcessLink( void )
+void plNetLinkingMgr::IPostProcessLink()
 {
     // Grab some useful things...
     plAgeLinkStruct* link = GetAgeLink();
     plAgeInfoStruct* info = link->GetAgeInfo();
 
     bool city = (info->GetAgeFilename().compare_i(kCityAgeFilename) == 0);
-    bool hood = (info->GetAgeFilename().compare_i(kNeighborhoodAgeFilename) == 0);
-    bool psnl = (info->GetAgeFilename().compare_i(kPersonalAgeFilename) == 0);
 
     // Update our online status 
     if (hsRef<RelVaultNode> rvnInfo = VaultGetPlayerInfoNode()) {
@@ -836,7 +830,7 @@ void plNetLinkingMgr::IPostProcessLink( void )
 
 ////////////////////////////////////////////////////////////////////
 
-uint8_t plNetLinkingMgr::IPreProcessLink(void)
+uint8_t plNetLinkingMgr::IPreProcessLink()
 {
     // Grab some stuff we're gonna use extensively
     plNetClientMgr* nc = plNetClientMgr::GetInstance();
@@ -1011,7 +1005,8 @@ uint8_t plNetLinkingMgr::IPreProcessLink(void)
             }
 
             link->SetLinkingRules(plNetCommon::LinkingRules::kOwnedBook);
-            // falls thru to OWNED BOOK case...
+            // falls through
+            // to OWNED BOOK case...
 
         //--------------------------------------------------------------------
         // OWNED BOOK. Look for the book in our AgesIOwn folder

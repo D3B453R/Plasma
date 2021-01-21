@@ -39,7 +39,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
       Mead, WA   99021
 
 *==LICENSE==*/
-#pragma warning(disable: 4284)
 #include "HeadSpin.h"
 #include "hsWindows.h"
 #include "plClient.h"
@@ -84,7 +83,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plScene/plVisMgr.h"
 
 #include "plAudio/plAudioSystem.h"
-#include "plAudio/plAudioCaps.h"
 
 #include "plStatGather/plProfileManagerFull.h"
 
@@ -158,7 +156,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 static plDispatchBase* gDisp = nil;
 static plTimerCallbackManager* gTimerMgr = nil;
-static plAudioSystem* gAudio = nil;
 
 #ifdef HS_BUILD_FOR_WIN32
 extern ITaskbarList3* gTaskbarList;
@@ -171,30 +168,16 @@ plClient* plClient::fInstance=nil;
 static hsTArray<HMODULE>        fLoadedDLLs;
 
 plClient::plClient()
-: fPipeline(nil),
-    fDone(false),
-    fQuitIntro(false),
-    fWindowHndl(nil),
-    fInputManager(nil),
-    fConsole(nil),
-    fCurrentNode(nil),
-    fNewCamera(nil),
-    fpAuxInitDir(nil),
-    fTransitionMgr(nil),
-    fLinkEffectsMgr(nil),
-    fProgressBar(nil),
-    fGameGUIMgr(nil),
-    fWindowActive(false),
-    fAnimDebugList(nil),
-    fClampCap(-1),
-    fQuality(0),
-    fPageMgr(nil),
-    fFontCache(nil),
-    fHoldLoadRequests(false),
-    fNumLoadingRooms(0),
-    fNumPostLoadMsgs(0),
-    fPostLoadMsgInc(0.f)
+    : fPipeline(), fDone(), fQuitIntro(), fWindowHndl(),
+      fInputManager(), fConsole(), fCurrentNode(), fNewCamera(),
+      fpAuxInitDir(), fTransitionMgr(), fLinkEffectsMgr(),
+      fProgressBar(), fGameGUIMgr(), fWindowActive(), fAnimDebugList(),
+      fClampCap(-1), fQuality(), fPageMgr(), fFontCache(),
+      fHoldLoadRequests(), fNumLoadingRooms(), fNumPostLoadMsgs(), fPostLoadMsgInc(),
+      fLastProgressUpdate(), fMessagePumpProc()
 {
+    fClearColor.Set(0.f, 0.f, 0.f, 1.f);
+
 #ifndef PLASMA_EXTERNAL_RELEASE
     bPythonDebugConnected = false;
 #endif
@@ -578,7 +561,7 @@ bool plClient::MsgReceive(plMessage* msg)
         {
         case plClientRefMsg::kLoadRoom :
             #ifndef PLASMA_EXTERNAL_RELEASE
-            plStatusLog::AddLineS( "pageouts.log", ".. ClientRefMsg received for room %s", pRefMsg->GetRef() != nil ? pRefMsg->GetRef()->GetKey()->GetUoid().GetObjectName().c_str() : "nilref" );
+            plStatusLog::AddLineSF( "pageouts.log", ".. ClientRefMsg received for room {}", pRefMsg->GetRef() ? pRefMsg->GetRef()->GetKey()->GetUoid().GetObjectName() : ST_LITERAL("nilref") );
             #endif
 
             // was it that the room was loaded?
@@ -1039,16 +1022,16 @@ void plClient::IUnloadRooms(const std::vector<plLocation>& locs)
             if (node)
             {
                 #ifndef PLASMA_EXTERNAL_RELEASE
-                plStatusLog::AddLineS("pageouts.log", "SceneNode for %s loaded; Removing node",
-                                      node->GetKey()->GetUoid().GetObjectName().c_str());
+                plStatusLog::AddLineSF("pageouts.log", "SceneNode for {} loaded; Removing node",
+                                       node->GetKey()->GetUoid().GetObjectName());
                 #endif
                 fPageMgr->RemoveNode(node);
             }
             else
             {
                 #ifndef PLASMA_EXTERNAL_RELEASE
-                plStatusLog::AddLineS("pageouts.log", "SceneNode for %s NOT loaded",
-                                      nodeKey->GetUoid().GetObjectName().c_str());
+                plStatusLog::AddLineSF("pageouts.log", "SceneNode for {} NOT loaded",
+                                       nodeKey->GetUoid().GetObjectName());
                 #endif
             }
             GetKey()->Release(nodeKey);     // release notify interest in scene node
@@ -1064,8 +1047,8 @@ void plClient::IUnloadRooms(const std::vector<plLocation>& locs)
                 fCurrentNode = nil;
 
             #ifndef PLASMA_EXTERNAL_RELEASE
-            plStatusLog::AddLineS("pageouts.log", "Telling netClientMgr about paging out %s",
-                                  nodeKey->GetUoid().GetObjectName().c_str());
+            plStatusLog::AddLineSF("pageouts.log", "Telling netClientMgr about paging out {}",
+                                   nodeKey->GetUoid().GetObjectName());
             #endif
 
             if (plNetClientMgr::GetInstance() != nil)
@@ -1081,7 +1064,7 @@ void plClient::IUnloadRooms(const std::vector<plLocation>& locs)
         else
         {
             #ifndef PLASMA_EXTERNAL_RELEASE
-//          plStatusLog::AddLineS("pageouts.log", "++ Can't find node key for paging out room %s, loc 0x%x",
+//          plStatusLog::AddLineSF("pageouts.log", "++ Can't find node key for paging out room {}, loc 0x{x}",
 //              pMsg->GetRoomName() != nil ? pMsg->GetRoomName() : "",
 //              loc.GetSequenceNumber());
             #endif
@@ -1319,7 +1302,7 @@ void    plClient::IStartProgress( const char *title, float len )
 
 
 //============================================================================
-void    plClient::IStopProgress( void )
+void    plClient::IStopProgress()
 {
     if (fProgressBar)
     {
@@ -1380,7 +1363,6 @@ bool plClient::StartInit()
     ((plResManager *)hsgResMgr::ResMgr())->VerifyPages();
 
     plgAudioSys::Init();
-    gAudio = plgAudioSys::Sys();
 
     RegisterAs( kClient_KEY );
 
@@ -1486,7 +1468,7 @@ bool plClient::BeginGame()
 }
 
 //============================================================================
-void    plClient::IPatchGlobalAgeFiles( void )
+void    plClient::IPatchGlobalAgeFiles()
 {
     plgDispatch::Dispatch()->RegisterForExactType(plResPatcherMsg::Index(), GetKey());
 
@@ -2122,20 +2104,11 @@ void plClient::IDetectAudioVideoSettings()
 #endif
 
     //check to see if audio.ini exists
-    if (s.Open(audioIniFile))
-    {
+    if (s.Open(audioIniFile)) {
         s.Close();
-    }
-    else
-    {
+    } else {
         stream = plEncryptedStream::OpenEncryptedFileWrite(audioIniFile);
-
-        plAudioCaps caps = plAudioCapsDetector::Detect(false, true);
-
-        char deviceName[256];
-        sprintf(deviceName, "\"%s\"", DEFAULT_AUDIO_DEVICE_NAME);
-
-        WriteBool(stream, "Audio.Initialize",  caps.IsAvailable());
+        WriteBool(stream, "Audio.Initialize",  true);
         WriteBool(stream, "Audio.UseEAX", false);
         WriteInt(stream, "Audio.SetPriorityCutoff", 6);
         WriteInt(stream, "Audio.MuteAll", false);
@@ -2144,21 +2117,15 @@ void plClient::IDetectAudioVideoSettings()
         WriteInt(stream, "Audio.SetChannelVolume Ambience", 1);
         WriteInt(stream, "Audio.SetChannelVolume NPCVoice", 1);
         WriteInt(stream, "Audio.EnableVoiceRecording", 1);
-        WriteString(stream, "Audio.SetDeviceName", deviceName );
         stream->Close();
         delete stream;
-        stream = nil;
     }
-    
+
     // check to see if graphics.ini exists
     if (s.Open(graphicsIniFile))
-    {
         s.Close();
-    }
     else
-    {
         IWriteDefaultGraphicsSettings(graphicsIniFile);
-    }
 }
 
 void plClient::IWriteDefaultGraphicsSettings(const plFileName& destFile)

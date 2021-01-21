@@ -45,8 +45,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *   
 ***/
 
-#ifdef CLIENT
-
 #ifdef PLASMA20_SOURCES_PLASMA_PUBUTILLIB_PLVAULT_PLVAULTCLIENTAPI_H
 #error "Header $/Plasma20/Sources/Plasma/PubUtilLib/plVault/plVaultClientApi.h included more than once"
 #endif
@@ -65,19 +63,21 @@ class plUUID;
 
 struct VaultCallback {
     struct IVaultCallback * internal;
-    
+
+    virtual ~VaultCallback() { }
+
     virtual void AddedChildNode (
-        RelVaultNode *  parent,
-        RelVaultNode *  child
+        const hsRef<RelVaultNode>& parent,
+        const hsRef<RelVaultNode>& child
     ) = 0;
 
     virtual void RemovingChildNode (
-        RelVaultNode *  parent,
-        RelVaultNode *  child
+        const hsRef<RelVaultNode>& parent,
+        const hsRef<RelVaultNode>& child
     ) = 0;
 
     virtual void ChangedNode (
-        RelVaultNode * changedNode
+        const hsRef<RelVaultNode>& changedNode
     ) = 0;
 };
 
@@ -105,38 +105,27 @@ struct RelVaultNode : NetVaultNode {
     bool IsParentOf (unsigned nodeId, unsigned maxDepth);
     bool IsChildOf (unsigned nodeId, unsigned maxDepth);
     
-    void GetRootIds (ARRAY(unsigned) * nodeIds);
+    void GetRootIds (std::vector<unsigned> * nodeIds);
     
     unsigned RemoveChildNodes (unsigned maxDepth);  // returns # of nodes removed
 
     void GetChildNodeIds (
-        ARRAY(unsigned) *   nodeIds,
+        std::vector<unsigned> * nodeIds,
         unsigned            maxDepth
     );
     void GetParentNodeIds (
-        ARRAY(unsigned) *   nodeIds,
-        unsigned            maxDepth
-    );
-    
-    void GetMatchingChildNodeIds (
-        NetVaultNode *      templateNode,
-        ARRAY(unsigned) *   nodeIds,
-        unsigned            maxDepth
-    );
-    void GetMatchingParentNodeIds (
-        NetVaultNode *      templateNode,
-        ARRAY(unsigned) *   nodeIds,
+        std::vector<unsigned> * nodeIds,
         unsigned            maxDepth
     );
 
     // returns first matching node found
     hsRef<RelVaultNode> GetParentNode (
-        NetVaultNode *      templateNode,
-        unsigned            maxDepth
+        hsWeakRef<NetVaultNode> templateNode,
+        unsigned                maxDepth
     );
     hsRef<RelVaultNode> GetChildNode (
-        NetVaultNode *      templateNode,
-        unsigned            maxDepth
+        hsWeakRef<NetVaultNode> templateNode,
+        unsigned                maxDepth
     );
     hsRef<RelVaultNode> GetChildNode (
         unsigned            nodeType,
@@ -161,7 +150,7 @@ struct RelVaultNode : NetVaultNode {
         RefList *               nodes
     );
     void GetChildNodes (
-        NetVaultNode *          templateNode,
+        hsWeakRef<NetVaultNode> templateNode,
         unsigned                maxDepth,
         RefList *               nodes
     );
@@ -208,7 +197,7 @@ void VaultUpdate ();
 ***/
 
 hsRef<RelVaultNode> VaultGetNode(unsigned nodeId);
-hsRef<RelVaultNode> VaultGetNode(NetVaultNode * templateNode);
+hsRef<RelVaultNode> VaultGetNode(hsWeakRef<NetVaultNode> templateNode);
 
 // VaultAddChildNode will download the child node if necessary
 // the parent exists locally before making the callback.
@@ -250,15 +239,15 @@ void VaultPublishNode (
     const ST::string& deviceName
 );
 void VaultSendNode (
-    RelVaultNode*   srcNode,
-    unsigned        dstPlayerId
+    hsWeakRef<RelVaultNode> srcNode,
+    unsigned                dstPlayerId
 );
 
 typedef void (*FVaultCreateNodeCallback)(
     ENetError       result,
     void *          state,
     void *          param,
-    RelVaultNode *  node
+    hsWeakRef<RelVaultNode> node
 );
 void VaultCreateNode (          // non-blocking
     plVault::NodeTypes          nodeType,
@@ -267,7 +256,7 @@ void VaultCreateNode (          // non-blocking
     void *                      param
 );
 void VaultCreateNode (          // non-blocking
-    NetVaultNode *              templateNode,
+    hsWeakRef<NetVaultNode>     templateNode,
     FVaultCreateNodeCallback    callback,
     void *                      state,
     void *                      param
@@ -277,11 +266,11 @@ hsRef<RelVaultNode> VaultCreateNodeAndWait (   // block until completion. return
     ENetError *                 result
 );
 hsRef<RelVaultNode> VaultCreateNodeAndWait (   // block until completion. returns node. nil --> failure
-    NetVaultNode *              templateNode,
+    hsWeakRef<NetVaultNode>     templateNode,
     ENetError *                 result
 );
 void VaultForceSaveNodeAndWait (
-    NetVaultNode *      node
+    hsWeakRef<NetVaultNode>     node
 );
 
 typedef void (*FVaultFindNodeCallback)(
@@ -291,17 +280,17 @@ typedef void (*FVaultFindNodeCallback)(
     const unsigned      nodeIds[]
 );
 void VaultFindNodes (
-    NetVaultNode *          templateNode,
+    hsWeakRef<NetVaultNode> templateNode,
     FVaultFindNodeCallback  callback,
     void *                  param
 );
 void VaultFindNodesAndWait (
-    NetVaultNode *          templateNode,
-    ARRAY(unsigned) *       nodeIds
+    hsWeakRef<NetVaultNode> templateNode,
+    std::vector<unsigned> * nodeIds
 );
 void VaultLocalFindNodes (
-    NetVaultNode *          templateNode,
-    ARRAY(unsigned) *       nodeIds
+    hsWeakRef<NetVaultNode> templateNode,
+    std::vector<unsigned> * nodeIds
 );
 void VaultFetchNodesAndWait (   // Use VaultGetNode to access the fetched nodes
     const unsigned          nodeIds[],
@@ -346,7 +335,7 @@ hsRef<RelVaultNode> VaultGetOwnedAgeInfo(const plAgeInfoStruct * info);
 bool                VaultGetOwnedAgeLink(const plAgeInfoStruct * info, plAgeLinkStruct * link);
 bool                VaultAddOwnedAgeSpawnPoint(const plUUID& ageInstId, const plSpawnPointInfo & spawnPt);
 bool                VaultSetOwnedAgePublicAndWait(const plAgeInfoStruct * info, bool publicOrNot);
-bool                VaultSetAgePublicAndWait(NetVaultNode * ageInfoNode, bool publicOrNot);
+bool                VaultSetAgePublicAndWait(hsWeakRef<NetVaultNode> ageInfoNode, bool publicOrNot);
 hsRef<RelVaultNode> VaultGetVisitAgeLink(const plAgeInfoStruct * info);
 bool                VaultGetVisitAgeLink(const plAgeInfoStruct * info, class plAgeLinkStruct * link);
 bool                VaultRegisterOwnedAgeAndWait(const plAgeLinkStruct * link);
@@ -496,5 +485,3 @@ void VaultCull (
 
 hsRef<RelVaultNode> VaultGetSystemNode();
 hsRef<RelVaultNode> VaultGetGlobalInbox();
-
-#endif // def CLIENT

@@ -70,16 +70,8 @@ plBlower::plBlower()
     fMaxOffsetDist(kInitialMaxOffDist),
     fAccumTime(0)
 {
-    fRestPos.Set(0,0,0);
-    fLocalRestPos.Set(0,0,0);
-    fCurrDel.Set(0,0,0);
-
     fDirection.Set(fRandom.RandMinusOneToOne(), fRandom.RandMinusOneToOne(), 0);
     hsFastMath::NormalizeAppr(fDirection);
-}
-
-plBlower::~plBlower()
-{
 }
 
 void plBlower::IBlow(double secs, float delSecs)
@@ -137,8 +129,7 @@ void plBlower::IBlow(double secs, float delSecs)
     const float kOffsetDistDecay = 0.999f;
     fMaxOffsetDist *= kOffsetDistDecay;
 
-    hsVector3 accel = force;
-    accel += fSpringKonst * hsVector3(&fLocalRestPos, &localPos);
+    hsVector3 accel = force + (fSpringKonst * hsVector3(&fLocalRestPos, &localPos));
 
     hsVector3 del = accel * (delSecs * delSecs);
 
@@ -218,8 +209,8 @@ void plBlower::IInitOscillators()
     for( i = 0; i < fOscillators.GetCount(); i++ )
     {
         float fi = float(i+1);
-        fOscillators[i].fFrequency = fi / M_PI * fRandom.RandRangeF(0.75f, 1.25f);
-//      fOscillators[i].fFrequency = 1.f / M_PI * fRandom.RandRangeF(0.5f, 1.5f);
+        fOscillators[i].fFrequency = fi / hsConstants::pi<float> * fRandom.RandRangeF(0.75f, 1.25f);
+//      fOscillators[i].fFrequency = 1.f / hsConstants::pi<float> * fRandom.RandRangeF(0.5f, 1.5f);
         fOscillators[i].fPhase = fRandom.RandZeroToOne();
         fOscillators[i].fPower = kBasePower * fRandom.RandRangeF(0.75f, 1.25f);
     }

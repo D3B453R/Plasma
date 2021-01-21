@@ -66,7 +66,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "hsResMgr.h"
 
-#ifdef HS_BUILD_FOR_OSX
+#ifdef HS_BUILD_FOR_MACOS
 #include <malloc/malloc.h>
 #else
 #include <malloc.h>
@@ -167,25 +167,21 @@ static void INetErrorCallback (
     switch (error)
     {
     case kNetErrKickedByCCR:
-        StrPrintf(
-            msg->str,
-            arrsize(msg->str),
-            "You have been kicked by a CCR."
-        );
+        strncpy(msg->str, "You have been kicked by a CCR.", std::size(msg->str));
         break;
 
     default:
         // Until we get some real error handling, this'll ensure no errors
         // fall thru the cracks and we hang forever wondering what's up.
-        StrPrintf(
+        snprintf(
             // buf
             msg->str,
-            arrsize(msg->str),
+            std::size(msg->str),
             // fmt
             "Network error %u, %S.\n"
             "protocol: %S\n"
             ,// values
-            error,
+            static_cast<unsigned>(error),
             NetErrorToString(error),
             NetProtocolToString(protocol)
         );
@@ -216,7 +212,7 @@ static void INetBufferCallback (
     }
     plNetMessage * msg = plNetMessage::ConvertNoRef(plFactory::Create(type));
     if (!msg) {
-        LogMsg(kLogError, "NetComm: could not convert plNetMessage to class %u", type);
+        LogMsg(kLogError, "NetComm: could not convert plNetMessage to class {}", type);
         return;
     }
 
@@ -404,7 +400,7 @@ static void INetCliAuthLoginRequestCallback (
         s_account.billingType   = billingType;
         s_players.resize(playerCount);
         for (unsigned i = 0; i < playerCount; ++i) {
-            LogMsg(kLogDebug, L"Player %u: %S explorer: %u", playerInfoArr[i].playerInt, playerInfoArr[i].playerName.c_str(), playerInfoArr[i].explorer);
+            LogMsg(kLogDebug, "Player %{}: {} explorer: {}", playerInfoArr[i].playerInt, playerInfoArr[i].playerName, playerInfoArr[i].explorer);
             s_players[i].playerInt         = playerInfoArr[i].playerInt;
             s_players[i].explorer          = playerInfoArr[i].explorer;
             s_players[i].playerName        = playerInfoArr[i].playerName;
@@ -442,10 +438,10 @@ static void INetCliAuthCreatePlayerRequestCallback (
     const NetCliAuthPlayerInfo &    playerInfo
 ) {
     if (IS_NET_ERROR(result)) {
-        LogMsg(kLogDebug, L"Create player failed: %s", NetErrorToString(result));
+        LogMsg(kLogDebug, "Create player failed: {}", NetErrorToString(result));
     }
     else {
-        LogMsg(kLogDebug, L"Created player %S: %u", playerInfo.playerName.c_str(), playerInfo.playerInt);
+        LogMsg(kLogDebug, "Created player {}: {}", playerInfo.playerName, playerInfo.playerInt);
 
         unsigned currPlayer = s_player ? s_player->playerInt : 0;
         s_players.emplace_back(playerInfo.playerInt, playerInfo.playerName,
@@ -474,10 +470,10 @@ static void INetCliAuthDeletePlayerCallback (
     uint32_t playerInt = (uint32_t)((uintptr_t)param);
 
     if (IS_NET_ERROR(result)) {
-        LogMsg(kLogDebug, L"Delete player failed: %d %s", playerInt, NetErrorToString(result));
+        LogMsg(kLogDebug, "Delete player failed: {} {}", playerInt, NetErrorToString(result));
     }
     else {
-        LogMsg(kLogDebug, L"Player deleted: %d", playerInt);
+        LogMsg(kLogDebug, "Player deleted: {}", playerInt);
 
         uint32_t currPlayer = s_player ? s_player->playerInt : 0;
 
@@ -509,10 +505,10 @@ static void INetCliAuthChangePasswordCallback (
     void *          param
 ) {
     if (IS_NET_ERROR(result)) {
-        LogMsg(kLogDebug, L"Change password failed: %s", NetErrorToString(result));
+        LogMsg(kLogDebug, "Change password failed: {}", NetErrorToString(result));
     }
     else {
-        LogMsg(kLogDebug, L"Password changed!");
+        LogMsg(kLogDebug, "Password changed!");
     }
 
     plAccountUpdateMsg* updateMsg = new plAccountUpdateMsg(plAccountUpdateMsg::kChangePassword);
@@ -526,7 +522,7 @@ static void INetCliAuthChangePasswordCallback (
 static void INetCliAuthGetPublicAgeListCallback (
     ENetError                   result,
     void *                      param,
-    const ARRAY(NetAgeInfo) &   ages
+    std::vector<NetAgeInfo>     ages
 ) {
     NetCommParam * cp = (NetCommParam *) param;
     
@@ -534,24 +530,10 @@ static void INetCliAuthGetPublicAgeListCallback (
     msg->result     = result;
     msg->param      = cp->param;
     msg->ptype      = cp->type;
-    msg->ages.Set(ages.Ptr(), ages.Count());
+    msg->ages       = std::move(ages);
     msg->Send();
     
     delete cp;
-}
-
-//============================================================================
-static void INetAuthFileListRequestCallback (
-    ENetError                   result,
-    void *                      param,
-    const NetCliAuthFileInfo    infoArr[],
-    unsigned                    infoCount
-) {
-    plNetCommFileListMsg * msg = new plNetCommFileListMsg;
-    msg->result = result;
-    msg->param  = param;
-    msg->fileInfoArr.Set(infoArr, infoCount);
-    msg->Send();
 }
 
 //============================================================================
@@ -583,9 +565,9 @@ static void INetCliAuthAgeRequestCallback (
 
         LogMsg(
             kLogPerf,
-            L"Connecting to game server %S, ageInstId %S",
-            gameAddrStr.c_str(),
-            ageInstIdStr.c_str()
+            "Connecting to game server {}, ageInstId {}",
+            gameAddrStr,
+            ageInstIdStr
         );
 
         NetCliGameDisconnect();
@@ -614,10 +596,10 @@ static void INetCliAuthUpgradeVisitorRequestCallback (
     uint32_t playerInt = (uint32_t)((uintptr_t)param);
 
     if (IS_NET_ERROR(result)) {
-        LogMsg(kLogDebug, L"Upgrade visitor failed: %d %s", playerInt, NetErrorToString(result));
+        LogMsg(kLogDebug, "Upgrade visitor failed: {} {}", playerInt, NetErrorToString(result));
     }
     else {
-        LogMsg(kLogDebug, L"Upgrade visitor succeeded: %d", playerInt);
+        LogMsg(kLogDebug, "Upgrade visitor succeeded: {}", playerInt);
 
         for (NetCommPlayer& player : s_players) {
             if (player.playerInt == playerInt) {
@@ -737,17 +719,16 @@ void NetCommStartup () {
     s_shutdown = false;
 
     AsyncCoreInitialize();
-    LogMsg(kLogPerf, "Client: %s", plProduct::ProductString().c_str());
+    LogMsg(kLogPerf, "Client: {}", plProduct::ProductString());
 
     NetClientInitialize();
     NetClientSetErrorHandler(IPreInitNetErrorCallback);
 
     // Set startup age info
-    memset(&s_startupAge, 0, sizeof(s_startupAge));
     s_startupAge.ageDatasetName = s_iniStartupAgeName;
 
     s_startupAge.ageInstId = s_iniStartupAgeInstId;
-    StrCopy(s_startupAge.spawnPtName, "LinkInPointDefault", arrsize(s_startupAge.spawnPtName));
+    StrCopy(s_startupAge.spawnPtName, "LinkInPointDefault", std::size(s_startupAge.spawnPtName));
 }
 
 //============================================================================
@@ -1023,9 +1004,9 @@ void NetCommSetAuthTokenAndOS (
     wchar_t               os[]
 ) {
     if (authToken)
-        StrCopy(s_iniAuthToken, authToken, arrsize(s_iniAuthToken));
+        StrCopy(s_iniAuthToken, authToken, std::size(s_iniAuthToken));
     if (os)
-        StrCopy(s_iniOS, os, arrsize(s_iniOS));
+        StrCopy(s_iniOS, os, std::size(s_iniOS));
 }
 
 //============================================================================
@@ -1088,7 +1069,7 @@ void NetCommSetActivePlayer (//--> plNetCommActivePlayerMsg
             VaultPlayerInfoNode pInfo(rvn);
             pInfo.SetAgeInstUuid(kNilUuid);
             pInfo.SetOnline(false);
-            NetCliAuthVaultNodeSave(rvn, nil, nil);
+            NetCliAuthVaultNodeSave(rvn.Get(), nil, nil);
         }
 
         VaultCull(s_player->playerInt);

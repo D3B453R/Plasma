@@ -46,7 +46,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 //////////////////////////////////////////////////////////////////////
 
 #include <Python.h>
-#pragma hdrstop
 
 #include "pyVaultTextNoteNode.h"
 #include "pyVaultAgeLinkNode.h"
@@ -56,15 +55,9 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #   include "pyVault.h"
 #endif
 
-// should only be created from C++ side
-pyVaultTextNoteNode::pyVaultTextNoteNode(RelVaultNode* nfsNode)
-: pyVaultNode(nfsNode)
-{
-}
-
 //create from the Python side
 pyVaultTextNoteNode::pyVaultTextNoteNode()
-: pyVaultNode(new RelVaultNode)
+    : pyVaultNode()
 {
     fNode->SetNodeType(plVault::kNodeType_TextNote);
 }
@@ -96,7 +89,7 @@ ST::string pyVaultTextNoteNode::Note_GetTitle() const
         VaultTextNoteNode note(fNode);
         return note.GetNoteTitle();
     }
-    return ST::null;
+    return ST::string();
 }
 
 void pyVaultTextNoteNode::Note_SetText(const char * text)
@@ -122,7 +115,7 @@ ST::string pyVaultTextNoteNode::Note_GetText() const
         VaultTextNoteNode note(fNode);
         return note.GetNoteText();
     }
-    return ST::null;
+    return ST::string();
 }
 
 void pyVaultTextNoteNode::Note_SetType( int32_t type )
@@ -134,7 +127,7 @@ void pyVaultTextNoteNode::Note_SetType( int32_t type )
     textNote.SetNoteType(type);
 }
 
-int32_t pyVaultTextNoteNode::Note_GetType( void )
+int32_t pyVaultTextNoteNode::Note_GetType()
 {
     if (!fNode)
         return 0;
@@ -152,7 +145,7 @@ void pyVaultTextNoteNode::Note_SetSubType( int32_t type )
     textNote.SetNoteSubType(type);
 }
 
-int32_t pyVaultTextNoteNode::Note_GetSubType( void )
+int32_t pyVaultTextNoteNode::Note_GetSubType()
 {
     if (!fNode)
         return 0;

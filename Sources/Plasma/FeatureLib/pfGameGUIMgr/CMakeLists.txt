@@ -1,9 +1,3 @@
-include_directories(../../CoreLib)
-include_directories(../../FeatureLib)
-include_directories(../../NucleusLib)
-include_directories(../../NucleusLib/inc)
-include_directories(../../PubUtilLib)
-
 set(pfGameGUIMgr_SOURCES
     pfGameGUIMgr.cpp
     pfGUIButtonMod.cpp
@@ -63,6 +57,13 @@ set(pfGameGUIMgr_HEADERS
 )
 
 add_library(pfGameGUIMgr STATIC ${pfGameGUIMgr_SOURCES} ${pfGameGUIMgr_HEADERS})
+plasma_optimize_target(pfGameGUIMgr UNITY_BUILD)
+
+target_link_libraries(pfGameGUIMgr
+    PUBLIC
+        CoreLib
+        plClipboard
+)
 
 source_group("Source Files" FILES ${pfGameGUIMgr_SOURCES})
 source_group("Header Files" FILES ${pfGameGUIMgr_HEADERS})

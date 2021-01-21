@@ -130,6 +130,8 @@ struct NetCliAuthPlayerInfo {
     ST::string  avatarShape;
     unsigned    playerFlags;
     unsigned    explorer;
+
+    NetCliAuthPlayerInfo() : playerInt(), playerFlags(), explorer() { }
 };
 
 typedef void (*FNetCliAuthLoginRequestCallback)(
@@ -262,7 +264,7 @@ struct NetAgeInfo;
 typedef void (*FNetCliAuthGetPublicAgeListCallback)(
     ENetError                   result,
     void *                      param,
-    const ARRAY(NetAgeInfo) &   ages
+    std::vector<NetAgeInfo>     ages
 );
 void NetCliAuthGetPublicAgeList (
     const ST::string&                   ageName,

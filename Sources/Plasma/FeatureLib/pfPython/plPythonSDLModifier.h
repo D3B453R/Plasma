@@ -71,14 +71,15 @@ protected:
         bool skipLocalCheck;
         bool sendImmediate;
         ST::string hintString;
-        SDLObj() : obj(nil), size(-1), sendToClients(false) {}
-        SDLObj(PyObject* obj, int size, bool sendToClients) : obj(obj), size(size), sendToClients(sendToClients) {}
+        SDLObj() : obj(), size(-1), sendToClients(), skipLocalCheck(), sendImmediate() { }
+        SDLObj(PyObject* obj, int size, bool sendToClients)
+            : obj(obj), size(size), sendToClients(sendToClients), skipLocalCheck(), sendImmediate() { }
     };
     typedef std::map<ST::string, SDLObj> SDLMap;
     SDLMap fMap;
     plPythonFileMod* fOwner;
 
-    plPythonSDLModifier() {}
+    plPythonSDLModifier() : fOwner() { }
 
     PyObject* ISDLVarToPython(plSimpleStateVariable* var);
     PyObject* ISDLVarIdxToPython(plSimpleStateVariable* var, int type, int idx);
@@ -127,7 +128,7 @@ protected:
     plPythonSDLModifier* fRecord;
 
     pySDLModifier(plPythonSDLModifier* sdlMod);
-    pySDLModifier() {}
+    pySDLModifier() : fRecord() { }
 public:
     // required functions for PyObject interoperability
     PYTHON_CLASS_NEW_FRIEND(ptSDL);
@@ -137,7 +138,7 @@ public:
     PYTHON_CLASS_CONVERT_FROM_DEFINITION(pySDLModifier); // converts a PyObject to a pySDLModifier (throws error if not correct type)
 
     static void AddPlasmaClasses(PyObject *m);
-    static void AddPlasmaMethods(std::vector<PyMethodDef> &methods);
+    static void AddPlasmaMethods(PyObject* m);
 
     // global function to get the GrandMaster Age SDL object
     static PyObject* GetAgeSDL();

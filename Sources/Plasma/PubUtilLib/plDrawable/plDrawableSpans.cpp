@@ -1122,7 +1122,7 @@ bool    plDrawableSpans::ITestMatForSpecularity( hsGMaterial *mat )
 
     for( i = 0; i < mat->GetNumLayers(); i++ )
     {
-        if( mat->GetLayer( i )->GetShadeFlags() && hsGMatState::kShadeSpecular )
+        if( mat->GetLayer( i )->GetShadeFlags() & hsGMatState::kShadeSpecular )
             return true;
     }
 
@@ -1441,7 +1441,7 @@ void    plDrawableSpans::SetCriteria( const plDrawableCriteria& crit )
 //  optimized version may be plugged into the Optimize function at a later
 //  date if this one doesn't perform enough (it does so far).
 
-void    plDrawableSpans::IQuickSpaceTree( void ) const
+void    plDrawableSpans::IQuickSpaceTree() const
 {
     int     i;
 
@@ -1990,7 +1990,7 @@ void plDrawableSpans::SortVisibleSpans(const hsTArray<int16_t>& visList, plPipel
 #endif // MF_CHUNKSORT
 }
 
-struct buffTriCmpBackToFront : public std::binary_function<plGBufferTriangle, plGBufferTriangle, bool>
+struct buffTriCmpBackToFront
 {
     hsPoint3 fViewPos;
     buffTriCmpBackToFront(const hsPoint3& p) : fViewPos(p) {}
@@ -2001,7 +2001,7 @@ struct buffTriCmpBackToFront : public std::binary_function<plGBufferTriangle, pl
     }
 };
 
-struct buffTriCmpFrontToBack : public std::binary_function<plGBufferTriangle, plGBufferTriangle, bool>
+struct buffTriCmpFrontToBack
 {
     hsPoint3 fViewPos;
     buffTriCmpFrontToBack(const hsPoint3& p) : fViewPos(p) {}
@@ -2830,7 +2830,7 @@ void    plDrawableSpans::RemoveDISpans( uint32_t index )
 
 //// IRebuildSpanArray ///////////////////////////////////////////////////////
 
-void    plDrawableSpans::IRebuildSpanArray( void )
+void    plDrawableSpans::IRebuildSpanArray()
 {
     uint32_t      j, i;
     plIcicle    *icicle = nil;
@@ -2920,7 +2920,7 @@ void    plDrawableSpans::ICleanupMatrices()
 //// IRemoveGarbage //////////////////////////////////////////////////////////
 //  Cleans out all the unused spans. Oh, joy.
 
-void    plDrawableSpans::IRemoveGarbage( void )
+void    plDrawableSpans::IRemoveGarbage()
 {
     int     groupIdx, ibIdx, i, j, k, count, offset;
 
@@ -3358,7 +3358,7 @@ uint8_t   plDrawableSpans::IFindBufferGroup(uint8_t vtxFormat, uint32_t numVerts
 //// GetParticleSpanVector ///////////////////////////////////////////////////
 //  Get a bitVector of the spans that are particle spans
 
-hsBitVector const   &plDrawableSpans::GetParticleSpanVector( void ) const
+hsBitVector const   &plDrawableSpans::GetParticleSpanVector() const
 {
     return fParticleSpanVector;
 }
@@ -3366,7 +3366,7 @@ hsBitVector const   &plDrawableSpans::GetParticleSpanVector( void ) const
 //// GetBlendingSpanVector ///////////////////////////////////////////////////
 //  Get a bitVector of the spans that are blending (i.e. numMatrices > 0)
 
-hsBitVector const   &plDrawableSpans::GetBlendingSpanVector( void ) const
+hsBitVector const   &plDrawableSpans::GetBlendingSpanVector() const
 {
     /// See the plRenderMsg handler for why we do this
     return fFakeBlendingSpanVector;
@@ -3383,7 +3383,7 @@ void    plDrawableSpans::SetBlendingSpanVectorBit( uint32_t bitNumber, bool on )
 
 //// IBuildVectors ///////////////////////////////////////////////////////////
 
-void    plDrawableSpans::IBuildVectors( void )
+void    plDrawableSpans::IBuildVectors()
 {
     int     i;
     bool    needRenderMsg = false;
@@ -3707,7 +3707,6 @@ uint32_t  plDrawableSpans::RefreshDISpans( uint32_t index )
 {
     int             i;
     uint32_t          spanIdx;
-    plSpan          *span;
     hsBounds3Ext    bounds;
     plDISpanIndex   *spanLookup;
 
@@ -3729,7 +3728,6 @@ uint32_t  plDrawableSpans::RefreshDISpans( uint32_t index )
         hsAssert( ( spanIdx & kSpanTypeMask ) == kSpanTypeIcicle, "Mismatch in span formats" );
         plIcicle *icicle = &fIcicles[ spanIdx & kSpanIDMask ];
         IUpdateIcicleFromGeoSpan( geoSpan, icicle );
-        span = (plSpan *)icicle;
         if( fProps & kPropSortFaces )
         {
             // Should add sort data too...
@@ -3755,7 +3753,6 @@ uint32_t  plDrawableSpans::RefreshDISpans( uint32_t index )
 uint32_t  plDrawableSpans::RefreshSpan( uint32_t index )
 {
     uint32_t          spanIdx;
-    plSpan          *span;
     hsBounds3Ext    bounds;
 
 //  hsAssert( fProps & kPropVolatile, "Trying to add spans on a non-volatile drawable" );
@@ -3771,7 +3768,6 @@ uint32_t  plDrawableSpans::RefreshSpan( uint32_t index )
     hsAssert( ( spanIdx & kSpanTypeMask ) == kSpanTypeIcicle, "Mismatch in span formats" );
     plIcicle *icicle = &fIcicles[ spanIdx & kSpanIDMask ];
     IUpdateIcicleFromGeoSpan( geoSpan, icicle );
-    span = (plSpan *)icicle;
     if( fProps & kPropSortFaces )
     {
         // Should add sort data too...

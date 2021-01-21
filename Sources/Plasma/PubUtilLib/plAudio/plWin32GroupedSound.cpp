@@ -69,16 +69,6 @@ plProfile_Extern( StaticSwizzleTime );
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-plWin32GroupedSound::plWin32GroupedSound()
-{
-    fCurrentSound = 0;
-}
-
-plWin32GroupedSound::~plWin32GroupedSound()
-{
-    DeActivate();
-}
-
 void    plWin32GroupedSound::SetPositionArray( uint16_t numSounds, uint32_t *posArray, float *volumeArray )
 {
     uint16_t  i;
@@ -242,7 +232,7 @@ bool    plWin32GroupedSound::LoadSound( bool is3D )
     if( GetKey() != nil && GetKeyName().contains( "Footstep" ) )
         ;
     else
-        plStatusLog::AddLineS( "audioTimes.log", "%s (%s)", str.c_str(), GetKey() ? GetKeyName().c_str() : "unkeyed" );
+        plStatusLog::AddLineSF( "audioTimes.log", "{} ({})", str, GetKey() ? GetKeyName() : ST_LITERAL("unkeyed") );
 
     fTotalBytes = bufferSize;
 
@@ -285,12 +275,12 @@ uint32_t      plWin32GroupedSound::IGetSoundbyteLength( int16_t soundIndex )
 //// IGetDataPointer/Length //////////////////////////////////////////////////
 // Abstracting a few things here for the incidentalMgr
 
-void    *plWin32GroupedSound::IGetDataPointer( void ) const
+void    *plWin32GroupedSound::IGetDataPointer() const
 {
     return ( fDataBufferKey->ObjectIsLoaded() ) ? (void *)( (uint8_t *)((plSoundBuffer *)fDataBufferKey->ObjectIsLoaded())->GetData() + fStartPositions[ fCurrentSound ] ) : nil;
 }
 
-uint32_t  plWin32GroupedSound::IGetDataLength( void ) const
+uint32_t  plWin32GroupedSound::IGetDataLength() const
 {
     return ( fDataBufferKey->ObjectIsLoaded() ) ? fCurrentSoundLength : 0;
 }
@@ -374,7 +364,7 @@ void    plWin32GroupedSound::IFillCurrentSound( int16_t newCurrent /*= -1*/ )
     plProfile_EndTiming( StaticSndShoveTime );
 }
 
-void plWin32GroupedSound::IDerivedActuallyPlay( void )
+void plWin32GroupedSound::IDerivedActuallyPlay()
 {
     // Ensure there's a stop notify for us
     if( !fReallyPlaying )

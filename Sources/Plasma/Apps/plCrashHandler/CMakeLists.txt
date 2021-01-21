@@ -1,7 +1,3 @@
-include_directories("../../CoreLib")
-include_directories("../../NucleusLib")
-include_directories("../../FeatureLib")
-
 set(plCrashHandler_SOURCES
     main.cpp
 )
@@ -23,3 +19,8 @@ endif()
 if(WIN32)
     target_link_libraries(plCrashHandler Dbghelp)
 endif(WIN32)
+
+install(
+    TARGETS plCrashHandler
+    DESTINATION client
+)

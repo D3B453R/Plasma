@@ -44,7 +44,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "hsTemplates.h"
 #include "hsWindows.h"
 #include <Max.h>
-#pragma hdrstop
 
 #include "plRenderInstance.h"
 
@@ -58,7 +57,7 @@ public:
     plNilView() 
     {       
         projType = 1;
-        fov = M_PI * 0.25f;
+        fov = hsConstants::pi<float> * 0.25f;
         pixelSize = 1.f;
         affineTM.IdentityMatrix();
         worldToView.IdentityMatrix();

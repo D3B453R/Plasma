@@ -42,7 +42,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <Python.h>
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "pfGameGUIMgr/pfGUIListBoxMod.h"
 #include "pfGameGUIMgr/pfGUIListElement.h"
@@ -81,12 +80,12 @@ class pfColorListElement : public pfGUIListText
             if ( string1 )
             {
                 fString1 = hsStringToWString(string1);
-                fText = ST::null;
+                fText = ST::string();
             }
             else
             {
                 fString1 = nil;
-                fText = ST::null;
+                fText = ST::string();
             }
             fTextColor1 = color1;
             if (string2)
@@ -105,12 +104,12 @@ class pfColorListElement : public pfGUIListText
             {
                 fString1 = new wchar_t[wcslen(string1)+1];
                 wcscpy(fString1,string1);
-                fText = ST::null;
+                fText = ST::string();
             }
             else
             {
                 fString1 = nil;
-                fText = ST::null;
+                fText = ST::string();
             }
             fTextColor1 = color1;
             if (string2)
@@ -132,7 +131,7 @@ class pfColorListElement : public pfGUIListText
             {
                 delete [] fString1;
                 fString1 = nil;
-                fText = ST::null;
+                fText = ST::string();
             }
             if ( fString2 )
                 delete [] fString2;
@@ -248,7 +247,7 @@ class pfColorListElement : public pfGUIListText
             {
                 size_t length = wcslen( fString1 ) + wcslen( fString2 ) + 3;
                 thestring = new wchar_t[ length ];
-                hsSnwprintf( thestring, length, L"%s %s", fString1, fString2 );
+                swprintf( thestring, length, L"%s %s", fString1, fString2 );
                 wemade_string = true;
             }
             else if (fString1)
@@ -435,7 +434,7 @@ bool pyGUIControlListBox::IsGUIControlListBox(pyKey& gckey)
     return false;
 }
 
-int32_t pyGUIControlListBox::GetSelection( void )
+int32_t pyGUIControlListBox::GetSelection()
 {
     if ( fGCkey )
     {
@@ -458,7 +457,7 @@ void pyGUIControlListBox::SetSelection( int32_t item )
     }
 }
 
-void pyGUIControlListBox::Refresh( void )
+void pyGUIControlListBox::Refresh()
 {
     if ( fGCkey )
     {
@@ -480,7 +479,7 @@ void pyGUIControlListBox::RemoveElement( uint16_t index )
     }
 }
 
-void pyGUIControlListBox::ClearAllElements( void )
+void pyGUIControlListBox::ClearAllElements()
 {
     if ( fGCkey )
     {
@@ -491,7 +490,7 @@ void pyGUIControlListBox::ClearAllElements( void )
     }
 }
 
-uint16_t pyGUIControlListBox::GetNumElements( void )
+uint16_t pyGUIControlListBox::GetNumElements()
 {
     if ( fGCkey )
     {
@@ -764,7 +763,7 @@ void    pyGUIControlListBox::SetSwatchEdgeOffset( uint32_t set )
 
 
 
-void pyGUIControlListBox::ScrollToBegin( void )
+void pyGUIControlListBox::ScrollToBegin()
 {
     if ( fGCkey )
     {
@@ -776,7 +775,7 @@ void pyGUIControlListBox::ScrollToBegin( void )
 }
 
 
-void pyGUIControlListBox::ScrollToEnd( void )
+void pyGUIControlListBox::ScrollToEnd()
 {
     if ( fGCkey )
     {
@@ -800,7 +799,7 @@ void pyGUIControlListBox::SetScrollPos( int32_t pos )
 }
 
 
-int32_t pyGUIControlListBox::GetScrollPos( void )
+int32_t pyGUIControlListBox::GetScrollPos()
 {
     if ( fGCkey )
     {
@@ -813,7 +812,7 @@ int32_t pyGUIControlListBox::GetScrollPos( void )
 }
 
 
-int32_t pyGUIControlListBox::GetScrollRange( void )
+int32_t pyGUIControlListBox::GetScrollRange()
 {
     if ( fGCkey )
     {
@@ -826,7 +825,7 @@ int32_t pyGUIControlListBox::GetScrollRange( void )
 }
 
 
-void pyGUIControlListBox::LockList( void )
+void pyGUIControlListBox::LockList()
 {
     if ( fGCkey )
     {
@@ -838,7 +837,7 @@ void pyGUIControlListBox::LockList( void )
 }
 
 
-void pyGUIControlListBox::UnlockList( void )
+void pyGUIControlListBox::UnlockList()
 {
     if ( fGCkey )
     {
@@ -849,7 +848,7 @@ void pyGUIControlListBox::UnlockList( void )
     }
 }
 
-void pyGUIControlListBox::Clickable( void )
+void pyGUIControlListBox::Clickable()
 {
     if ( fGCkey )
     {
@@ -860,7 +859,7 @@ void pyGUIControlListBox::Clickable( void )
     }
 }
 
-void pyGUIControlListBox::Unclickable( void )
+void pyGUIControlListBox::Unclickable()
 {
     if ( fGCkey )
     {
@@ -891,7 +890,7 @@ void    pyGUIControlListBox::AddBranch( const ST::string &name, bool initiallyOp
     }
 }
 
-void    pyGUIControlListBox::CloseBranch( void )
+void    pyGUIControlListBox::CloseBranch()
 {
     if ( fGCkey )
     {
@@ -945,7 +944,7 @@ PyObject*   pyGUIControlListBox::GetSelectionList()
                 pfGUIListElement* element = plbmod->GetElement(i);
                 if ( element->IsSelected() )
                 {
-                    PyObject* element = PyInt_FromLong(i);
+                    PyObject* element = PyLong_FromLong(i);
                     PyList_Append(pySL, element);
                     Py_XDECREF(element);
                 }
@@ -978,8 +977,8 @@ PyObject*   pyGUIControlListBox::GetBranchList()
                         pfGUIListTreeRoot* elroot = (pfGUIListTreeRoot*)element;
                         uint16_t showing = elroot->IsShowingChildren();
                         PyObject* element = PyTuple_New(2);
-                        PyTuple_SetItem(element, 0, PyInt_FromLong(i));
-                        PyTuple_SetItem(element, 1, PyInt_FromLong(showing));
+                        PyTuple_SetItem(element, 0, PyLong_FromLong(i));
+                        PyTuple_SetItem(element, 1, PyLong_FromLong(showing));
                         PyList_Append(pySL, element);
                         Py_XDECREF(element);
                     }

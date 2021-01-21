@@ -91,7 +91,7 @@ pfGUICtrlGenerator::~pfGUICtrlGenerator()
     Shutdown();
 }
 
-void    pfGUICtrlGenerator::Shutdown( void )
+void    pfGUICtrlGenerator::Shutdown()
 {
     int i;
     
@@ -113,7 +113,7 @@ void    pfGUICtrlGenerator::Shutdown( void )
 
 //// Instance ////////////////////////////////////////////////////////////////
 
-pfGUICtrlGenerator  &pfGUICtrlGenerator::Instance( void )
+pfGUICtrlGenerator  &pfGUICtrlGenerator::Instance()
 {
     static pfGUICtrlGenerator       myInstance;
 
@@ -277,8 +277,6 @@ pfGUIButtonMod  *pfGUICtrlGenerator::GenerateRectButton( const char *title, floa
                                     const char *consoleCmd, hsColorRGBA &color, hsColorRGBA &textColor )
 {
     hsGMaterial     *material;
-    hsMatrix44      l2w, w2l;
-    hsVector3       vec;
     pfGUIDialogMod  *dlgToAddTo = IGetDialog();
 
 
@@ -308,7 +306,6 @@ pfGUIButtonMod  *pfGUICtrlGenerator::CreateRectButton( pfGUIDialogMod *parent, c
 {
     plDrawableSpans *myDraw;
     hsMatrix44      l2w, w2l;
-    hsVector3       vec;
 
 
     // Translate x and y from (0:1) to (-10:10)
@@ -320,8 +317,10 @@ pfGUIButtonMod  *pfGUICtrlGenerator::CreateRectButton( pfGUIDialogMod *parent, c
 
     // Create drawable that is rectangular
     l2w.Reset();
-    hsPoint3 corner( x, -y, -100 );
-    hsVector3 xVec( width, 0, 0 ), yVec( 0, height, 0 ), zVec( 0, 0, 0.1f );
+    hsPoint3 corner(x, -y, -100.f);
+    hsVector3 xVec(width, 0.f, 0.f);
+    hsVector3 yVec(0.f, height, 0.f);
+    hsVector3 zVec(0.f, 0.f, 0.1f);
 
     myDraw = plDrawableGenerator::GeneratePlanarDrawable( corner, xVec, yVec, material, l2w );
 
@@ -387,7 +386,6 @@ pfGUIDragBarCtrl *pfGUICtrlGenerator::GenerateDragBar( float x, float y, float w
     hsGMaterial     *material;
     plDrawableSpans *myDraw;
     hsMatrix44      l2w, w2l;
-    hsVector3       vec;
     pfGUIDialogMod  *dlgToAddTo = IGetDialog();
 
 
@@ -404,13 +402,15 @@ pfGUIDragBarCtrl *pfGUICtrlGenerator::GenerateDragBar( float x, float y, float w
     // Create drawable that is rectangular
     l2w.Reset();
 
-    hsPoint3 corner( x, -y, -100 );//x - width / 2.f, -y - height / 2.f, -100 );
-    hsVector3 xVec( width, 0, 0 ), yVec( 0, height, 0 ), zVec( 0, 0, 0.1f );
+    hsPoint3 corner(x, -y, -100.f);//x - width / 2.f, -y - height / 2.f, -100 );
+    hsVector3 xVec(width, 0.f, 0.f);
+    hsVector3 yVec(0.f, height, 0.f);
+    hsVector3 zVec(0.f, 0.f, 0.1f);
 
     myDraw = plDrawableGenerator::GenerateBoxDrawable( corner, xVec, yVec, zVec,/*width, height, 0.01f, */material, l2w );
 
     // Drag bars are special--everything else gets attached to them and they get attached to the dialog
-    vec.Set( x, -y, -100 );
+    hsVector3 vec(x, -y, -100.f);
     l2w.MakeTranslateMat( &vec );
     l2w.GetInverse( &w2l );
 
@@ -435,7 +435,7 @@ pfGUIDragBarCtrl *pfGUICtrlGenerator::GenerateDragBar( float x, float y, float w
 
 //// IGetDialog //////////////////////////////////////////////////////////////
 
-pfGUIDialogMod  *pfGUICtrlGenerator::IGetDialog( void )
+pfGUIDialogMod  *pfGUICtrlGenerator::IGetDialog()
 {
     if( fDynDialogs.GetCount() == 0 )
         IGenerateDialog( "GUIBaseDynamicDlg", 20.f );
@@ -464,8 +464,8 @@ pfGUIDialogMod  *pfGUICtrlGenerator::IGenerateDialog( const char *name, float sc
     fovX = atan( scrnWidth / ( 2.f * 100.f ) ) * 2.f;
     fovY = fovX;// * 3.f / 4.f;
 
-    renderMod->SetFovX( fovX * 180.f / M_PI );
-    renderMod->SetFovY( fovY * 180.f / M_PI );
+    renderMod->SetFovX(hsRadiansToDegrees(fovX));
+    renderMod->SetFovY(hsRadiansToDegrees(fovY));
 
     // Create the sceneNode to go with it
     node = new plSceneNode;

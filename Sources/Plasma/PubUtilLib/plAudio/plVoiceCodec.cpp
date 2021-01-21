@@ -57,7 +57,7 @@ static const int kOpusDecoderSampleRate = 48000;
 *
 ***/
 
-#ifdef PLASMA_USE_SPEEX
+#ifdef USE_SPEEX
 
 #include <speex/speex.h>
 #include <speex/speex_bits.h>
@@ -71,20 +71,20 @@ public:
     bool Init();
     bool Shutdown();
 
-    int GetSampleRate() const HS_OVERRIDE { return fSampleRate; }
+    int GetSampleRate() const override { return fSampleRate; }
 
-    bool Encode(const short* data, int numFrames, int& packedLength, void* out, int outsz) HS_OVERRIDE;
-    bool Decode(const void* data, int size, int numFrames, int& numOutputBytes, short* out) HS_OVERRIDE;
+    bool Encode(const short* data, int numFrames, int& packedLength, void* out, int outsz) override;
+    bool Decode(const void* data, int size, int numFrames, int& numOutputBytes, short* out) override;
 
-    int GetFrameSize() const HS_OVERRIDE { return fFrameSize; }
-    void VBR(bool b) HS_OVERRIDE;
-    void SetABR(uint32_t abr) HS_OVERRIDE;
-    void SetQuality(uint32_t quality) HS_OVERRIDE;
-    bool IsUsingVBR() const HS_OVERRIDE { return fVBR; }
-    int GetQuality() const HS_OVERRIDE { return fQuality; }
-    void SetComplexity(uint8_t c) HS_OVERRIDE;
-    uint8_t GetVoiceFlag() const HS_OVERRIDE;
-    bool SetSampleRate(uint32_t rate) HS_OVERRIDE;
+    int GetFrameSize() const override { return fFrameSize; }
+    void VBR(bool b) override;
+    void SetABR(uint32_t abr) override;
+    void SetQuality(uint32_t quality) override;
+    bool IsUsingVBR() const override { return fVBR; }
+    int GetQuality() const override { return fQuality; }
+    void SetComplexity(uint8_t c) override;
+    uint8_t GetVoiceFlag() const override;
+    bool SetSampleRate(uint32_t rate) override;
 
 private:
     std::unique_ptr<SpeexBits>  fBits;                  // main speex structure
@@ -305,7 +305,7 @@ plVoiceEncoder* plVoiceEncoder::GetSpeex()
     return nullptr;
 }
 
-#endif // PLASMA_USE_SPEEX
+#endif // USE_SPEEX
 
 /*****************************************************************************
 *
@@ -313,7 +313,7 @@ plVoiceEncoder* plVoiceEncoder::GetSpeex()
 *
 ***/
 
-#ifdef PLASMA_USE_OPUS
+#ifdef USE_OPUS
 
 #include <opus.h>
 
@@ -325,10 +325,10 @@ public:
     plOpusDecoder();
     ~plOpusDecoder();
 
-    int GetSampleRate() const HS_OVERRIDE;
-    int GetFrameSize() const HS_OVERRIDE;
+    int GetSampleRate() const override;
+    int GetFrameSize() const override;
 
-    bool Decode(const void* data, int size, int numFrames, int& numOutputBytes, short* out) HS_OVERRIDE;
+    bool Decode(const void* data, int size, int numFrames, int& numOutputBytes, short* out) override;
 };
 
 plOpusDecoder::plOpusDecoder()
@@ -394,19 +394,19 @@ public:
     plOpusEncoder();
     ~plOpusEncoder();
 
-    int GetSampleRate() const HS_OVERRIDE;
-    int GetFrameSize() const HS_OVERRIDE;
+    int GetSampleRate() const override;
+    int GetFrameSize() const override;
 
-    bool Encode(const short* data, int numFrames, int& packedLength, void* out, int outsz) HS_OVERRIDE;
+    bool Encode(const short* data, int numFrames, int& packedLength, void* out, int outsz) override;
 
-    uint8_t GetVoiceFlag() const HS_OVERRIDE;
-    void VBR(bool b) HS_OVERRIDE;
-    void SetABR(uint32_t abr) HS_OVERRIDE;
-    void SetQuality(uint32_t quality) HS_OVERRIDE;
-    bool IsUsingVBR() const HS_OVERRIDE;
-    int GetQuality() const HS_OVERRIDE;
-    void SetComplexity(uint8_t c) HS_OVERRIDE;
-    bool SetSampleRate(uint32_t rate) HS_OVERRIDE;
+    uint8_t GetVoiceFlag() const override;
+    void VBR(bool b) override;
+    void SetABR(uint32_t abr) override;
+    void SetQuality(uint32_t quality) override;
+    bool IsUsingVBR() const override;
+    int GetQuality() const override;
+    void SetComplexity(uint8_t c) override;
+    bool SetSampleRate(uint32_t rate) override;
 };
 
 plOpusEncoder::plOpusEncoder()
@@ -516,4 +516,4 @@ plVoiceEncoder* plVoiceEncoder::GetOpus()
     return nullptr;
 }
 
-#endif  // PLASMA_USE_OPUS
+#endif  // USE_OPUS

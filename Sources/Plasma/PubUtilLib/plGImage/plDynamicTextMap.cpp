@@ -77,8 +77,8 @@ plProfile_Extern(MemMipmaps);
 
 plDynamicTextMap::plDynamicTextMap()
     : fVisWidth(0), fVisHeight(0), fHasAlpha(false), fPremultipliedAlpha(false), fJustify(kLeftJustify),
-      fInitBuffer(nullptr), fFontSize(0), fFontFlags(0),
-      fFontAntiAliasRGB(false), fFontBlockRGB(false), fHasCreateBeenCalled(false)
+      fInitBuffer(), fFontSize(), fFontFlags(), fShadowed(), fLineSpacing(),
+      fCurrFont(), fFontAntiAliasRGB(), fFontBlockRGB(), fHasCreateBeenCalled()
 {
     fFontColor.Set(0, 0, 0, 1);
 }
@@ -152,7 +152,7 @@ void    plDynamicTextMap::Create( uint32_t width, uint32_t height, bool hasAlpha
 
 //// Reset ////////////////////////////////////////////////////////////////////
 
-void    plDynamicTextMap::Reset( void )
+void    plDynamicTextMap::Reset()
 {
     IDestroyOSSurface();
 
@@ -164,7 +164,7 @@ void    plDynamicTextMap::Reset( void )
     delete [] fInitBuffer;
     fInitBuffer = nil;
 
-    fFontFace = ST::null;
+    fFontFace = ST::string();
 
     // Destroy the old texture ref, since we're no longer using it
     SetDeviceRef( nil );
@@ -174,7 +174,7 @@ void    plDynamicTextMap::Reset( void )
 //// OS-Specific Functions ////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-bool        plDynamicTextMap::IIsValid( void )
+bool        plDynamicTextMap::IIsValid()
 {
     if( GetImage() == nil && fHasCreateBeenCalled )
     {
@@ -235,7 +235,7 @@ uint32_t* plDynamicTextMap::IAllocateOSSurface( uint16_t width, uint16_t height 
 //// IDestroyOSSurface ////////////////////////////////////////////////////////
 //  Opposite of allocate. DUH!
 
-void    plDynamicTextMap::IDestroyOSSurface( void )
+void    plDynamicTextMap::IDestroyOSSurface()
 {
 #ifdef MEMORY_LEAK_TRACER
     if( fImage != nil )
@@ -361,7 +361,6 @@ void    plDynamicTextMap::IClearFromBuffer( uint32_t *clearBuffer )
 {
     int         y;
     uint32_t      *data = (uint32_t *)fImage, *srcData = clearBuffer;
-    uint8_t       *destAlpha = nil;
 
 
     if( !IIsValid() )
@@ -772,7 +771,7 @@ void    plDynamicTextMap::DrawClippedImage( uint16_t x, uint16_t y, plMipmap *im
 
 //// FlushToHost //////////////////////////////////////////////////////////////
 
-void    plDynamicTextMap::FlushToHost( void )
+void    plDynamicTextMap::FlushToHost()
 {
     if( !IIsValid() )
         return;
@@ -787,13 +786,11 @@ void    plDynamicTextMap::FlushToHost( void )
 //  you want to be able to apply a layer texture transform that will compensate. This
 //  function will give you that transform. Just feed it into plLayer->SetTransform().
 
-hsMatrix44  plDynamicTextMap::GetLayerTransform( void )
+hsMatrix44  plDynamicTextMap::GetLayerTransform()
 {
     hsMatrix44  xform;
-    hsVector3   scale;
-
-    scale.Set( (float)GetVisibleWidth() / (float)GetWidth(), 
-               (float)GetVisibleHeight() / (float)GetHeight(), 1.f );
+    hsVector3   scale((float)GetVisibleWidth() / (float)GetWidth(),
+                      (float)GetVisibleHeight() / (float)GetHeight(), 1.f);
 
     xform.MakeScaleMat( &scale );
     return xform;

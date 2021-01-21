@@ -132,7 +132,7 @@ protected:
     ST::string  fAgeName;
 
 public:
-    plKey   GetFoundKey( void ) const { return fFoundKey; }
+    plKey   GetFoundKey() const { return fFoundKey; }
 
     plKeyFinderIter( uint16_t classType, const ST::string &obName, bool substr )
             : fFoundKey( nil ), fClassType( classType ), fObjName( obName ), fSubstr( substr ) { }
@@ -263,12 +263,12 @@ void plKeyFinder::IGetNames(std::vector<ST::string>& names, const ST::string& se
 
 void plKeyFinder::GetResponderNames(std::vector<ST::string>& names)
 {
-    IGetNames(names, ST::null, CLASS_INDEX_SCOPED(plResponderModifier));
+    IGetNames(names, ST::string(), CLASS_INDEX_SCOPED(plResponderModifier));
 }
 
 void plKeyFinder::GetActivatorNames(std::vector<ST::string>& names)
 {
-    IGetNames(names, ST::null, CLASS_INDEX_SCOPED(plLogicModifier));
+    IGetNames(names, ST::string(), CLASS_INDEX_SCOPED(plLogicModifier));
 }
 
 class plKeyFinderIterator : public plRegistryKeyIterator, public plRegistryPageIterator

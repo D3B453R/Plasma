@@ -102,10 +102,10 @@ class plDXGeneralSettings
         IDirect3DPixelShader9           *fCurrPixelShader;
         DWORD                           fCurrFVFFormat;
 
-        HRESULT                 fDXError;
+        hsCOMError              fDXError;
         char                    fErrorStr[ 256 ];
 
-        void    Reset( void );
+        void    Reset();
 };
 
 //// Fog Settings /////////////////////////////////////////////////////////////
@@ -123,7 +123,7 @@ class plDXFogSettings
         float               fDensity;
         hsColorRGBA         fColor;
 
-        void    Reset( void )
+        void    Reset()
         {
             fEnvPtr = nil;
             fMode = D3DFOG_NONE;
@@ -159,14 +159,17 @@ class plDXLightSettings
         uint32_t                          fNextShadowLight;
         hsTArray<plDXLightRef*>     fShadowLights;
 
-        plDXLightSettings();
+        plDXLightSettings()
+            : fActiveList(), fRefList(), fPipeline(),
+              fNextIndex(), fLastIndex(), fTime(), fNextShadowLight()
+        { }
 
         // Sets member variables to initial states. Does NOT release anything.
         void    Reset( plDXPipeline *pipe );
         // Releases/deletes anything associated with these settings
-        void    Release( void );
+        void    Release();
         // Reserve a D3D light index
-        uint32_t  ReserveD3DIndex( void );
+        uint32_t  ReserveD3DIndex();
         // Release a reserved D3D light index
         void    ReleaseD3DIndex( uint32_t idx );
 };
@@ -184,7 +187,7 @@ class plDXStencilSettings
         uint32_t  fMask;
         uint32_t  fWriteMask;
 
-        void    Reset( void )
+        void    Reset()
         {
             fEnabled = false;
             fCmpFunc = 0;

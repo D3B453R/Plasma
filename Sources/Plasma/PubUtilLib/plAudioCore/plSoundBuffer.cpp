@@ -159,16 +159,19 @@ void plSoundBuffer::Shutdown()
 
 //// Constructor/Destructor //////////////////////////////////////////////////
 
-plSoundBuffer::plSoundBuffer() 
-{   
-    IInitBuffer();
-}
+plSoundBuffer::plSoundBuffer()
+    : fAsyncLoadLength(), fStreamType(plAudioFileReader::StreamType::kStreamRAM),
+      fError(), fValid(), fFileName(), fData(), fDataLength(),
+      fFlags(), fDataRead(), fReader(), fLoaded(), fLoading(),
+      fHeader()
+{ }
 
-plSoundBuffer::plSoundBuffer( const plFileName &fileName, uint32_t flags )
+plSoundBuffer::plSoundBuffer(const plFileName &fileName, uint32_t flags)
+    : fAsyncLoadLength(), fStreamType(plAudioFileReader::StreamType::kStreamRAM),
+      fError(), fValid(), fFileName(fileName), fData(), fDataLength(),
+      fFlags(flags), fDataRead(), fReader(), fLoaded(), fLoading(),
+      fHeader()
 {
-    IInitBuffer();
-    SetFileName( fileName );
-    fFlags = flags;
     fValid = IGrabHeaderInfo();
 }
 
@@ -187,29 +190,9 @@ plSoundBuffer::~plSoundBuffer()
     UnLoad();
 }
 
-void plSoundBuffer::IInitBuffer()
-{
-    fError = false;
-    fValid = false;
-    fFileName = "";
-    fData = nil;
-    fDataLength = 0;
-    fFlags = 0;
-    fDataRead = 0;
-    fReader = nil;
-    fLoaded = 0;
-    fLoading = false;
-    fHeader.fFormatTag = 0;
-    fHeader.fNumChannels = 0;
-    fHeader.fNumSamplesPerSec = 0;
-    fHeader.fAvgBytesPerSec = 0;
-    fHeader.fBlockAlign = 0;
-    fHeader.fBitsPerSample = 0;
-}
-
 //// GetDataLengthInSecs /////////////////////////////////////////////////////
 
-float    plSoundBuffer::GetDataLengthInSecs( void ) const
+float    plSoundBuffer::GetDataLengthInSecs() const
 {
     return (float)fDataLength / (float)fHeader.fAvgBytesPerSec;
 }
@@ -299,7 +282,7 @@ void    plSoundBuffer::SetFileName( const plFileName &name )
 //// GetReaderSelect /////////////////////////////////////////////////////////
 //  Translates our flags into the ChannelSelect enum for plAudioFileReader
 
-plAudioCore::ChannelSelect  plSoundBuffer::GetReaderSelect( void ) const
+plAudioCore::ChannelSelect  plSoundBuffer::GetReaderSelect() const
 {
     if( fFlags & kOnlyLeftChannel )
         return plAudioCore::kLeft;
@@ -378,10 +361,8 @@ plSoundBuffer::ELoadReturnVal plSoundBuffer::AsyncLoad(plAudioFileReader::Stream
 
 //// ForceNonInternal ////////////////////////////////////////////////////////
 // destroys loaded, and frees data
-void    plSoundBuffer::UnLoad( void )
+void    plSoundBuffer::UnLoad()
 {
-    if(fLoaded)
-        int i = 0;
     if(fLoading) 
         return;
 
@@ -490,7 +471,7 @@ plSoundBuffer::ELoadReturnVal plSoundBuffer::EnsureInternal()
 }
 
 //// IGrabHeaderInfo /////////////////////////////////////////////////////////
-bool    plSoundBuffer::IGrabHeaderInfo( void )
+bool    plSoundBuffer::IGrabHeaderInfo()
 {
     if (fFileName.IsValid())
     {

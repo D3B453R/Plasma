@@ -39,8 +39,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
       Mead, WA   99021
 
 *==LICENSE==*/
-#pragma warning(disable: 4503 4786)
-
 #include "plAvatarMgr.h"
 
 // local
@@ -536,8 +534,6 @@ void plAvatarMgr::ISendDeferredInit(plKey avatarSOKey)
     if(armature)
     {
         DeferredInits::iterator i = fDeferredInits.find(avatarSOKey);
-        bool found = (i != fDeferredInits.end());
-
         if(i != fDeferredInits.end())
         {
             plMessage * initMsg = (*i).second;
@@ -954,15 +950,14 @@ void plAvatarMgr::PointToDniCoordinate(hsPoint3 pt, plDniCoordinateInfo* ret)
                 float dotView = retVec * zeroVec;
                 float dotRight = retVec * zeroRight;
 
-                float deg = acosf(dotView);
-                deg*=(180/3.141592);
+                float deg = hsRadiansToDegrees(acosf(dotView));
                 // account for being > 180
                 if (dotRight < 0.0f) 
                 {
                     deg = 360.f - deg;
                 }
                 // convert it to dni radians (torans)
-                deg*=173.61;
+                deg *= 173.61f;
                 ret->SetTorans((int)deg);
             }
             break;

@@ -53,8 +53,11 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 class plMessage;
 class plSoftVolume;
+
 #ifdef EAX_SDK_AVAILABLE
 typedef struct _EAXREVERBPROPERTIES EAXREVERBPROPERTIES;
+#else
+#include "plEAXStructures.h"
 #endif
 
 class plEAXListenerMod : public plSingleModifier
@@ -75,9 +78,9 @@ public:
     virtual bool    MsgReceive( plMessage* pMsg );
     virtual void    Read( hsStream* s, hsResMgr* mgr );
     virtual void    Write( hsStream* s, hsResMgr* mgr );
-    float           GetStrength( void );
+    float           GetStrength();
 
-    EAXREVERBPROPERTIES *   GetListenerProps( void ) { return fListenerProps; }
+    EAXREVERBPROPERTIES *   GetListenerProps() { return fListenerProps; }
     void                    SetFromPreset( uint32_t preset );
 
 protected:
@@ -85,8 +88,8 @@ protected:
     EAXREVERBPROPERTIES *fListenerProps;
     bool        fRegistered, fGetsMessages;
 
-    void            IRegister( void );
-    void            IUnRegister( void );
+    void            IRegister();
+    void            IUnRegister();
     virtual bool    IEval( double secs, float del, uint32_t dirty ); // called only by owner object's Eval()
 };
 

@@ -49,7 +49,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <Python.h>
 #include "plgDispatch.h"
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "pyDynamicText.h"
 #include "plMessage/plDynamicTextMsg.h"
@@ -59,30 +58,22 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 
 pyDynamicText::pyDynamicText()
-{
-    IInit();
-}
+    : fClipLeft(), fClipTop(), fClipRight(), fClipBottom(), fWrapWidth(), fWrapHeight(),
+      fSenderKey(), fNetPropagate(), fNetForce(), fWrap(), fClip()
+{ }
 
-pyDynamicText::pyDynamicText(pyKey& key) 
+pyDynamicText::pyDynamicText(pyKey& key)
+    : fClipLeft(), fClipTop(), fClipRight(), fClipBottom(), fWrapWidth(), fWrapHeight(),
+      fSenderKey(), fNetPropagate(), fNetForce(), fWrap(), fClip()
 {
-    IInit();
     fReceivers.Append(key.getKey());
 }
 
-pyDynamicText::pyDynamicText(plKey key) 
+pyDynamicText::pyDynamicText(plKey key)
+    : fClipLeft(), fClipTop(), fClipRight(), fClipBottom(), fWrapWidth(), fWrapHeight(),
+      fSenderKey(), fNetPropagate(), fNetForce(), fWrap(), fClip()
 {
-    IInit();
     fReceivers.Append(key);
-}
-
-
-void pyDynamicText::IInit()
-{
-    fSenderKey = nil;
-    fNetPropagate = false;
-    fNetForce = false;
-    fWrap = false;
-    fClip = false;
 }
 
 
@@ -163,7 +154,7 @@ void pyDynamicText::ClearToColor( pyColor& color )
     }
 }
 
-void pyDynamicText::Flush( void )
+void pyDynamicText::Flush()
 {
     // create message
     plDynamicTextMsg* pMsg = ICreateDTMsg();
@@ -174,7 +165,7 @@ void pyDynamicText::Flush( void )
     }
 }
 
-void pyDynamicText::PurgeImage( void )
+void pyDynamicText::PurgeImage()
 {
     // create message
     plDynamicTextMsg* pMsg = ICreateDTMsg();
@@ -319,7 +310,7 @@ void pyDynamicText::DrawImageClipped( uint16_t x, uint16_t y, pyImage& image, ui
 }
 
 
-uint16_t  pyDynamicText::GetWidth( void )
+uint16_t  pyDynamicText::GetWidth()
 {
     // We better just pick our first key. Note that the ONLY time we should be getting multiple receivers
     // is if the export process ends up creating multiple copies of the material. Now, WHY you'd be wanting
@@ -334,7 +325,7 @@ uint16_t  pyDynamicText::GetWidth( void )
     return (uint16_t)dtMap->GetWidth();
 }
 
-uint16_t  pyDynamicText::GetHeight( void )
+uint16_t  pyDynamicText::GetHeight()
 {
     // We better just pick our first key. Note that the ONLY time we should be getting multiple receivers
     // is if the export process ends up creating multiple copies of the material. Now, WHY you'd be wanting

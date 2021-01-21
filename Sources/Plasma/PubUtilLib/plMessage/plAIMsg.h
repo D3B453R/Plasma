@@ -42,9 +42,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #ifndef plAIMsg_inc
 #define plAIMsg_inc
 
-#ifndef SERVER // we use stuff the server doesn't link with
-#ifndef NO_AV_MSGS
-
 #include "hsGeometry3.h"
 #include "pnMessage/plMessage.h"
 
@@ -98,8 +95,8 @@ public:
 class plAIArrivedAtGoalMsg : public plAIMsg
 {
 public:
-    plAIArrivedAtGoalMsg(): plAIMsg(), fGoal(0, 0, 0) {}
-    plAIArrivedAtGoalMsg(const plKey& sender, const plKey& receiver): plAIMsg(sender, receiver), fGoal(0, 0, 0) {}
+    plAIArrivedAtGoalMsg(): plAIMsg() {}
+    plAIArrivedAtGoalMsg(const plKey& sender, const plKey& receiver): plAIMsg(sender, receiver) {}
 
     CLASSNAME_REGISTER(plAIArrivedAtGoalMsg);
     GETINTERFACE_ANY(plAIArrivedAtGoalMsg, plAIMsg);
@@ -107,14 +104,11 @@ public:
     virtual void Read(hsStream* stream, hsResMgr* mgr);
     virtual void Write(hsStream* stream, hsResMgr* mgr);
 
-    void Goal(hsPoint3 goal) {fGoal = goal;}
+    void Goal(const hsPoint3& goal) {fGoal = goal;}
     hsPoint3 Goal() const {return fGoal;}
 
 private:
     hsPoint3 fGoal;
 };
-
-#endif // NO_AV_MSGS
-#endif // SERVER
 
 #endif // plAIMsg_inc

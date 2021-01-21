@@ -43,7 +43,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <Python.h>
 #include "pyGeometry3.h"
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "pyNotify.h"
 #include "pyEnum.h"
@@ -209,8 +208,8 @@ PYTHON_METHOD_DEFINITION(ptNotify, addVarNumber, args)
 
     if (number == NULL || number == Py_None)
         self->fThis->AddVarNull(name);
-    else if (PyInt_Check(number))
-        self->fThis->AddVarNumber(name, static_cast<int32_t>(PyInt_AsLong(number)));
+    else if (PyLong_Check(number))
+        self->fThis->AddVarNumber(name, static_cast<int32_t>(PyLong_AsLong(number)));
     else if (PyLong_Check(number))
     {
         // try as int first

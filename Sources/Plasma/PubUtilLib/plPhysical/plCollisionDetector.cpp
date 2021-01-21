@@ -70,11 +70,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plModifier/plDetectorLog.h"
 
-#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
-#include "plPhysX/plSimulationMgr.h"
-#endif
-
-
 
 plArmatureMod* plCollisionDetector::IGetAvatarModifier(plKey key)
 {
@@ -272,9 +267,6 @@ bool plCameraRegionDetector::MsgReceive(plMessage* msg)
 
         fEntering = (pCollMsg->fEntering != 0);
 
- #ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
-        fLastStep = plSimulationMgr::GetInstance()->GetStepCount();
-#endif
         return true;
     }
 
@@ -303,21 +295,13 @@ void plCameraRegionDetector::Write(hsStream* stream, hsResMgr* mgr)
 
 void plCameraRegionDetector::IHandleEval(plEvalMsg*)
 {
-#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
-    if (plSimulationMgr::GetInstance()->GetStepCount() - fLastStep > 1)
-    {
-#endif
-        if (fIsInside != fEntering)
-        {
-            fIsInside = fEntering;
-            DetectorLog("%s CameraRegion: %s", fIsInside ? "Entering" : "Exiting", GetKeyName().c_str());
-            ISendTriggerMsg();
-        }
-        plgDispatch::Dispatch()->UnRegisterForExactType(plEvalMsg::Index(), GetKey());
-        fWaitingForEval = false;
-#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
+    if (fIsInside != fEntering) {
+        fIsInside = fEntering;
+        plDetectorLog::Log("{} CameraRegion: {}", fIsInside ? "Entering" : "Exiting", GetKeyName());
+        ISendTriggerMsg();
     }
-#endif
+    plgDispatch::Dispatch()->UnRegisterForExactType(plEvalMsg::Index(), GetKey());
+    fWaitingForEval = false;
 }
 
 /////////////////////////////////
@@ -326,26 +310,16 @@ void plCameraRegionDetector::IHandleEval(plEvalMsg*)
 /////////////////////////////////
 // object-in-volume detector
 
-void plObjectInVolumeDetector::ITrigger(plKey hitter, bool entering)
+void plObjectInVolumeDetector::ITrigger(const plKey& hitter, bool entering)
 {
-#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
-    for (bookKeepingList::iterator it = fCollisionList.begin(); it != fCollisionList.end(); ++it)
-    {
-        plCollisionBookKeepingInfo* collisionInfo = *it;
-        if (collisionInfo->fHitter == hitter)
-        {
-            collisionInfo->fEntering = entering;
-            collisionInfo->fLastStep = plSimulationMgr::GetInstance()->GetStepCount();
+    for (auto& collisionInfo : fCollisionList) {
+        if (collisionInfo.fHitter == hitter) {
+            collisionInfo.fEntering = entering;
             return;
         }
     }
-#endif
 
-    plCollisionBookKeepingInfo* collisionInfo = new plCollisionBookKeepingInfo(hitter, entering);
-    fCollisionList.push_back(collisionInfo);
-#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
-    collisionInfo->fLastStep = plSimulationMgr::GetInstance()->GetStepCount();
-#endif
+    fCollisionList.emplace_back(hitter, entering);
 }
 
 void plObjectInVolumeDetector::IRegisterForEval()
@@ -400,43 +374,20 @@ bool plObjectInVolumeDetector::MsgReceive(plMessage* msg)
 
 void plObjectInVolumeDetector::IHandleEval(plEvalMsg*)
 {
-    bookKeepingList::iterator it = fCollisionList.begin();
-    while (it != fCollisionList.end())
-    {
-        plCollisionBookKeepingInfo* collisionInfo = *it;
-#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
-        if (plSimulationMgr::GetInstance()->GetStepCount() - collisionInfo->fLastStep > 1)
-        {
-#endif // USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
-            ResidentSet::iterator j = fCurrentResidents.find(collisionInfo->fHitter);
-            bool wasInside = j != fCurrentResidents.end();
-            if (collisionInfo->fEntering != wasInside)
-            {
-                if (collisionInfo->fEntering)
-                {
-                    fCurrentResidents.insert(collisionInfo->fHitter);
-                    DetectorLog("%s: Sending Volume Enter ActivatorMsg", GetKeyName().c_str());
-                    ISendTriggerMsg(collisionInfo->fHitter, true);
-                }
-                else
-                {
-                    fCurrentResidents.erase(j);
-                    DetectorLog("%s: Sending Volume Exit ActivatorMsg", GetKeyName().c_str());
-                    ISendTriggerMsg(collisionInfo->fHitter, false);
-                }
+    for (const auto& collisionInfo : fCollisionList) {
+        auto j = fCurrentResidents.find(collisionInfo.fHitter);
+        bool wasInside = j != fCurrentResidents.end();
+        if (collisionInfo.fEntering != wasInside) {
+            if (collisionInfo.fEntering) {
+                fCurrentResidents.insert(collisionInfo.fHitter);
+                plDetectorLog::Log("{}: Sending Volume Enter ActivatorMsg", GetKeyName());
+                ISendTriggerMsg(collisionInfo.fHitter, true);
+            } else {
+                fCurrentResidents.erase(j);
+                plDetectorLog::Log("{}: Sending Volume Exit ActivatorMsg", GetKeyName());
+                ISendTriggerMsg(collisionInfo.fHitter, false);
             }
-
-            delete collisionInfo;
-#ifdef USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
-            it = fCollisionList.erase(it);
         }
-        else
-        {
-            ++it;
-        }
-#else
-            ++it;
-#endif // USE_PHYSX_COLLISION_FLUTTER_WORKAROUND
     }
 }
 
@@ -479,7 +430,7 @@ plObjectInVolumeAndFacingDetector::~plObjectInVolumeAndFacingDetector()
 
 void plObjectInVolumeAndFacingDetector::SetFacingTolerance(int degrees)
 {
-    fFacingTolerance = cos(hsDegreesToRadians(degrees));
+    fFacingTolerance = cos(hsDegreesToRadians(float(degrees)));
 }
 
 void plObjectInVolumeAndFacingDetector::ICheckForTrigger()
@@ -514,13 +465,13 @@ void plObjectInVolumeAndFacingDetector::ICheckForTrigger()
 
         if (facing && movingForward && !fTriggered)
         {
-            DetectorLog("%s: Trigger InVolume&Facing", GetKeyName().c_str());
+            plDetectorLog::Log("{}: Trigger InVolume&Facing", GetKeyName());
             fTriggered = true;
             ISendTriggerMsg(avatar->GetKey(), true);
         }
         else if (!facing && fTriggered)
         {
-            DetectorLog("%s: Untrigger InVolume&Facing", GetKeyName().c_str());
+            plDetectorLog::Log("{}: Untrigger InVolume&Facing", GetKeyName());
             fTriggered = false;
             ISendTriggerMsg(avatar->GetKey(), false);
         }
@@ -613,7 +564,7 @@ bool plSubworldRegionDetector::MsgReceive(plMessage* msg)
         plArmatureMod* avMod = IGetAvatarModifier(pCollMsg->fOtherKey);
         if (avMod)
         {
-            DetectorLog("%s subworld detector %s", pCollMsg->fEntering ? "Entering" : "Exiting", GetKeyName().c_str());
+            plDetectorLog::Log("{} subworld detector {}", pCollMsg->fEntering ? "Entering" : "Exiting", GetKeyName());
 
             if ((pCollMsg->fEntering && !fOnExit) ||
                 (!pCollMsg->fEntering && fOnExit))
@@ -623,7 +574,7 @@ bool plSubworldRegionDetector::MsgReceive(plMessage* msg)
                     plSceneObject* SO = plSceneObject::ConvertNoRef(fSub->ObjectIsLoaded());
                     if (SO)
                     {
-                        DetectorLogSpecial("Switching to subworld %s", fSub->GetName().c_str());
+                        plDetectorLog::Special("Switching to subworld {}", fSub->GetName());
 
                         plKey nilKey;
                         plSubWorldMsg* msg = new plSubWorldMsg(GetKey(), avMod->GetKey(), fSub);
@@ -632,7 +583,7 @@ bool plSubworldRegionDetector::MsgReceive(plMessage* msg)
                 }
                 else
                 {
-                    DetectorLogSpecial("Switching to main subworld");
+                    plDetectorLog::Special("Switching to main subworld");
                     plSubWorldMsg* msg = new plSubWorldMsg(GetKey(), avMod->GetKey(), nil);
                     msg->Send();
                 }
@@ -684,11 +635,12 @@ bool plPanicLinkRegion::MsgReceive(plMessage* msg)
                     if (avMod->GetController())
                     {
                         avMod->GetController()->GetPositionSim(pos);
-                        DetectorLogSpecial("Avatar is panic linking. Position %f,%f,%f and is %s", pos.fX, pos.fY, pos.fZ, avMod->GetController()->IsEnabled() ? "enabled" : "disabled");
+                        plDetectorLog::Special("Avatar is panic linking. Position {f},{f},{f} and is {}",
+                                               pos.fX, pos.fY, pos.fZ, avMod->GetController()->IsEnabled() ? "enabled" : "disabled");
                     }
                     avMod->PanicLink(fPlayLinkOutAnim);
                 } else
-                    DetectorLogRed("PANIC LINK %s before we actually linked in!", GetKey()->GetName().c_str());
+                    plDetectorLog::Red("PANIC LINK {} before we actually linked in!", GetKey()->GetName());
             }
         }
 

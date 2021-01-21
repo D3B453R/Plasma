@@ -85,14 +85,14 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 class pfPopUpKeyGenerator
 {
     public:
-        char        fPrefix[ 128 ];
-        uint32_t      fKeyCount;
+        char        fPrefix[128];
+        uint32_t    fKeyCount;
         plLocation  fLoc;
 
-        pfPopUpKeyGenerator( const char *p, const plLocation &loc )
+        pfPopUpKeyGenerator(const char *p, const plLocation &loc)
+            : fKeyCount(0), fLoc(loc)
         {
-            strcpy( fPrefix, p );
-            fLoc = loc;
+            strcpy(fPrefix, p);
         }
 
         plKey   CreateKey( hsKeyedObject *ko )
@@ -242,7 +242,7 @@ void    pfGUIPopUpMenu::Read( hsStream *s, hsResMgr *mgr )
     fMargin = s->ReadLE16();
 
     uint32_t i, count = s->ReadLE32();
-    fMenuItems.SetCountAndZero( count );
+    fMenuItems.SetCount( count );
     for( i = 0; i < count; i++ )
     {
         char readTemp[ 256 ];
@@ -343,7 +343,7 @@ void    pfGUIPopUpMenu::Show( float x, float y )
     ISeekToOrigin();
 }
 
-void    pfGUIPopUpMenu::ISeekToOrigin( void )
+void    pfGUIPopUpMenu::ISeekToOrigin()
 {
 #if 0
     uint32_t i;
@@ -429,7 +429,7 @@ void    pfGUIPopUpMenu::IHandleMenuSomething( uint32_t idx, pfGUIControlMod *ctr
 //// IBuildMenu //////////////////////////////////////////////////////////////
 //  Given the list of menu items, builds our set of dynamic buttons
 
-bool    pfGUIPopUpMenu::IBuildMenu( void )
+bool    pfGUIPopUpMenu::IBuildMenu()
 {
     int     i;
 
@@ -597,7 +597,7 @@ bool    pfGUIPopUpMenu::IBuildMenu( void )
 //// ITearDownMenu ///////////////////////////////////////////////////////////
 //  Destroys all of our dynamic controls representing the menu
 
-void    pfGUIPopUpMenu::ITearDownMenu( void )
+void    pfGUIPopUpMenu::ITearDownMenu()
 {
     int     i;
 
@@ -646,7 +646,7 @@ bool        pfGUIPopUpMenu::HandleMouseEvent( pfGameGUIMgr::EventType event, flo
 //// ClearItems //////////////////////////////////////////////////////////////
 //  Clears the list of template items
 
-void    pfGUIPopUpMenu::ClearItems( void )
+void    pfGUIPopUpMenu::ClearItems()
 {
     int     i;
 
@@ -697,7 +697,7 @@ void    pfGUIPopUpMenu::AddItem( const wchar_t *name, pfGUICtrlProcObject *handl
 //// ICreateDynMaterial //////////////////////////////////////////////////////
 //  Creates the hsGMaterial tree for a single layer with a plDynamicTextMap.
 
-hsGMaterial *pfGUIPopUpMenu::ICreateDynMaterial( void )
+hsGMaterial *pfGUIPopUpMenu::ICreateDynMaterial()
 {
     hsColorRGBA     black, white;
 
@@ -777,8 +777,8 @@ pfGUIPopUpMenu  *pfGUIPopUpMenu::Build( const char *name, pfGUIDialogMod *parent
     fovX = atan( scrnWidth / ( 2.f * 100.f ) ) * 2.f;
     fovY = fovX;// * 3.f / 4.f;
 
-    renderMod->SetFovX( fovX * 180.f / M_PI );
-    renderMod->SetFovY( fovY * 180.f / M_PI );
+    renderMod->SetFovX(hsRadiansToDegrees(fovX));
+    renderMod->SetFovY(hsRadiansToDegrees(fovY));
 
     // Create the sceneNode to go with it
     menu->fParentNode= new plSceneNode;
@@ -845,14 +845,14 @@ void    pfGUIPopUpMenu::SetSkin( pfGUISkin *skin )
 //////////////////////////////////////////////////////////////////////////////
 
 pfGUISkin::pfGUISkin()
+    : fTexture(), fItemMargin(), fBorderMargin()
 {
-    fTexture = nil;
     memset( fElements, 0, sizeof( pfSRect ) * kNumElements );
 }
 
-pfGUISkin::pfGUISkin( plMipmap *texture )
+pfGUISkin::pfGUISkin(plMipmap* texture)
+    : fTexture(texture), fItemMargin(), fBorderMargin()
 {
-    fTexture = texture;
     if( fTexture != nil )
     {
         hsAssert( fTexture->GetKey() != nil, "Creating a GUI skin via a mipmap with no key!" );

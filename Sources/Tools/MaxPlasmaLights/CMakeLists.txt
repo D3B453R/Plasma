@@ -1,9 +1,3 @@
-include_directories("../")
-include_directories("../../Plasma/CoreLib")
-include_directories("../../Plasma/NucleusLib")
-include_directories("../../Plasma/NucleusLib/inc")
-include_directories("../../Plasma/PubUtilLib")
-include_directories("../../Plasma/PubUtilLib/inc")
 include_directories(${3dsm_INCLUDE_DIR})
 
 set(MaxPlasmaLights_HEADERS
@@ -31,8 +25,8 @@ set(MaxPlasmaLights_SOURCES
 )
 
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${Plasma_BINARY_DIR}/bin)
-use_precompiled_header(Pch.h Pch.cpp MaxPlasmaLights_HEADERS MaxPlasmaLights_SOURCES)
 add_library(MaxPlasmaLights SHARED ${MaxPlasmaLights_HEADERS} ${MaxPlasmaLights_RESOURCES} ${MaxPlasmaLights_SOURCES})
+plasma_optimize_target(MaxPlasmaLights PRECOMPILED_HEADERS Pch.h)
 set_target_properties(MaxPlasmaLights PROPERTIES SUFFIX ".dlo")
 
 
@@ -127,6 +121,11 @@ endif(WIN32)
 if(USE_VLD)
     target_link_libraries(MaxPlasmaLights ${VLD_LIBRARY})
 endif()
+
+install(
+    TARGETS MaxPlasmaLights
+    DESTINATION 3dsmax
+)
 
 source_group("Header Files" FILES ${MaxPlasmaLights_HEADERS})
 source_group("Resource Files" FILES ${MaxPlasmaLights_RESOURCES})

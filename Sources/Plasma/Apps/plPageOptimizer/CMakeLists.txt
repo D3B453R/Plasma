@@ -1,12 +1,3 @@
-include_directories("../../Apps")
-include_directories("../../CoreLib")
-include_directories("../../FeatureLib/inc")
-include_directories("../../FeatureLib")
-include_directories("../../NucleusLib/inc")
-include_directories("../../NucleusLib")
-include_directories("../../PubUtilLib/inc")
-include_directories("../../PubUtilLib")
-
 set(plPageOptimizer_SOURCES
     main.cpp
     plAllCreatables.cpp
@@ -27,6 +18,11 @@ target_link_libraries(plPageOptimizer ${STRING_THEORY_LIBRARIES})
 if(USE_VLD)
     target_link_libraries(plPageOptimizer ${VLD_LIBRARY})
 endif()
+
+install(
+    TARGETS plPageOptimizer
+    DESTINATION tools_cli
+)
 
 source_group("Source Files" FILES ${plPageOptimizer_SOURCES})
 source_group("Header Files" FILES ${plPageOptimizer_HEADERS})

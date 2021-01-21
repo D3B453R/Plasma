@@ -102,9 +102,6 @@ plPlate::~plPlate()
 
 void    plPlate::SetPosition( float x, float y, float z )
 {
-    hsVector3   triple;
-
-
     if( z != -1.0f )
     {
         /// Gotta resort--let the manager do it
@@ -114,10 +111,8 @@ void    plPlate::SetPosition( float x, float y, float z )
 
     x *= fDepth / 1.0f;
     y *= fDepth / 1.0f;
-    triple.fX = x;
-    triple.fY = y;
-    triple.fZ = fDepth;
 
+    hsVector3 triple(x, y, fDepth);
     fXformMatrix.SetTranslate( &triple );
 }
 
@@ -125,15 +120,11 @@ void    plPlate::SetPosition( float x, float y, float z )
 
 void    plPlate::SetSize( float width, float height, bool adjustByAspectRatio )
 {
-    hsVector3   size;
-
     width *= fDepth / 1.0f;
     height *= fDepth / 1.0f;
 
-    size.fX = adjustByAspectRatio ? (width * ((float)plPlateManager::Instance().GetPipeHeight() / (float)plPlateManager::Instance().GetPipeWidth())) : width;
-    size.fY = height;
-    size.fZ = 1.0f;
-
+    hsVector3 size(adjustByAspectRatio ? (width * ((float)plPlateManager::Instance().GetPipeHeight() / (float)plPlateManager::Instance().GetPipeWidth())) : width,
+                   height, 1.f);
     fXformMatrix.SetScale( &size );
 }
 
@@ -357,7 +348,7 @@ void    plGraphPlate::SetDataLabels( uint32_t min, uint32_t max )
 
 //// ClearData ///////////////////////////////////////////////////////////////
 
-void    plGraphPlate::ClearData( void )
+void    plGraphPlate::ClearData()
 {
     uint32_t  *bits = (uint32_t *)fMipmap->GetImage(), *ptr;
     int     i;
@@ -648,7 +639,7 @@ void    plGraphPlate::IDrawDigit( char digit, uint32_t *dataPtr, uint32_t stride
           0,0,9 } };
 
     
-    char    *digData = digits[ digit ];
+    char    *digData = digits[uint8_t(digit)];
     int     i, j;
 
 
@@ -733,12 +724,12 @@ void    plPlateManager::DestroyPlate( plPlate *plate )
 
 //// GetPipeWidth/Height /////////////////////////////////////////////////////
 
-uint32_t  plPlateManager::GetPipeWidth( void )
+uint32_t  plPlateManager::GetPipeWidth()
 {
     return fOwner->Width();
 }
 
-uint32_t  plPlateManager::GetPipeHeight( void )
+uint32_t  plPlateManager::GetPipeHeight()
 {
     return fOwner->Height();
 }

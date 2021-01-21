@@ -142,49 +142,49 @@ plUnifiedTime::plUnifiedTime(plUnifiedTime_CtorNow,int mode)
 
 
 plUnifiedTime::plUnifiedTime(const timeval & tv)
-:   fMode(kGmt)
+    : fMode(kGmt)
 {
     *this = tv;
 }
 
 plUnifiedTime::plUnifiedTime(int mode, const struct tm & src)
-:   fMode((Mode)mode)
+    : fMode((Mode)mode), fMicros()
 {
     *this = src;
 }
 
 plUnifiedTime::plUnifiedTime(time_t t)
-:   fMode(kGmt)
+    : fMode(kGmt)
 {
     *this = t;
 }
 
 plUnifiedTime::plUnifiedTime(unsigned long t)
-:   fMode(kGmt)
+    : fMode(kGmt)
 {
     *this = t;
 }
 
 plUnifiedTime::plUnifiedTime(int year, int month, int day, int hour, int min, int sec, unsigned long usec, int dst)
-:   fMode(kGmt)
+    : fMode(kGmt), fMicros()
 {
     SetTime(year,month,day,hour,min,sec,usec,dst);
 }
 
 plUnifiedTime::plUnifiedTime(int mode, const char * buf, const char * fmt)
-:   fMode((Mode)mode)
+    : fMode((Mode)mode), fMicros()
 {
     FromString(buf,fmt);
 }
 
 plUnifiedTime::plUnifiedTime(const plUnifiedTime & src)
-:   fMode(src.fMode)
+    : fMode(src.fMode)
 {
     *this = src;
 }
 
 plUnifiedTime::plUnifiedTime(const plUnifiedTime * src)
-:   fMode(src->fMode)
+    : fMode(src->fMode)
 {
     *this = *src;
 }
@@ -364,13 +364,17 @@ int plUnifiedTime::GetMillis() const
     return fMicros/1000;
 }
 
-#pragma optimize( "g", off )    // disable global optimizations
+#ifdef _MSC_VER
+#   pragma optimize( "g", off )    // disable global optimizations
+#endif
 double plUnifiedTime::GetSecsDouble() const
 {
     double ret = GetSecs() + GetMicros() / 1000000.0;
     return ret;
 }
-#pragma optimize( "", on )  // restore optimizations to their defaults
+#ifdef _MSC_VER
+#   pragma optimize( "", on )  // restore optimizations to their defaults
+#endif
 
 void plUnifiedTime::Read(hsStream* s)
 {
@@ -1001,7 +1005,7 @@ bool plUnifiedTime::FromString(const char * buf, const char * fmt)
 
 int32_t   plUnifiedTime::fLocalTimeZoneOffset = -1;
 
-int32_t   plUnifiedTime::IGetLocalTimeZoneOffset( void )
+int32_t   plUnifiedTime::IGetLocalTimeZoneOffset()
 {
     static bool     inited = false;
 

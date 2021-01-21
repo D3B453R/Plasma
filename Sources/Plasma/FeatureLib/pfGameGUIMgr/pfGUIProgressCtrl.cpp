@@ -67,13 +67,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plgDispatch.h"
 #include "hsResMgr.h"
 
-//// Constructor/Destructor //////////////////////////////////////////////////
-
-pfGUIProgressCtrl::pfGUIProgressCtrl() : fStopSoundTimer(99)
-{
-    fAnimTimesCalced = false;
-    fPlaySound = true;
-}
 
 //// IEval ///////////////////////////////////////////////////////////////////
 
@@ -145,12 +138,12 @@ void    pfGUIProgressCtrl::SetAnimationKeys( hsTArray<plKey> &keys, const ST::st
 //  Loops through and computes the max begin and end for our animations. If
 //  none of them are loaded and we're not already calced, returns false.
 
-bool    pfGUIProgressCtrl::ICalcAnimTimes( void )
+bool    pfGUIProgressCtrl::ICalcAnimTimes()
 {
     if( fAnimTimesCalced )
         return true;
 
-    float tBegin = 1e30, tEnd = -1e30;
+    float tBegin = 1e30f, tEnd = -1e30f;
     bool     foundOne = false;
 
     for( int i = 0; i < fAnimationKeys.GetCount(); i++ )

@@ -63,9 +63,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "pnMessage/plWarpMsg.h"
 #include "pnKeyedObject/plFixedKey.h"
 
-// chronicle var
-#define kCleftSolved                    "CleftSolved"
-
 #include "plAvatar/plArmatureMod.h"
 #include "plAvatar/plAvatarTasks.h"
 #include "plAnimation/plAGAnim.h"
@@ -128,7 +125,7 @@ void plLinkEffectsMgr::IAddDead(plLinkEffectsTriggerMsg *msg)
     fDeadlist.Append(msg);
 }
 
-void plLinkEffectsMgr::IAddPsuedo(plPseudoLinkEffectMsg *msg)
+void plLinkEffectsMgr::IAddPseudo(plPseudoLinkEffectMsg *msg)
 {
     hsRefCnt_SafeRef(msg);
     fPseudolist.Append(msg);
@@ -238,30 +235,30 @@ bool plLinkEffectsMgr::MsgReceive(plMessage *msg)
     plNetClientMgr* nc = plNetClientMgr::GetInstance();
     plNetLinkingMgr* lm = plNetLinkingMgr::GetInstance();
 
-    plPseudoLinkEffectMsg* pSeudoMsg = plPseudoLinkEffectMsg::ConvertNoRef(msg);
-    if (pSeudoMsg)
+    plPseudoLinkEffectMsg* pseudoMsg = plPseudoLinkEffectMsg::ConvertNoRef(msg);
+    if (pseudoMsg)
     {
         // verify valid avatar and "link" objects
-        if (!pSeudoMsg->fAvatarKey) 
+        if (!pseudoMsg->fAvatarKey)
             return true;
-        if (!pSeudoMsg->fLinkObjKey)
+        if (!pseudoMsg->fLinkObjKey)
             return true;
-        if (!pSeudoMsg->fLinkObjKey->ObjectIsLoaded())
+        if (!pseudoMsg->fLinkObjKey->ObjectIsLoaded())
             return true;
-        if (!plNetClientMgr::GetInstance()->IsAPlayerKey(pSeudoMsg->fAvatarKey))
+        if (!plNetClientMgr::GetInstance()->IsAPlayerKey(pseudoMsg->fAvatarKey))
             return true;
         // send the trigger message to the avatar...
-        plPseudoLinkAnimTriggerMsg* pMsg = new plPseudoLinkAnimTriggerMsg(true, pSeudoMsg->fAvatarKey);
+        plPseudoLinkAnimTriggerMsg* pMsg = new plPseudoLinkAnimTriggerMsg(true, pseudoMsg->fAvatarKey);
         pMsg->SetSender(GetKey());
         pMsg->Send();
-        IAddPsuedo(pSeudoMsg);
+        IAddPseudo(pseudoMsg);
     }
 
-    plPseudoLinkAnimCallbackMsg* pSeudoCallback = plPseudoLinkAnimCallbackMsg::ConvertNoRef(msg);
-    if (pSeudoCallback)
+    plPseudoLinkAnimCallbackMsg* pseudoCallback = plPseudoLinkAnimCallbackMsg::ConvertNoRef(msg);
+    if (pseudoCallback)
     {
         // warp the avatar to his new position
-        plPseudoLinkEffectMsg* pMsg = IFindPseudo(pSeudoCallback->fAvatarKey);
+        plPseudoLinkEffectMsg* pMsg = IFindPseudo(pseudoCallback->fAvatarKey);
         if (pMsg)
         {
             plSceneObject* pObj = plSceneObject::ConvertNoRef(pMsg->fLinkObjKey->ObjectIsLoaded());
@@ -271,7 +268,7 @@ bool plLinkEffectsMgr::MsgReceive(plMessage *msg)
                 // create message
                 plWarpMsg* pMsg = new plWarpMsg(mat);
                 pMsg->SetWarpFlags(plWarpMsg::kFlushTransform);
-                pMsg->AddReceiver(pSeudoCallback->fAvatarKey);
+                pMsg->AddReceiver(pseudoCallback->fAvatarKey);
                 plUoid U(kVirtualCamera1_KEY);
                 plKey pCamKey = hsgResMgr::ResMgr()->FindKey(U);
                 if (pCamKey)
@@ -280,10 +277,10 @@ bool plLinkEffectsMgr::MsgReceive(plMessage *msg)
                 }
                 plgDispatch::MsgSend( pMsg );   // whoosh... off it goes
                 // now make him re-appear
-                plPseudoLinkAnimTriggerMsg* pTrigMsg = new plPseudoLinkAnimTriggerMsg(false, pSeudoCallback->fAvatarKey);
+                plPseudoLinkAnimTriggerMsg* pTrigMsg = new plPseudoLinkAnimTriggerMsg(false, pseudoCallback->fAvatarKey);
                 pTrigMsg->SetSender(GetKey());
                 pTrigMsg->Send();
-                IRemovePseudo(pSeudoCallback->fAvatarKey);
+                IRemovePseudo(pseudoCallback->fAvatarKey);
                 
             }
         }
@@ -380,8 +377,6 @@ bool plLinkEffectsMgr::MsgReceive(plMessage *msg)
                 bool linkToStartup = ageName.compare_i(kStartUpAgeFilename) == 0;      // To Startup
                 bool linkFromStartup = prevAgeName.compare_i(kStartUpAgeFilename) == 0;   // Leaving Startup
 
-                bool cleftSolved = VaultHasChronicleEntry( kCleftSolved );
-
                 bool linkToACA = ageName.compare_i(kAvCustomizationFilename) == 0;
                 bool linkFromACA = prevAgeName.compare_i(kAvCustomizationFilename) == 0;
 
@@ -453,7 +448,6 @@ bool plLinkEffectsMgr::MsgReceive(plMessage *msg)
         plNetApp::GetInstance()->DebugMsg("Received pLinkCallbackMsg, localmsg={}\n",
             !msg->HasBCastFlag(plMessage::kNetNonLocal));
 
-        static char str[ 128 ];
         plLinkEffectsTriggerMsg *pTriggerMsg = IFindLinkTriggerMsg(pLinkCallbackMsg->fLinkKey);
         if (pTriggerMsg == nil)
         {

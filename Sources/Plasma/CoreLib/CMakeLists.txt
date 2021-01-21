@@ -1,5 +1,3 @@
-add_definitions(-D_LIB)
-
 add_definitions(-DPRODUCT_BRANCH_ID=${PRODUCT_BRANCH_ID})
 add_definitions(-DPRODUCT_BUILD_ID=${PRODUCT_BUILD_ID})
 add_definitions(-DPRODUCT_BUILD_TYPE=${PRODUCT_BUILD_TYPE})
@@ -35,6 +33,7 @@ set(CoreLib_SOURCES
     plLoadMask.cpp
     plProduct.cpp
     plViewTransform.cpp
+    hsWindows.cpp
 )
 
 if(WIN32 AND NOT CYGWIN)
@@ -86,8 +85,8 @@ set(CoreLib_HEADERS
     plViewTransform.h
 )
 
-use_precompiled_header(_CoreLibPch.h Pch.cpp CoreLib_HEADERS CoreLib_SOURCES)
 add_library(CoreLib STATIC ${CoreLib_SOURCES} ${CoreLib_HEADERS})
+plasma_optimize_target(CoreLib PRECOMPILED_HEADERS _CoreLibPch.h)
 
 if(UNIX)
     target_link_libraries(CoreLib pthread)

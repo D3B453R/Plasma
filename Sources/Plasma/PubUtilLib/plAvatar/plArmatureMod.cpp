@@ -122,6 +122,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plTweak.h"
 #include "plDrawable/plVisLOSMgr.h"
 
+static const ST::string kPersonalLinkAnimName = ST_LITERAL("PersonalLink");
+
 int plArmatureModBase::fMinLOD = 0;     // standard is 3 levels of LOD
 double plArmatureModBase::fLODDistance = 50.0;
 
@@ -507,7 +509,8 @@ int plArmatureModBase::AppendBoneVec(plKeyVector *boneVec)
 
 uint8_t plArmatureModBase::GetNumLOD() const
 {
-    return fMeshKeys.size();
+    hsAssert(fMeshKeys.size() < std::numeric_limits<uint8_t>::max(), "Too many mesh keys");
+    return (uint8_t)fMeshKeys.size();
 }
 
 void plArmatureModBase::EnablePhysics(bool status, uint16_t reason /* = kDisableReasonUnknown */)
@@ -628,45 +631,19 @@ const char *plArmatureMod::BoneStrings[] = {"Male", "Female", "Critter", "Actor"
 float plArmatureMod::fMouseTurnSensitivity = 1.f;
 bool plArmatureMod::fClickToTurn = true;
 
-void plArmatureMod::IInitDefaults()
+plArmatureMod::plArmatureMod() 
+    : plArmatureModBase(),
+      fBoneRootAnimator(), fRootAGMod(), fFootSoundSOKey(), fLinkSoundSOKey(),
+      fBodyType(kBoneBaseMale), fClothingOutfit(), fClothingSDLMod(), fAvatarSDLMod(),
+      fAvatarPhysicalSDLMod(), fEffects(), fDebugOn(), fBoneMap(),
+      fStealthMode(plAvatarStealthModeMsg::kStealthVisible), fStealthLevel(),
+      fMouseFrameTurnStrength(), fSuspendInputCount(), fIsLinkedIn(), fMidLink(),
+      fAlreadyPanicLinking(), fReverseFBOnIdle(), fFollowerParticleSystemSO(),
+      fPendingSynch(), fOpaque(true), fPhysHeight(), fPhysWidth(), fUpdateMsg(),
+      fRootName(), fDontPanicLink(), fBodyAgeName("GlobalAvatars"),
+      fBodyFootstepSoundPage("Audio"), fAnimationPrefix("Male"), fUserStr(),
+      fUnconsumedJump(), fLastSynch()
 {
-    fBoneRootAnimator = nil;
-    fRootAGMod = nil;
-    fFootSoundSOKey = nil;
-    fLinkSoundSOKey = nil;
-    fBodyType = kBoneBaseMale;
-    fClothingOutfit = nil;
-    fClothingSDLMod = nil;
-    fAvatarSDLMod = nil;
-    fAvatarPhysicalSDLMod = nil;
-    fEffects = nil;
-    fDebugOn = false;
-    fBoneMap = nil;
-    fStealthMode = plAvatarStealthModeMsg::kStealthVisible;
-    fStealthLevel = 0;
-    fMouseFrameTurnStrength = 0.f;
-    fSuspendInputCount = 0;
-    fIsLinkedIn = false;
-    fMidLink = false;
-    fAlreadyPanicLinking = false;
-    fReverseFBOnIdle = false;
-    fFollowerParticleSystemSO = nil;
-    fPendingSynch = false;
-    fOpaque = true;
-    fPhysHeight = 0.f;
-    fPhysWidth = 0.f;
-    fUpdateMsg = nil;
-    fRootName = ST::null;
-    fDontPanicLink = false;
-    fBodyAgeName = "GlobalAvatars";
-    fBodyFootstepSoundPage = "Audio";
-    fAnimationPrefix = "Male";
-    fUserStr = ST::null;
-}
-
-plArmatureMod::plArmatureMod() : plArmatureModBase()
-{
-    IInitDefaults();
     fWaitFlags |= kNeedAudio | kNeedCamera | kNeedSpawn;
 }
 
@@ -1045,7 +1022,7 @@ void plArmatureMod::PersonalLink()
     else
     {
         plAvOneShotLinkTask *task = new plAvOneShotLinkTask;
-        ST::string animName = MakeAnimationName("PersonalLink");
+        ST::string animName = MakeAnimationName(kPersonalLinkAnimName);
         task->SetAnimName(animName);
         task->SetMarkerName(ST_LITERAL("touch"));
         
@@ -1057,8 +1034,6 @@ void plArmatureMod::PersonalLink()
 
 bool plArmatureMod::MsgReceive(plMessage* msg)
 {   
-    bool result = false;
-    
     plArmatureBrain *curBrain = nil;
     if (fBrains.size() > 0)
     {
@@ -1540,9 +1515,9 @@ void plArmatureMod::ILinkToPersonalAge()
     
     link.SetLinkingRules( plNetCommon::LinkingRules::kOriginalBook );
     plLinkToAgeMsg* pMsg = new plLinkToAgeMsg( &link );
-    pMsg->SetLinkInAnimName("PersonalBookEnter");
+    pMsg->SetLinkInAnimName(kPersonalLinkAnimName);
     pMsg->AddReceiver(nc->GetKey());
-    pMsg->Send();   
+    pMsg->Send();
 }
 
 bool plArmatureMod::IEval(double time, float elapsed, uint32_t dirty)
@@ -1788,7 +1763,7 @@ void plArmatureMod::Read(hsStream * stream, hsResMgr *mgr)
             {
                 // So it exists... but FindKey won't properly create our clone. So we do.
                 SOUoid.SetClone(myUoid.GetClonePlayerID(), myUoid.GetCloneID());
-                fFootSoundSOKey = mgr->ReRegister(ST::null, SOUoid);
+                fFootSoundSOKey = mgr->ReRegister(ST::string(), SOUoid);
             }
 
             // Add the effect to our effects manager
@@ -1797,7 +1772,7 @@ void plArmatureMod::Read(hsStream * stream, hsResMgr *mgr)
             if (effectKey)
             {
                 effectUoid.SetClone(myUoid.GetClonePlayerID(), myUoid.GetCloneID());
-                effectKey = mgr->ReRegister(ST::null, effectUoid);
+                effectKey = mgr->ReRegister(ST::string(), effectUoid);
             }
             if (effectKey != nil)
                 mgr->AddViaNotify(effectKey, new plGenRefMsg(effectMgrKey, plRefMsg::kOnCreate, -1, -1), plRefFlags::kActiveRef);
@@ -1808,7 +1783,7 @@ void plArmatureMod::Read(hsStream * stream, hsResMgr *mgr)
             if (fLinkSoundSOKey)
             {
                 LinkUoid.SetClone(myUoid.GetClonePlayerID(), myUoid.GetCloneID());
-                fLinkSoundSOKey = mgr->ReRegister(ST::null, LinkUoid);
+                fLinkSoundSOKey = mgr->ReRegister(ST::string(), LinkUoid);
             }
         }
     }
@@ -1989,11 +1964,7 @@ bool plArmatureMod::ValidatePhysics()
         return false;
 
     if (!fController)
-    {
-        // The kinematic actor is made taller if the avatar is human (male or female)
-        fController = plPhysicalControllerCore::Create(GetTarget(0)->GetKey(), fPhysHeight,
-                      fPhysWidth, (fBodyType == kBoneBaseMale || fBodyType == kBoneBaseFemale));
-    }
+        fController = plPhysicalControllerCore::Create(GetTarget(0)->GetKey(), fPhysHeight, fPhysWidth);
 
     if (fController)
     {

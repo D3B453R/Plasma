@@ -63,20 +63,15 @@ class pyVaultImageNode : public pyVaultNode
     plMipmap *  fMipmap;
     
 protected:
-    // should only be created from C++ side
-    pyVaultImageNode(RelVaultNode* nfsNode);
-
     //create from the Python side
-    pyVaultImageNode(int n=0);
-    
+    pyVaultImageNode();
 
 public:
     ~pyVaultImageNode ();
 
     // required functions for PyObject interoperability
     PYTHON_CLASS_NEW_FRIEND(ptVaultImageNode);
-    static PyObject *New(RelVaultNode* nfsNode);
-    static PyObject *New(int n=0);
+    PYTHON_CLASS_VAULT_NODE_NEW_DEFINITION;
     PYTHON_CLASS_CHECK_DEFINITION; // returns true if the PyObject is a pyVaultImageNode object
     PYTHON_CLASS_CONVERT_FROM_DEFINITION(pyVaultImageNode); // converts a PyObject to a pyVaultImageNode (throws error if not correct type)
 
@@ -89,7 +84,7 @@ public:
     void Image_SetTitleW( const wchar_t * text );
     ST::string Image_GetTitle() const;
 
-    PyObject* Image_GetImage( void ); // returns pyImage
+    PyObject* Image_GetImage(); // returns pyImage
     void Image_SetImage(pyImage& image);
 
     void SetImageFromBuf( PyObject * buf );

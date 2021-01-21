@@ -41,7 +41,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 
 #include <Python.h>
-#pragma hdrstop
 
 #include "pySDL.h"
 #include "plSDL/plSDL.h"
@@ -82,7 +81,7 @@ PyObject * pySDLStateDataRecord::FindVar( const ST::string & name ) const
 ST::string pySDLStateDataRecord::GetName() const
 {
     if (!fRec)
-        return ST::null;
+        return ST::string();
     const plStateDescriptor *stateDesc = fRec->GetDescriptor();
     return stateDesc->GetName();
 }
@@ -255,7 +254,7 @@ int pySimpleStateVariable::GetType() const
 ST::string pySimpleStateVariable::GetDisplayOptions() const
 {
     if (!fVar)
-        return ST::null;
+        return ST::string();
     plVarDescriptor *varDesc = fVar->GetVarDescriptor();
     return varDesc->GetDisplayOptions();
 }
@@ -263,7 +262,7 @@ ST::string pySimpleStateVariable::GetDisplayOptions() const
 ST::string pySimpleStateVariable::GetDefault() const
 {
     if (!fVar)
-        return ST::null;
+        return ST::string();
     plVarDescriptor *varDesc = fVar->GetVarDescriptor();
     return varDesc->GetDefault();
 }

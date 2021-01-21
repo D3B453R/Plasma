@@ -48,7 +48,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
     \ingroup Avatar
     \ingroup AniGraph
 */
-#pragma warning(disable: 4786)      // don't care if mangled names are longer than 255 characters
 
 #include <map>
 #include "pnNetCommon/plSynchedObject.h"
@@ -88,10 +87,11 @@ public:
         kForceSize = 0xff
     };
 
-    plAGAnim();
+    plAGAnim() : plSynchedObject(), fBlend(), fStart(), fEnd() { }
     /** Construct with name, start time, and end time (within the max note track)
      */
-    plAGAnim(const ST::string &name, double begin, double end);
+    plAGAnim(ST::string name, double start, double end)
+        : fStart((float)start), fEnd((float)end), fName(std::move(name)), fBlend() { }
     /** Destruct, freeing the underlying animation data. */
     virtual ~plAGAnim();
 

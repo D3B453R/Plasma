@@ -220,7 +220,7 @@ public:
     bool ReadClothing();
 
     void WriteToVault();
-    void WriteToVault(const ARRAY(plStateDataRecord*) & SDRs);
+    void WriteToVault(const std::vector<plStateDataRecord*> & SDRs);
 
     /** Write the avatar clothing to a file */
     bool WriteToFile(const plFileName &filename);
@@ -304,7 +304,7 @@ public:
     plClothingItem *GetLRMatch(plClothingItem *item);
     bool IsLRMatch(plClothingItem *item1, plClothingItem *item2);
 
-    static void ChangeAvatar(const ST::string& name, const plFileName &clothingFile = ST::null);
+    static void ChangeAvatar(const ST::string& name, const plFileName &clothingFile = {});
     
     static plClothingMgr *GetClothingMgr() { return fInstance; }    
     static void Init();

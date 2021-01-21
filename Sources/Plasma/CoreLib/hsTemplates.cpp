@@ -122,7 +122,7 @@ void TArrayStats()
 
     hsDlistNode * pNode = hsDlistNode::fpFirst;
     char fnm[512];
-    snprintf(fnm,arrsize(fnm),"Reports\\%s.txt","TArray");
+    snprintf(fnm, std::size(fnm), "Reports\\%s.txt", "TArray");
     FILE * DumpLogFile = fopen( fnm, "w" );
     if (!DumpLogFile) return;
     int i=0;
@@ -176,7 +176,7 @@ void LargeArrayStats()
 
     hsDlistNode * pNode = hsDlistNode::fpFirst;
     char fnm[512];
-    snprintf(fnm,arrsize(fnm),"Reports\\%s.txt","TArray");
+    snprintf(fnm, std::size(fnm), "Reports\\%s.txt", "TArray");
     FILE * DumpLogFile = fopen( fnm, "w" );
     if (!DumpLogFile) return;
     int i=0;
@@ -224,7 +224,7 @@ void LargeArrayStats()
 
 char * hsTArrayBase::GetTypeName() { return ""; }
 
-int   hsTArrayBase::GetSizeOf(void) { return 0; }
+int   hsTArrayBase::GetSizeOf() { return 0; }
 
 hsTArrayBase::hsTArrayBase():fUseCount(0), fTotalCount(0)
 {
@@ -243,7 +243,7 @@ hsTArrayBase::~hsTArrayBase()
 
 char * hsLargeArrayBase::GetTypeName() { return ""; }
 
-int   hsLargeArrayBase::GetSizeOf(void) { return 0; }
+int   hsLargeArrayBase::GetSizeOf() { return 0; }
 
 hsLargeArrayBase::hsLargeArrayBase():fUseCount(0), fTotalCount(0)
 {

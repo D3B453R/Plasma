@@ -71,7 +71,9 @@ public:
 
     plMessage*                      fMsg;
 
-    plMsgWrap(plMessage* msg) : fMsg(msg) { hsRefCnt_SafeRef(msg); }
+    plMsgWrap(plMessage* msg)
+        : fMsg(msg), fNext(), fBack()
+    { hsRefCnt_SafeRef(msg); }
     virtual ~plMsgWrap() { hsRefCnt_SafeUnRef(fMsg); }
 
     plMsgWrap&                      ClearReceivers() { fReceivers.SetCount(0); return *this; }
@@ -299,7 +301,7 @@ void plDispatch::IMsgDispatch()
         {
             fMsgWatch.Remove(watchIdx);
 #if HS_BUILD_FOR_WIN32
-            __asm { int 3 }
+            __debugbreak();
 #endif // HS_BUILD_FOR_WIN32
         }
 #endif // HS_DEBUGGING

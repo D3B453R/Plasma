@@ -50,7 +50,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <dummy.h>
 #include <notify.h>
 #include <vector>
-#pragma hdrstop
 
 #include "plLightMapGen.h"
 #include "plGImage/plMipmap.h"
@@ -195,7 +194,7 @@ bool plLightMapGen::Open(Interface* ip, TimeValue t, bool forceRegen)
         vp.yon = 30.f;
         vp.distance = 1.f;
         vp.zoom = 1.f;
-        vp.fov = M_PI / 4.f;
+        vp.fov = hsConstants::pi<float> / 4.f;
         vp.nearRange = 1.f;
         vp.farRange = 30.f;
 
@@ -947,7 +946,7 @@ bool plLightMapGen::ISpotAffectsNode(plLightMapInfo* liInfo, LightObject* liObj,
     liObj->EvalLightState(TimeValue(0), FOREVER, &ls);
 
     float coneRad[2];
-    coneRad[0] = (float)(ls.fallsize * M_PI / 180.f);
+    coneRad[0] = hsDegreesToRadians(ls.fallsize);
     coneRad[1] = coneRad[0];
     if( ls.shape == RECT_LIGHT )
         coneRad[1] /= ls.aspect;
@@ -1557,7 +1556,7 @@ bool plLightMapGen::ISelectBitmapDimension(plMaxNode* node, const hsMatrix44& l2
     {
         fWidth = kMinSize;
     }
-    fWidth *= fScale;
+    fWidth = int(fWidth * fScale);
     fWidth = IPowerOfTwo(fWidth);
     
     if( dvDr > 0 )
@@ -1573,7 +1572,7 @@ bool plLightMapGen::ISelectBitmapDimension(plMaxNode* node, const hsMatrix44& l2
     {
         fHeight = kMinSize;
     }
-    fHeight *= fScale;
+    fHeight = int(fHeight * fScale);
     fHeight = IPowerOfTwo(fHeight);
 
     if( fHeight / fWidth > kMaxAspect )

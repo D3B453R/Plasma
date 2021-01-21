@@ -42,7 +42,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <Python.h>
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "cyMisc.h"
 #include "pyGlueHelpers.h"
@@ -142,15 +141,15 @@ PYTHON_GLOBAL_METHOD_DEFINITION(PtAtTimeCallback, args, "Params: selfkey,time,id
 {
     PyObject* keyObj = NULL;
     float time;
-    unsigned long id;
-    if (!PyArg_ParseTuple(args, "Ofl", &keyObj, &time, &id))
+    int id;
+    if (!PyArg_ParseTuple(args, "Ofi", &keyObj, &time, &id))
     {
-        PyErr_SetString(PyExc_TypeError, "PtAtTimeCallback expects a ptKey, a float, and an unsigned long");
+        PyErr_SetString(PyExc_TypeError, "PtAtTimeCallback expects a ptKey, a float, and an int");
         PYTHON_RETURN_ERROR;
     }
     if (!pyKey::Check(keyObj))
     {
-        PyErr_SetString(PyExc_TypeError, "PtAtTimeCallback expects a ptKey, a float, and an unsigned long");
+        PyErr_SetString(PyExc_TypeError, "PtAtTimeCallback expects a ptKey, a float, and an int");
         PYTHON_RETURN_ERROR;
     }
     pyKey* key = pyKey::ConvertFrom(keyObj);
@@ -214,8 +213,6 @@ PYTHON_GLOBAL_METHOD_DEFINITION(PtFindActivator, args, "Params: name\nThis will 
 
     return cyMisc::FindActivator(ST::string::from_utf8(name));
 }
-
-PYTHON_BASIC_GLOBAL_METHOD_DEFINITION(PtClearCameraStack, cyMisc::ClearCameraStack, "Clears the camera stack")
 
 PYTHON_GLOBAL_METHOD_DEFINITION(PtWasLocallyNotified, args, "Params: selfKey\nReturns 1 if the last notify was local or 0 if the notify originated on the network")
 {
@@ -503,7 +500,7 @@ PYTHON_BASIC_GLOBAL_METHOD_DEFINITION(PtClearOfferBookMode, cyMisc::DisableOffer
 
 PYTHON_GLOBAL_METHOD_DEFINITION_NOARGS(PtGetLocalClientID, "Returns our local client ID number")
 {
-    return PyInt_FromLong(cyMisc::GetLocalClientID());
+    return PyLong_FromLong(cyMisc::GetLocalClientID());
 }
 
 PYTHON_GLOBAL_METHOD_DEFINITION_NOARGS(PtIsCCRAway, "Returns current status of CCR dept")
@@ -589,7 +586,7 @@ PYTHON_GLOBAL_METHOD_DEFINITION(PtGetControlEvents, args, "Params: on, key\nRegi
 
 PYTHON_GLOBAL_METHOD_DEFINITION_NOARGS(PtGetLanguage, "Returns the current language as a PtLanguage enum")
 {
-    return PyInt_FromLong(cyMisc::GetLanguage());
+    return PyLong_FromLong(cyMisc::GetLanguage());
 }
 
 PYTHON_GLOBAL_METHOD_DEFINITION_NOARGS(PtUsingUnicode, "Returns true if the current language is a unicode language (like Japanese)")
@@ -638,42 +635,26 @@ PYTHON_GLOBAL_METHOD_DEFINITION(PtWearDefaultClothingType, args, "Params: key,ty
 
 PYTHON_GLOBAL_METHOD_DEFINITION(PtFileExists, args, "Params: filename\nReturns true if the specified file exists")
 {
-    PyObject* filenameObj;
-    if (!PyArg_ParseTuple(args, "O", &filenameObj))
+    plFileName filename;
+    if (!PyArg_ParseTuple(args, "O&", PyUnicode_PlFileNameDecoder, &filename))
     {
-        PyErr_SetString(PyExc_TypeError, "PtFileExists expects a string");
+        PyErr_SetString(PyExc_TypeError, "PtFileExists expects a pathlike object or string");
         PYTHON_RETURN_ERROR;
     }
 
-    if (PyString_CheckEx(filenameObj))
-    {
-        PYTHON_RETURN_BOOL(cyMisc::FileExists(PyString_AsStringEx(filenameObj)));
-    }
-    else
-    {
-        PyErr_SetString(PyExc_TypeError, "PtFileExists expects a string");
-        PYTHON_RETURN_ERROR;
-    }
+    PYTHON_RETURN_BOOL(cyMisc::FileExists(filename));
 }
 
 PYTHON_GLOBAL_METHOD_DEFINITION(PtCreateDir, args, "Params: directory\nCreates the directory and all parent folders. Returns false on failure")
 {
-    PyObject* directoryObj;
-    if (!PyArg_ParseTuple(args, "O", &directoryObj))
+    plFileName directory;
+    if (!PyArg_ParseTuple(args, "O&", PyUnicode_PlFileNameDecoder, &directory))
     {
-        PyErr_SetString(PyExc_TypeError, "PtCreateDir expects a string");
+        PyErr_SetString(PyExc_TypeError, "PtCreateDir expects a pathlike object or string");
         PYTHON_RETURN_ERROR;
     }
 
-    if (PyString_CheckEx(directoryObj))
-    {
-        PYTHON_RETURN_BOOL(cyMisc::CreateDir(PyString_AsStringEx(directoryObj)));
-    }
-    else
-    {
-        PyErr_SetString(PyExc_TypeError, "PtCreateDir expects a string");
-        PYTHON_RETURN_ERROR;
-    }
+    PYTHON_RETURN_BOOL(cyMisc::CreateDir(directory));
 }
 
 PYTHON_GLOBAL_METHOD_DEFINITION_NOARGS(PtGetUserPath, "Returns the unicode path to the client's root user directory. Do NOT convert to a standard string.")
@@ -691,76 +672,77 @@ PYTHON_GLOBAL_METHOD_DEFINITION_NOARGS(PtGetInitPath, "Returns the unicode path 
 // AddPlasmaMethods - the python method definitions
 //
 
-void cyMisc::AddPlasmaMethods3(std::vector<PyMethodDef> &methods)
+void cyMisc::AddPlasmaMethods3(PyObject* m)
 {
-    PYTHON_GLOBAL_METHOD(methods, PtSendPetitionToCCR);
-    PYTHON_GLOBAL_METHOD(methods, PtSendChatToCCR);
+    PYTHON_START_GLOBAL_METHOD_TABLE(cyMisc3)
+        PYTHON_GLOBAL_METHOD(PtSendPetitionToCCR)
+        PYTHON_GLOBAL_METHOD(PtSendChatToCCR)
 
-    PYTHON_GLOBAL_METHOD_NOARGS(methods, PtGetPythonLoggingLevel);
-    PYTHON_GLOBAL_METHOD(methods, PtSetPythonLoggingLevel);
+        PYTHON_GLOBAL_METHOD_NOARGS(PtGetPythonLoggingLevel)
+        PYTHON_GLOBAL_METHOD(PtSetPythonLoggingLevel)
 
-    PYTHON_GLOBAL_METHOD(methods, PtConsole);
-    PYTHON_GLOBAL_METHOD(methods, PtConsoleNet);
+        PYTHON_GLOBAL_METHOD(PtConsole)
+        PYTHON_GLOBAL_METHOD(PtConsoleNet)
 
 #if 1
-    // TEMP
-    PYTHON_GLOBAL_METHOD(methods, PtPrintToScreen);
+        // TEMP
+        PYTHON_GLOBAL_METHOD(PtPrintToScreen)
 #endif
 
-    PYTHON_GLOBAL_METHOD(methods, PtAtTimeCallback);
-    PYTHON_GLOBAL_METHOD(methods, PtClearTimerCallbacks);
-    
-    PYTHON_GLOBAL_METHOD(methods, PtFindSceneobject);
-    PYTHON_GLOBAL_METHOD(methods, PtFindSceneobjects);
-    PYTHON_GLOBAL_METHOD(methods, PtFindActivator);
-    PYTHON_BASIC_GLOBAL_METHOD(methods, PtClearCameraStack);
-    PYTHON_GLOBAL_METHOD(methods, PtWasLocallyNotified);
+        PYTHON_GLOBAL_METHOD(PtAtTimeCallback)
+        PYTHON_GLOBAL_METHOD(PtClearTimerCallbacks)
 
-    PYTHON_GLOBAL_METHOD(methods, PtAttachObject);
-    PYTHON_GLOBAL_METHOD(methods, PtDetachObject);
-    
-    //PYTHON_GLOBAL_METHOD(methods, PtLinkToAge);
-    
-    PYTHON_GLOBAL_METHOD(methods, PtDirtySynchState);
-    PYTHON_GLOBAL_METHOD(methods, PtDirtySynchClients);
+        PYTHON_GLOBAL_METHOD(PtFindSceneobject)
+        PYTHON_GLOBAL_METHOD(PtFindSceneobjects)
+        PYTHON_GLOBAL_METHOD(PtFindActivator)
+        PYTHON_GLOBAL_METHOD(PtWasLocallyNotified)
 
-    PYTHON_GLOBAL_METHOD(methods, PtEnableControlKeyEvents);
-    PYTHON_GLOBAL_METHOD(methods, PtDisableControlKeyEvents);
+        PYTHON_GLOBAL_METHOD(PtAttachObject)
+        PYTHON_GLOBAL_METHOD(PtDetachObject)
 
-    PYTHON_BASIC_GLOBAL_METHOD(methods, PtEnableAvatarCursorFade);
-    PYTHON_BASIC_GLOBAL_METHOD(methods, PtDisableAvatarCursorFade);
-    PYTHON_GLOBAL_METHOD(methods, PtFadeLocalAvatar);
+        //PYTHON_GLOBAL_METHOD(PtLinkToAge)
 
-    PYTHON_GLOBAL_METHOD(methods, PtSetOfferBookMode);
-    PYTHON_GLOBAL_METHOD(methods, PtSetShareSpawnPoint);
-    PYTHON_GLOBAL_METHOD(methods, PtSetShareAgeInstanceGuid);
-    PYTHON_GLOBAL_METHOD(methods, PtNotifyOffererLinkAccepted);
-    PYTHON_GLOBAL_METHOD(methods, PtNotifyOffererLinkRejected);
-    PYTHON_GLOBAL_METHOD(methods, PtNotifyOffererLinkCompleted);
-    PYTHON_BASIC_GLOBAL_METHOD(methods, PtClearOfferBookMode);
+        PYTHON_GLOBAL_METHOD(PtDirtySynchState)
+        PYTHON_GLOBAL_METHOD(PtDirtySynchClients)
 
-    PYTHON_GLOBAL_METHOD_NOARGS(methods, PtGetLocalClientID);
-    
-    PYTHON_GLOBAL_METHOD_NOARGS(methods, PtIsCCRAway);
-    PYTHON_GLOBAL_METHOD_NOARGS(methods, PtAmCCR);
+        PYTHON_GLOBAL_METHOD(PtEnableControlKeyEvents)
+        PYTHON_GLOBAL_METHOD(PtDisableControlKeyEvents)
 
-    PYTHON_GLOBAL_METHOD(methods, PtToggleAvatarClickability);
-    
-    PYTHON_GLOBAL_METHOD(methods, PtTransferParticlesToObject);
-    PYTHON_GLOBAL_METHOD(methods, PtSetParticleDissentPoint);
+        PYTHON_BASIC_GLOBAL_METHOD(PtEnableAvatarCursorFade)
+        PYTHON_BASIC_GLOBAL_METHOD(PtDisableAvatarCursorFade)
+        PYTHON_GLOBAL_METHOD(PtFadeLocalAvatar)
 
-    PYTHON_GLOBAL_METHOD(methods, PtGetControlEvents);
-    
-    PYTHON_GLOBAL_METHOD_NOARGS(methods, PtGetLanguage);
-    PYTHON_GLOBAL_METHOD_NOARGS(methods, PtUsingUnicode);
-    
-    PYTHON_GLOBAL_METHOD(methods, PtFakeLinkAvatarToObject);
-    
-    PYTHON_GLOBAL_METHOD(methods, PtWearDefaultClothingType);
+        PYTHON_GLOBAL_METHOD(PtSetOfferBookMode)
+        PYTHON_GLOBAL_METHOD(PtSetShareSpawnPoint)
+        PYTHON_GLOBAL_METHOD(PtSetShareAgeInstanceGuid)
+        PYTHON_GLOBAL_METHOD(PtNotifyOffererLinkAccepted)
+        PYTHON_GLOBAL_METHOD(PtNotifyOffererLinkRejected)
+        PYTHON_GLOBAL_METHOD(PtNotifyOffererLinkCompleted)
+        PYTHON_BASIC_GLOBAL_METHOD(PtClearOfferBookMode)
 
-    PYTHON_GLOBAL_METHOD(methods, PtFileExists);
-    PYTHON_GLOBAL_METHOD(methods, PtCreateDir);
+        PYTHON_GLOBAL_METHOD_NOARGS(PtGetLocalClientID)
 
-    PYTHON_GLOBAL_METHOD_NOARGS(methods, PtGetUserPath);
-    PYTHON_GLOBAL_METHOD_NOARGS(methods, PtGetInitPath);
+        PYTHON_GLOBAL_METHOD_NOARGS(PtIsCCRAway)
+        PYTHON_GLOBAL_METHOD_NOARGS(PtAmCCR)
+
+        PYTHON_GLOBAL_METHOD(PtToggleAvatarClickability)
+
+        PYTHON_GLOBAL_METHOD(PtTransferParticlesToObject)
+        PYTHON_GLOBAL_METHOD(PtSetParticleDissentPoint)
+
+        PYTHON_GLOBAL_METHOD(PtGetControlEvents)
+
+        PYTHON_GLOBAL_METHOD_NOARGS(PtGetLanguage)
+        PYTHON_GLOBAL_METHOD_NOARGS(PtUsingUnicode)
+
+        PYTHON_GLOBAL_METHOD(PtFakeLinkAvatarToObject)
+
+        PYTHON_GLOBAL_METHOD(PtWearDefaultClothingType)
+
+        PYTHON_GLOBAL_METHOD(PtFileExists)
+        PYTHON_GLOBAL_METHOD(PtCreateDir)
+
+        PYTHON_GLOBAL_METHOD_NOARGS(PtGetUserPath)
+        PYTHON_GLOBAL_METHOD_NOARGS(PtGetInitPath)
+    PYTHON_END_GLOBAL_METHOD_TABLE(m, cyMisc3)
 }

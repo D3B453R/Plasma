@@ -51,7 +51,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <dummy.h>
 #include <iparamm2.h>
 #include <meshdlib.h> 
-#pragma hdrstop
 
 #include "MaxMain/plPlasmaRefMsgs.h"
 
@@ -73,8 +72,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "plScene/plVisRegion.h"
 
-static const float kPercentToFrac(1.e-2f);
-static const float kDegreeToRad(M_PI/180.f);
+static constexpr float kPercentToFrac(1.e-2f);
 
 
 // Preliminary setup bookkeeping
@@ -544,7 +542,7 @@ bool plWaterComponent::IReadRefObject(plMaxNodeBase* node, plFixedWaterState7& w
     ws.fWaterHeight = xfm.GetTrans().z;
 
     Point3 y = xfm.GetRow(1);
-    hsVector3 dir(-y.x, -y.y, 0);
+    hsVector3 dir(-y.x, -y.y, 0.f);
     dir.Normalize();
     ws.fWindDir = dir;
 
@@ -635,14 +633,14 @@ bool plWaterComponent::IMakeWaveSet(plMaxNode* node, plErrorMsg* pErrMsg)
     geoState.fMinLength = fCompPB->GetFloat(kGeoMinLen);
     geoState.fAmpOverLen = fCompPB->GetFloat(kGeoAmpOverLen) * kPercentToFrac;
     geoState.fChop = fCompPB->GetFloat(kGeoChop) * kPercentToFrac;
-    geoState.fAngleDev = fCompPB->GetFloat(kGeoAngleDev) * kDegreeToRad;
+    geoState.fAngleDev = hsDegreesToRadians(fCompPB->GetFloat(kGeoAngleDev));
 
     plFixedWaterState7::WaveState& texState = ws.fTexState;
     texState.fMaxLength = fCompPB->GetFloat(kTexMaxLen);
     texState.fMinLength = fCompPB->GetFloat(kTexMinLen);
     texState.fAmpOverLen = fCompPB->GetFloat(kTexAmpOverLen) * kPercentToFrac;
     texState.fChop = fCompPB->GetFloat(kTexChop) * kPercentToFrac;
-    texState.fAngleDev = fCompPB->GetFloat(kTexAngleDev) * kDegreeToRad;
+    texState.fAngleDev = hsDegreesToRadians(fCompPB->GetFloat(kTexAngleDev));
 
     hsVector3 specVec;
     specVec[ws.kNoise] = fCompPB->GetFloat(kNoise) * kPercentToFrac;
@@ -658,7 +656,7 @@ bool plWaterComponent::IMakeWaveSet(plMaxNode* node, plErrorMsg* pErrMsg)
     ws.fDepthFalloff = hsVector3(fCompPB->GetFloat(kDepthOpac), fCompPB->GetFloat(kDepthRefl), fCompPB->GetFloat(kDepthWave));
     ws. fWaterOffset = hsVector3(-fCompPB->GetFloat(kZeroOpac), -fCompPB->GetFloat(kZeroRefl), -fCompPB->GetFloat(kZeroWave));
     ws.fMaxAtten = hsVector3(1.f, 1.f, 1.f);
-    ws.fMinAtten = hsVector3(0, 0, 0);
+    ws.fMinAtten = {};
 
     IReadEnvObject(node, pErrMsg, ws);
 

@@ -42,7 +42,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <Python.h>
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "pfGameGUIMgr/pfGUIDraggableMod.h"
 #include "pfGameGUIMgr/pfGUIDialogMod.h"
@@ -78,7 +77,7 @@ void pyGUIControlDraggable::StopDragging( bool cancel )
     }
 }
 
-PyObject* pyGUIControlDraggable::GetLastMousePt( void )
+PyObject* pyGUIControlDraggable::GetLastMousePt()
 {
     if ( fGCkey )
     {

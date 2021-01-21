@@ -1,13 +1,3 @@
-include_directories("../../Apps")
-include_directories("../../CoreLib")
-include_directories("../../FeatureLib")
-include_directories("../../NucleusLib/inc")
-include_directories("../../NucleusLib")
-include_directories("../../PubUtilLib")
-
-include_directories(${OPENSSL_INCLUDE_DIR})
-include_directories(${CURL_INCLUDE_DIR})
-
 set(plUruLauncher_HEADERS
     plClientLauncher.h
 )
@@ -53,10 +43,7 @@ target_link_libraries(plUruLauncher pnUtils)
 target_link_libraries(plUruLauncher pnUUID)
 
 target_link_libraries(plUruLauncher ${DirectX_LIBRARIES})
-target_link_libraries(plUruLauncher ${OPENSSL_LIBRARIES})
-target_link_libraries(plUruLauncher ${Ogg_LIBRARIES})
-target_link_libraries(plUruLauncher ${Vorbis_LIBRARIES})
-target_link_libraries(plUruLauncher ${CURL_LIBRARY})
+target_link_libraries(plUruLauncher CURL::libcurl)
 target_link_libraries(plUruLauncher ${STRING_THEORY_LIBRARIES})
 
 if(USE_VLD)
@@ -68,7 +55,13 @@ if(WIN32)
     target_link_libraries(plUruLauncher rpcrt4)
     target_link_libraries(plUruLauncher comctl32)
     target_link_libraries(plUruLauncher crypt32)
+    target_link_libraries(plUruLauncher wldap32)
 endif()
+
+install(
+    TARGETS plUruLauncher
+    DESTINATION client
+)
 
 source_group("Source Files" FILES ${plUruLauncher_SOURCES})
 source_group("Header Files" FILES ${plUruLauncher_HEADERS})

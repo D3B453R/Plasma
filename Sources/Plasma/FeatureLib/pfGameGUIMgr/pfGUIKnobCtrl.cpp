@@ -68,18 +68,13 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 //// Constructor/Destructor //////////////////////////////////////////////////
 
-pfGUIKnobCtrl::pfGUIKnobCtrl() :
-    fDragStart(0.f, 0.f, 0.f),
-    fDragging(false),
-    fAnimStartPos(0.f, 0.f, 0.f),
-    fAnimEndPos(0.f, 0.f, 0.f),
-    fDragRangeMin(0.f),
-    fDragRangeMax(0.f),
-    fAnimBegin(0.f),
-    fAnimEnd(0.f),
-    fAnimTimesCalced(false)
+pfGUIKnobCtrl::pfGUIKnobCtrl()
+    : fDragging(), fDragValue(),
+      fDragRangeMin(), fDragRangeMax(),
+      fAnimTimesCalced(), fAnimBegin(),
+      fAnimEnd()
 {
-    SetFlag( kWantsInterest );
+    SetFlag(kWantsInterest);
 }
 
 //// IEval ///////////////////////////////////////////////////////////////////
@@ -147,14 +142,12 @@ void    pfGUIKnobCtrl::HandleMouseDown( hsPoint3 &mousePt, uint8_t modifiers )
 
     if( HasFlag( kMapToAnimationRange ) )
     {
-        hsPoint3    scrnStart, scrnEnd;
-
         // At mouse-down, we take our local-space start and end points and
         // translate them by our parent object's local-to-world to get the
         // right points in world-space. We do this now because our parent
         // might be animated, which could complicate matters a tad.
-        scrnStart = fAnimStartPos;
-        scrnEnd = fAnimEndPos;
+        hsPoint3 scrnStart = fAnimStartPos;
+        hsPoint3 scrnEnd = fAnimEndPos;
 
         plSceneObject *target = GetTarget();
         if( target != nil )
@@ -204,7 +197,7 @@ void    pfGUIKnobCtrl::HandleMouseUp( hsPoint3 &mousePt, uint8_t modifiers )
 
 void    pfGUIKnobCtrl::HandleMouseDrag( hsPoint3 &mousePt, uint8_t modifiers )
 {
-    float oldValue = fValue, newValue = fDragValue;
+    float newValue = fDragValue;
 
     if( fDragRangeMin != -1 )
     {
@@ -266,12 +259,12 @@ void    pfGUIKnobCtrl::SetAnimationKeys( hsTArray<plKey> &keys, const ST::string
 //  Loops through and computes the max begin and end for our animations. If
 //  none of them are loaded and we're not already calced, returns false.
 
-bool    pfGUIKnobCtrl::ICalcAnimTimes( void )
+bool    pfGUIKnobCtrl::ICalcAnimTimes()
 {
     if( fAnimTimesCalced )
         return true;
 
-    float tBegin = 1e30, tEnd = -1e30;
+    float tBegin = 1e30f, tEnd = -1e30f;
     bool     foundOne = false;
 
     for( int i = 0; i < fAnimationKeys.GetCount(); i++ )
@@ -351,7 +344,7 @@ void    pfGUIKnobCtrl::SetCurrValue( float v )
 
 //// IGetDesiredCursor ///////////////////////////////////////////////////////
 
-uint32_t      pfGUIKnobCtrl::IGetDesiredCursor( void ) const
+uint32_t      pfGUIKnobCtrl::IGetDesiredCursor() const
 {
     if( HasFlag( kLeftRightOrientation ) )
     {

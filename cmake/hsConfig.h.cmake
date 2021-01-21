@@ -46,17 +46,10 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 /* Compiler settings */
 #cmakedefine HAVE_CPUID
 
-#cmakedefine HAVE_CXX14_DEPRECATED_ATTR
-#cmakedefine HAVE_GCC_DEPRECATED_ATTR
-
-#cmakedefine HAVE_CONSTEXPR
-#cmakedefine HAVE_OVERRIDE
-#cmakedefine HAVE_NOEXCEPT
-
 /* External library usage */
-#cmakedefine PLASMA_USE_SPEEX
-#cmakedefine PLASMA_USE_OPUS
-#cmakedefine PLASMA_USE_VPX
-#cmakedefine PLASMA_USE_WEBM
+#cmakedefine USE_SPEEX
+#cmakedefine USE_OPUS
+#cmakedefine USE_VPX
+#cmakedefine USE_WEBM
 
 #endif

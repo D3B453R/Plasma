@@ -113,21 +113,12 @@ class pfScrollProc : public pfGUICtrlProcObject
 //// Constructor/Destructor //////////////////////////////////////////////////
 
 pfGUIListBoxMod::pfGUIListBoxMod()
+    : fMinSel(), fMaxSel(), fCurrClick(-1), fCurrHover(-1), fModsAtDragTime(),
+      fScrollControl(), fCheckScroll(), fSingleSelElement(-1),
+      fScrollRangeUpdateDeferred(), fScrollPos(), fLocked(),
+      fReadyToRoll(), fClicking(), fScrollProc()
 {
-    SetFlag( kWantsInterest );
-    fCurrClick = -1;
-    fCurrHover = -1;
-    fModsAtDragTime = 0;
-    fScrollControl = nil;
-    fCheckScroll = false;
-    fSingleSelElement = -1;
-    fScrollRangeUpdateDeferred = false;
-    fScrollPos = 0;
-    fLocked = false;
-    fReadyToRoll = false;
-    fClicking = false;
-
-    fScrollProc = nil;
+    SetFlag(kWantsInterest);
 }
 
 pfGUIListBoxMod::~pfGUIListBoxMod()
@@ -178,7 +169,7 @@ bool    pfGUIListBoxMod::MsgReceive( plMessage *msg )
 
 //// IPostSetUpDynTextMap ////////////////////////////////////////////////////
 
-void    pfGUIListBoxMod::IPostSetUpDynTextMap( void )
+void    pfGUIListBoxMod::IPostSetUpDynTextMap()
 {
     pfGUIColorScheme *scheme = GetColorScheme();
     fDynTextMap->SetFont( scheme->fFontFace, scheme->fFontSize, scheme->fFontFlags, 
@@ -191,7 +182,7 @@ void    pfGUIListBoxMod::IPostSetUpDynTextMap( void )
 
 //// IUpdate /////////////////////////////////////////////////////////////////
 
-void    pfGUIListBoxMod::IUpdate( void )
+void    pfGUIListBoxMod::IUpdate()
 {
     int         i, j;
     uint16_t      x, y, width, height, maxHeight;
@@ -363,7 +354,7 @@ void    pfGUIListBoxMod::IUpdate( void )
 //  Calculates the starting indexes for each row of items. Call whenever you
 //  update the element list.
 
-void    pfGUIListBoxMod::ICalcWrapStarts( void )
+void    pfGUIListBoxMod::ICalcWrapStarts()
 {
     uint16_t      i, x, y, maxHeight, width, height;
 
@@ -421,7 +412,7 @@ void    pfGUIListBoxMod::ICalcWrapStarts( void )
 //// ICalcScrollRange ////////////////////////////////////////////////////////
 //  Call whenever you update the element list
 
-void    pfGUIListBoxMod::ICalcScrollRange( void )
+void    pfGUIListBoxMod::ICalcScrollRange()
 {
     uint16_t      ctrlHt, ctrlWd, height, width, maxHeight;
     int         i, j, end;
@@ -1009,7 +1000,7 @@ bool    pfGUIListBoxMod::HandleKeyEvent( pfGameGUIMgr::EventType event, plKeyDef
 
 //// ScrollToEnd /////////////////////////////////////////////////////////////
 
-void    pfGUIListBoxMod::ScrollToEnd( void )
+void    pfGUIListBoxMod::ScrollToEnd()
 {
     if( fScrollControl != nil )
     {
@@ -1021,7 +1012,7 @@ void    pfGUIListBoxMod::ScrollToEnd( void )
 
 //// ScrollToBegin ///////////////////////////////////////////////////////////
 
-void    pfGUIListBoxMod::ScrollToBegin( void )
+void    pfGUIListBoxMod::ScrollToBegin()
 {
     if( fScrollControl != nil )
     {
@@ -1054,12 +1045,12 @@ void pfGUIListBoxMod::SetScrollPos( int32_t pos )
     IUpdate();
 }
 
-int32_t pfGUIListBoxMod::GetScrollPos( void )
+int32_t pfGUIListBoxMod::GetScrollPos()
 {
     return (int)fScrollControl->GetCurrValue();
 }
 
-int32_t pfGUIListBoxMod::GetScrollRange( void )
+int32_t pfGUIListBoxMod::GetScrollRange()
 {
     return (int)fScrollControl->GetMax() - (int)fScrollControl->GetMin();
 }
@@ -1136,7 +1127,7 @@ int16_t   pfGUIListBoxMod::FindElement( pfGUIListElement *toCompareTo )
     return (int16_t)-1;
 }
 
-void    pfGUIListBoxMod::ClearAllElements( void )
+void    pfGUIListBoxMod::ClearAllElements()
 {
     int     i;
 
@@ -1167,7 +1158,7 @@ int16_t   pfGUIListBoxMod::FindString( const ST::string &toCompareTo )
     return FindElement( &text );
 }
 
-uint16_t  pfGUIListBoxMod::GetNumElements( void )
+uint16_t  pfGUIListBoxMod::GetNumElements()
 {
     return fElements.GetCount();
 }
@@ -1177,12 +1168,12 @@ pfGUIListElement    *pfGUIListBoxMod::GetElement( uint16_t idx )
     return fElements[ idx ];
 }
 
-void    pfGUIListBoxMod::LockList( void )
+void    pfGUIListBoxMod::LockList()
 {
     fLocked = true;
 }
 
-void    pfGUIListBoxMod::UnlockList( void )
+void    pfGUIListBoxMod::UnlockList()
 {
     fLocked = false;
     ICalcWrapStarts();
@@ -1192,7 +1183,7 @@ void    pfGUIListBoxMod::UnlockList( void )
 
 //// IGetDesiredCursor ///////////////////////////////////////////////////////
 
-uint32_t      pfGUIListBoxMod::IGetDesiredCursor( void ) const
+uint32_t      pfGUIListBoxMod::IGetDesiredCursor() const
 {
     if( fCurrHover == -1 )
         return plInputInterface::kNullCursor;

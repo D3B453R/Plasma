@@ -170,7 +170,7 @@ void plNetClientStreamRecorder::RecordMsg(plNetMessage* msg, double secs)
 
 void plNetClientStreamRecorder::RecordAgeLoadedMsg(plAgeLoadedMsg* ageLoadedMsg)
 {
-    fLog->AddLineF("Age %s", ageLoadedMsg->fLoaded ? "Loaded" : "Unloaded");
+    fLog->AddLineF("Age {}", ageLoadedMsg->fLoaded ? "Loaded" : "Unloaded");
 
     if (ageLoadedMsg->fLoaded)
     {
@@ -298,7 +298,7 @@ void plNetClientStreamRecorder::ILogMsg(plNetMessage* msg, const char* preText)
     if (msg->ClassIndex() == CLASS_INDEX_SCOPED(plNetMsgGameMessage))
     {
         plNetMsgGameMessage* gameMsg = plNetMsgGameMessage::ConvertNoRef(msg);
-        fLog->AddLineF("%s%s(%s)", preText, msg->ClassName(), plFactory::GetNameOfClass(gameMsg->StreamInfo()->GetStreamType()));
+        fLog->AddLineF("{}{}({})", preText, msg->ClassName(), plFactory::GetNameOfClass(gameMsg->StreamInfo()->GetStreamType()));
 
         if (gameMsg->StreamInfo()->GetStreamType() == CLASS_INDEX_SCOPED(plNotifyMsg))
         {
@@ -325,7 +325,7 @@ void plNetClientStreamRecorder::ILogMsg(plNetMessage* msg, const char* preText)
                 case proEventData::kClickDrag:      eventName = "ClickDrag";        break;
                 }
 
-                fLog->AddLineF("\t%s", eventName);
+                fLog->AddLineF("\t{}", eventName);
             }
 
             hsRefCnt_SafeUnRef(notifyMsg);
@@ -338,7 +338,7 @@ void plNetClientStreamRecorder::ILogMsg(plNetMessage* msg, const char* preText)
         int ver;
         if (plStateDataRecord::ReadStreamHeader(&stream, &descName, &ver))
         {
-            fLog->AddLineF("%s%s(%s)", preText, msg->ClassName(), descName.c_str());
+            fLog->AddLineF("{}{}({})", preText, msg->ClassName(), descName);
 
             int i;
 
@@ -348,19 +348,19 @@ void plNetClientStreamRecorder::ILogMsg(plNetMessage* msg, const char* preText)
             sdRec.GetDirtyVars(&vars);
             for (i = 0; i < vars.size(); i++)
             {
-                fLog->AddLineF("\t%s", vars[i]->GetVarDescriptor()->GetName().c_str());
+                fLog->AddLineF("\t{}", vars[i]->GetVarDescriptor()->GetName());
             }
 
             plStateDataRecord::SDVarsList sdVars;
             sdRec.GetDirtySDVars(&sdVars);
             for (i = 0; i < sdVars.size(); i++)
             {
-                fLog->AddLineF("\t%s", sdVars[i]->GetSDVarDescriptor()->GetName().c_str());
+                fLog->AddLineF("\t{}", sdVars[i]->GetSDVarDescriptor()->GetName());
             }
         }
     }
     else
-        fLog->AddLineF("%s%s", preText, msg->ClassName());
+        fLog->AddLineF("{}{}", preText, msg->ClassName());
 }
 
 

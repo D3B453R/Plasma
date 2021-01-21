@@ -79,7 +79,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 //// pfGUIColorScheme Functions //////////////////////////////////////////////
 
-void    pfGUIColorScheme::IReset( void )
+void    pfGUIColorScheme::IReset()
 {
     fForeColor.Set( 1, 1, 1, 1 );
     fBackColor.Set( 0, 0, 0, 1 );
@@ -137,28 +137,7 @@ void    pfGUIColorScheme::Write( hsStream *s )
     s->WriteLE( fFontFlags );
 }
 
-//// Constructor/Destructor //////////////////////////////////////////////////
-
-pfGUIControlMod::pfGUIControlMod()
-{
-    fEnabled = true;
-    fDialog = nil;
-    fBoundsValid = false;
-    fCenterValid = false;
-    fFocused = false;
-    fInteresting = false;
-    fVisible = true;
-    fHandler = nil;
-    fTagID = 0;
-    fDropTargetHdlr = nil;
-    fDynTextMap = nil;
-    fProxy = nil;
-
-    fColorScheme = nil;
-    fSkin = nil;
-    
-    fNotifyOnInteresting = false;
-}
+//// Destructor //////////////////////////////////////////////////
 
 pfGUIControlMod::~pfGUIControlMod()
 {
@@ -177,7 +156,7 @@ bool    pfGUIControlMod::IEval( double secs, float del, uint32_t dirty )
 
 //// GetBounds ///////////////////////////////////////////////////////////////
 
-const hsBounds3 &pfGUIControlMod::GetBounds( void )
+const hsBounds3 &pfGUIControlMod::GetBounds()
 {
     UpdateBounds();
     return fBounds; 
@@ -276,8 +255,8 @@ static bool     CreateConvexHull( hsPoint3 *inPoints, int &numPoints )
         
         // If the angle is < 180, then it's a good angle and we can advance all our points by 1...
         // Note: we have a tolerance so that we don't get points that form edges that are pretty darned close...
-        const float tolerance = M_PI / 90.f;
-        if( angle > tolerance && angle < M_PI - tolerance )
+        constexpr float tolerance = hsConstants::pi<float> / 90.f;
+        if (angle > tolerance && angle < hsConstants::pi<float> - tolerance)
         {
             pointA++;
             pointB++;
@@ -405,7 +384,7 @@ bool    pfGUIControlMod::PointInBounds( const hsPoint3 &point )
 //  any dynmaic text maps, since we want to use the initial bounds to do so
 //  instead of any currently animated state of the bounds.
 
-void    pfGUIControlMod::CalcInitialBounds( void )
+void    pfGUIControlMod::CalcInitialBounds()
 {
     UpdateBounds( nil, true );
     fInitialBounds = fBounds;
@@ -518,7 +497,7 @@ void    pfGUIControlMod::UpdateBounds( hsMatrix44 *invXformMatrix, bool force )
 void    pfGUIControlMod::SetObjectCenter( float x, float y )
 {
     hsMatrix44  xformMatrix, l2p, p2l;
-    hsPoint3    center, corners[ 8 ];
+    hsPoint3    center;
 
 
     if( x > 1.f )
@@ -707,7 +686,7 @@ bool    pfGUIControlMod::ISetUpDynTextMap( plPipeline *pipe )
 
 //// Get/SetColorScheme //////////////////////////////////////////////////////
 
-pfGUIColorScheme    *pfGUIControlMod::GetColorScheme( void ) const
+pfGUIColorScheme    *pfGUIControlMod::GetColorScheme() const
 {
     if( fColorScheme == nil )
         return fDialog->GetColorScheme();
@@ -795,7 +774,7 @@ void    pfGUIControlMod::SetVisible( bool vis )
         fDialog->SetFocus( nil );
 }
 
-void    pfGUIControlMod::Refresh( void )
+void    pfGUIControlMod::Refresh()
 {
     IUpdate();
 }
@@ -930,7 +909,7 @@ void    pfGUIControlMod::ISetHandler( pfGUICtrlProcObject *h, bool clearInheritF
 
 //// DoSomething /////////////////////////////////////////////////////////////
 
-void    pfGUIControlMod::DoSomething( void )
+void    pfGUIControlMod::DoSomething()
 {
     if( fEnabled && fHandler != nil )
         fHandler->DoSomething( this );

@@ -126,24 +126,12 @@ plNetClientMgr::PendingLoad::~PendingLoad()
 //
 // CONSTRUCT
 //
-#pragma warning(disable:4355)   // this used in initializer list
-plNetClientMgr::plNetClientMgr() : 
-        fLocalPlayerKey(nil),
-        fMsgHandler(this),
-        fJoinOrder(0),
-        fTaskProgBar(nullptr),
-        fMsgRecorder(nil),
-        fServerTimeOffset(0),
-        fTimeSamples(0),
-        fLastTimeUpdate(0),
-        fListenListMode(kListenList_Distance),
-        fAgeSDLObjectKey(nil),
-        fExperimentalLevel(0),
-        fOverrideAgeTimeOfDayPercent(-1.f),
-        fNumInitialSDLStates(0),
-        fRequiredNumInitialSDLStates(0),
-        fDisableMsg(nil),
-        fIsOwner(true)
+plNetClientMgr::plNetClientMgr()
+    : fLocalPlayerKey(), fMsgHandler(this), fJoinOrder(), fTaskProgBar(),
+      fMsgRecorder(), fServerTimeOffset(), fTimeSamples(), fLastTimeUpdate(),
+      fListenListMode(kListenList_Distance), fAgeSDLObjectKey(), fExperimentalLevel(),
+      fOverrideAgeTimeOfDayPercent(-1.f), fNumInitialSDLStates(), fRequiredNumInitialSDLStates(),
+      fDisableMsg(), fIsOwner(true), fIniPlayerID(), fPingServerType()
 {   
 #ifndef HS_DEBUGGING
     // release code will timeout inactive players on servers by default
@@ -154,7 +142,6 @@ plNetClientMgr::plNetClientMgr() :
 //  fPlayerVault.SetPlayerName("SinglePlayer"); // in a MP game, this will be replaced with a player name like 'Atrus'
     fTransport.SetNumChannels(kNetNumChannels); 
 }
-#pragma warning(default:4355)
 
 //
 // DESTRUCT
@@ -920,7 +907,7 @@ bool plNetClientMgr::MsgReceive( plMessage* msg )
     if (plNetCommAuthMsg * authMsg = plNetCommAuthMsg::ConvertNoRef(msg)) {
         if (IS_NET_ERROR(authMsg->result)) {
             char str[256];
-            StrPrintf(str, arrsize(str), "Authentication failed: %S", NetErrorToString(authMsg->result));
+            snprintf(str, std::size(str), "Authentication failed: %S", NetErrorToString(authMsg->result));
             QueueDisableNet(true, str);
             return false;   // @@@ TODO: Handle this failure better
         }
@@ -931,7 +918,7 @@ bool plNetClientMgr::MsgReceive( plMessage* msg )
     if (plNetCommActivePlayerMsg * activePlrMsg = plNetCommActivePlayerMsg::ConvertNoRef(msg)) {
         if (IS_NET_ERROR(activePlrMsg->result)) {
             char str[256];
-            StrPrintf(str, arrsize(str), "SetActivePlayer failed: %S", NetErrorToString(activePlrMsg->result));
+            snprintf(str, std::size(str), "SetActivePlayer failed: %S", NetErrorToString(activePlrMsg->result));
             QueueDisableNet(true, str);
             return false;   // @@@ TODO: Handle this failure better.
         }
@@ -965,7 +952,7 @@ bool plNetClientMgr::MsgReceive( plMessage* msg )
     plCCRInvisibleMsg* invisMsg=plCCRInvisibleMsg::ConvertNoRef(msg);
     if (invisMsg)
     {
-        LogMsg(kLogDebug, "plNetClientMgr::MsgReceive - Got plCCRInvisibleMsg");
+        ::LogMsg(kLogDebug, "plNetClientMgr::MsgReceive - Got plCCRInvisibleMsg");
         MakeCCRInvisible(invisMsg->fAvKey, invisMsg->fInvisLevel);
         return true;
     }
@@ -1098,7 +1085,7 @@ ST::string plNetClientMgr::GetPlayerName(const plKey avKey) const
         return NetCommGetPlayer()->playerName;
 
     plNetTransportMember* mbr=TransportMgr().GetMember(TransportMgr().FindMember(avKey));
-    return mbr ? mbr->GetPlayerName() : ST::null;
+    return mbr ? mbr->GetPlayerName() : ST::string();
 }
 
 ST::string plNetClientMgr::GetPlayerNameById (unsigned playerId) const {
@@ -1107,7 +1094,7 @@ ST::string plNetClientMgr::GetPlayerNameById (unsigned playerId) const {
         return NetCommGetPlayer()->playerName;
 
     plNetTransportMember * mbr = TransportMgr().GetMember(TransportMgr().FindMember(playerId));
-    return mbr ? mbr->GetPlayerName() : ST::null;
+    return mbr ? mbr->GetPlayerName() : ST::string();
 }
 
 unsigned plNetClientMgr::GetPlayerIdByName (const ST::string & name) const {
@@ -1483,30 +1470,6 @@ void plNetClientMgr::EndTask()
 {
     delete fTaskProgBar;
     fTaskProgBar = nullptr;
-}
-
-bool plNetClientMgr::DebugMsgV(const char* fmt, va_list args) const 
-{
-    LogMsgV(kLogDebug, fmt, args);
-    return true;
-}
-
-bool plNetClientMgr::ErrorMsgV(const char* fmt, va_list args) const 
-{
-    LogMsgV(kLogError, fmt, args);
-    return true;
-}
-
-bool plNetClientMgr::WarningMsgV(const char* fmt, va_list args) const 
-{
-    LogMsgV(kLogError, fmt, args);
-    return true;
-}
-
-bool plNetClientMgr::AppMsgV(const char* fmt, va_list args) const 
-{
-    LogMsgV(kLogPerf, fmt, args);
-    return true;
 }
 
 bool plNetClientMgr::IsObjectOwner()

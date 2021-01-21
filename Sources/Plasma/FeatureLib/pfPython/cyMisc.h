@@ -87,16 +87,16 @@ public:
     static void Update( double secs );
 
     // the python definitions
-    static void AddPlasmaMethods(std::vector<PyMethodDef> &methods);
-    static void AddPlasmaMethods2(std::vector<PyMethodDef> &methods);
-    static void AddPlasmaMethods3(std::vector<PyMethodDef> &methods);
-    static void AddPlasmaMethods4(std::vector<PyMethodDef> &methods);
+    static void AddPlasmaMethods(PyObject* m);
+    static void AddPlasmaMethods2(PyObject* m);
+    static void AddPlasmaMethods3(PyObject* m);
+    static void AddPlasmaMethods4(PyObject* m);
 
     static void AddPlasmaConstantsClasses(PyObject *m);
 
 
     static void         SetPipeline( plPipeline *pipe ) { fPipeline = pipe; }
-    static plPipeline   *GetPipeline( void ) { return fPipeline; }
+    static plPipeline   *GetPipeline() { return fPipeline; }
 
 
 #if 1
@@ -167,7 +167,7 @@ public:
     //
     //  PURPOSE    : Execute a console command from a python script
     //
-    static void TimerCallback(pyKey& selfkey, float time, uint32_t id);
+    static void TimerCallback(pyKey& selfkey, float time, int32_t id);
 
     /////////////////////////////////////////////////////////////////////////////
     //
@@ -304,11 +304,11 @@ public:
     static ST::string GetPrevAgeName();
     static PyObject* GetPrevAgeInfo();
     // current time in current age
-    static uint32_t GetAgeTime( void );
-    static time_t GetDniTime(void);
+    static uint32_t GetAgeTime();
+    static time_t GetDniTime();
     static time_t ConvertGMTtoDni(time_t time);
-    static time_t GetServerTime( void ); // returns the current server time in GMT
-    static float GetAgeTimeOfDayPercent(void);
+    static time_t GetServerTime(); // returns the current server time in GMT
+    static float GetAgeTimeOfDayPercent();
 
     /////////////////////////////////////////////////////////////////////////////
     //
@@ -514,8 +514,7 @@ public:
     //
     //  RETURNS    : nothing
     //
-    static void YesNoDialog(pyKey& sender, const char* thestring);
-    static void YesNoDialog(pyKey& sender, std::wstring thestring);
+    static void YesNoDialog(pyKey& sender, const ST::string& thestring);
 
     /////////////////////////////////////////////////////////////////////////////
     //
@@ -912,7 +911,7 @@ public:
     // PURPOSE    : takes the name of an avatar model and a sceneobject key and
     //              spawns the avatar at that point
     //
-    static PyObject* LoadAvatarModel(const char* modelName, pyKey& object, const char* userStr); // returns pyKey
+    static PyObject* LoadAvatarModel(const char* modelName, pyKey& object, const ST::string& userStr); // returns pyKey
     static void UnLoadAvatarModel(pyKey& avatar);
     
     ///////////////////////////////////////////////////////////////////////////////
@@ -943,7 +942,7 @@ public:
     static int GetDesktopColorDepth();
     static PipelineParams *GetDefaultDisplayParams();
 
-    static bool DumpLogs(const std::wstring & folder);
+    static bool DumpLogs(const ST::string& folder);
 
     static bool FileExists(const plFileName & filename);
     static bool CreateDir(const plFileName & directory);

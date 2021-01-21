@@ -178,99 +178,62 @@ class pfEsHTMLChunk
 
         // Paragraph constructor
         pfEsHTMLChunk( const wchar_t *text )
+            : fType(kParagraph), fFlags(kLeft), fText(text ? text : L""),
+              fFontSize(), fImageKey(), fEventID(), fSFXTime(),
+              fAbsoluteX(), fAbsoluteY(), fNoResizeImg(), fLineSpacing(),
+              fCurrOpacity(1.f), fMinOpacity(), fMaxOpacity(1.f),
+              fTintDecal(), fLoopMovie(true), fOnCover(), fMovieIndex(-1)
+
         {
-            fType = kParagraph;
-            if (text)
-                fText = text;
-            else
-                fText = L"";
-            fFlags = kLeft;
-            fFontSize = 0;
-            fImageKey = nil;
-            fEventID = 0;
-            fColor.Set( 0.f, 0.f, 0.f, 1.f );
-            fAbsoluteX = fAbsoluteY = 0;
-            fCurrOpacity = 1.f;
-            fMinOpacity = 0.f;
-            fMaxOpacity = 1.f;
-            fNoResizeImg = false;
-            fLineSpacing = 0;
-            fTintDecal = false;
-            fLoopMovie = true;
-            fOnCover = false;
-            fMovieIndex = -1;
+            fColor.Set(0.f, 0.f, 0.f, 1.f);
+            fCurrColor.Set(0.f, 0.f, 0.f, 1.f);
+            fOffColor.Set(0.f, 0.f, 0.f, 1.f);
+            fOnColor.Set(0.f, 0.f, 0.f, 1.f);
         }
 
         // Image constructor (used for decals and movies too)
         pfEsHTMLChunk( plKey imageKey, uint32_t alignFlags )
+            : fType(kImage), fFlags(alignFlags), fText(L""),
+              fFontSize(), fImageKey(imageKey), fEventID(), fSFXTime(),
+              fAbsoluteX(), fAbsoluteY(), fNoResizeImg(), fLineSpacing(),
+              fCurrOpacity(1.f), fMinOpacity(), fMaxOpacity(1.f),
+              fTintDecal(), fLoopMovie(true), fOnCover(), fMovieIndex(-1)
         {
-            fType = kImage;
-            fText = L"";
-            fFlags = alignFlags;
-            fFontSize = 0;
-            fImageKey = imageKey;
-            fEventID = 0;
-            fColor.Set( 0.f, 0.f, 0.f, 1.f );
-            fAbsoluteX = fAbsoluteY = 0;
-            fCurrOpacity = 1.f;
-            fMinOpacity = 0.f;
-            fMaxOpacity = 1.f;
-            fNoResizeImg = false;
-            fLineSpacing = 0;
-            fTintDecal = false;
-            fLoopMovie = true;
-            fOnCover = false;
-            fMovieIndex = -1;
+            fColor.Set(0.f, 0.f, 0.f, 1.f);
+            fCurrColor.Set(0.f, 0.f, 0.f, 1.f);
+            fOffColor.Set(0.f, 0.f, 0.f, 1.f);
+            fOnColor.Set(0.f, 0.f, 0.f, 1.f);
         }
 
         // Page break constructor
         pfEsHTMLChunk()
+            : fType(kPageBreak), fFlags(), fText(L""),
+              fFontSize(), fImageKey(), fEventID(), fSFXTime(),
+              fAbsoluteX(), fAbsoluteY(), fNoResizeImg(), fLineSpacing(),
+              fCurrOpacity(1.f), fMinOpacity(), fMaxOpacity(1.f),
+              fTintDecal(), fLoopMovie(true), fOnCover(), fMovieIndex(-1)
         {
-            fType = kPageBreak;
-            fText = L"";
-            fImageKey = nil;
-            fFontSize = 0;
-            fFlags = 0;
-            fEventID = 0;
-            fColor.Set( 0.f, 0.f, 0.f, 1.f );
-            fAbsoluteX = fAbsoluteY = 0;
-            fCurrOpacity = 1.f;
-            fMinOpacity = 0.f;
-            fMaxOpacity = 1.f;
-            fNoResizeImg = false;
-            fLineSpacing = 0;
-            fTintDecal = false;
-            fLoopMovie = true;
-            fOnCover = false;
-            fMovieIndex = -1;
+            fColor.Set(0.f, 0.f, 0.f, 1.f);
+            fCurrColor.Set(0.f, 0.f, 0.f, 1.f);
+            fOffColor.Set(0.f, 0.f, 0.f, 1.f);
+            fOnColor.Set(0.f, 0.f, 0.f, 1.f);
         }
 
         // Font change constructor
         pfEsHTMLChunk( const wchar_t *face, uint8_t size, uint32_t fontFlags )
+            : fType(kFontChange), fFlags(fontFlags), fText(face ? face : L""),
+              fFontSize(size), fImageKey(), fEventID(), fSFXTime(),
+              fAbsoluteX(), fAbsoluteY(), fNoResizeImg(), fLineSpacing(),
+              fCurrOpacity(1.f), fMinOpacity(), fMaxOpacity(1.f),
+              fTintDecal(), fLoopMovie(true), fOnCover(), fMovieIndex(-1)
         {
-            fType = kFontChange;
-            if (face)
-                fText = face;
-            else
-                fText = L"";
-            fFontSize = size;
-            fFlags = fontFlags;
-            fImageKey = nil;
-            fEventID = 0;
-            fColor.Set( 0.f, 0.f, 0.f, 1.f );
-            fAbsoluteX = fAbsoluteY = 0;
-            fCurrOpacity = 1.f;
-            fMinOpacity = 0.f;
-            fMaxOpacity = 1.f;
-            fNoResizeImg = false;
-            fLineSpacing = 0;
-            fTintDecal = false;
-            fLoopMovie = true;
-            fOnCover = false;
-            fMovieIndex = -1;
+            fColor.Set(0.f, 0.f, 0.f, 1.f);
+            fCurrColor.Set(0.f, 0.f, 0.f, 1.f);
+            fOffColor.Set(0.f, 0.f, 0.f, 1.f);
+            fOnColor.Set(0.f, 0.f, 0.f, 1.f);
         }
 
-        ~pfEsHTMLChunk() {}
+        ~pfEsHTMLChunk() { }
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -346,22 +309,22 @@ class pfJournalDlgProc : public pfGUIDialogProc
         }
 
         // Called on dialog init (i.e. first showing, before OnShow() is called), only ever called once
-        virtual void    OnInit( void )
+        virtual void    OnInit()
         {
         }
 
         // Called before the dialog is shown, always after OnInit()
-        virtual void    OnShow( void )
+        virtual void    OnShow()
         {
         }
 
         // Called before the dialog is hidden
-        virtual void    OnHide( void )
+        virtual void    OnHide()
         {
         }
 
         // Called on the dialog's destructor, before it's unregistered with the game GUI manager
-        virtual void    OnDestroy( void )
+        virtual void    OnDestroy()
         {
         }
 
@@ -443,41 +406,6 @@ public:
 };
 
 //// Book data class /////////////////////////////////////////////////////////
-
-pfBookData::pfBookData(const ST::string &guiName /* = nil */)
-{
-    fCurrBook = nil;
-    fDialog = nil;
-    fCoverButton = fTurnPageButton = nil;
-    fLeftPageMap = fRightPageMap = nil;
-    fCoverLayer = nil;
-    fCoverMaterial = nil;
-    uint16_t i;
-    for (i=0; i<4; i++)
-        fPageMaterials[i] = nil;
-    fLeftCorner = fRightCorner = nil;
-    fWidthCtrl = fHeightCtrl = nil;
-    fCurrSFXPages = kNoSides;
-    fBaseSFXTime = 0.f;
-    fResetSFXFlag = false;
-    fSFXUpdateFlip = false;
-    fCurrentlyTurning = false;
-
-    fRightEditCtrl = fLeftEditCtrl = nil;
-    fTurnFrontEditCtrl = fTurnBackEditCtrl = nil;
-    fEditable = false;
-    fAdjustCursorTo = -1;
-    
-    if (!guiName.empty())
-        fGUIName = guiName;
-    else
-        fGUIName = ST_LITERAL("BkBook");
-}
-
-pfBookData::~pfBookData()
-{
-    RegisterForSFX( kNoSides );
-}
 
 void pfBookData::LoadGUI()
 {
@@ -1137,14 +1065,14 @@ void pfBookData::EnableEditGUI(bool enable/* =true */)
 //pfJournalBook *pfJournalBook::fInstance = nil;
 std::map<ST::string,pfBookData*> pfJournalBook::fBookGUIs;
 
-void    pfJournalBook::SingletonInit( void )
+void    pfJournalBook::SingletonInit()
 {
     fBookGUIs["BkBook"] = new pfBookData(); // load the default book data object
     hsgResMgr::ResMgr()->NewKey("BkBook",fBookGUIs["BkBook"],pfGameGUIMgr::GetInstance()->GetKey()->GetUoid().GetLocation());
     fBookGUIs["BkBook"]->LoadGUI();
 }
 
-void    pfJournalBook::SingletonShutdown( void )
+void    pfJournalBook::SingletonShutdown()
 {
     std::map<ST::string,pfBookData*>::iterator i = fBookGUIs.begin();
     while (i != fBookGUIs.end())
@@ -1379,7 +1307,7 @@ void    pfJournalBook::IFinishShow( bool startOpened )
 
 //// Hide ////////////////////////////////////////////////////////////////////
 
-void    pfJournalBook::Hide( void )
+void    pfJournalBook::Hide()
 {
     if (fBookGUIs[fCurBookGUI])
     {
@@ -1429,7 +1357,7 @@ void    pfJournalBook::Open( uint32_t startingPage /*= 0 */)
 //// Close ///////////////////////////////////////////////////////////////////
 // Closes the book.
 
-void    pfJournalBook::Close( void )
+void    pfJournalBook::Close()
 {
     // don't allow them to close the book if the book started open
     if( !fBookGUIs[fCurBookGUI]->StartedOpen() && fBookGUIs[fCurBookGUI]->CurrentlyOpen() )
@@ -1442,7 +1370,7 @@ void    pfJournalBook::Close( void )
 //// CloseAndHide ////////////////////////////////////////////////////////////
 // Closes the book, then calls Hide() once it's done closing
 
-void    pfJournalBook::CloseAndHide( void )
+void    pfJournalBook::CloseAndHide()
 {
     // if they start with the book open, then don't allow them to close it
     if( !fBookGUIs[fCurBookGUI]->StartedOpen() && fBookGUIs[fCurBookGUI]->CurrentlyOpen() )
@@ -1508,7 +1436,7 @@ void    pfJournalBook::ITriggerCloseWithNotify( bool closeNotOpen, bool immediat
 //// NextPage ////////////////////////////////////////////////////////////////
 // Advances forward one page
 
-void    pfJournalBook::NextPage( void )
+void    pfJournalBook::NextPage()
 {
     if( (fBookGUIs[fCurBookGUI]->CurrentlyTurning()) || (!fAllowTurning) || (!fAreWeShowing) )
         return;
@@ -1565,7 +1493,7 @@ void    pfJournalBook::NextPage( void )
 //// PreviousPage ////////////////////////////////////////////////////////////
 // Same, only back
 
-void    pfJournalBook::PreviousPage( void )
+void    pfJournalBook::PreviousPage()
 {
     if(( fBookGUIs[fCurBookGUI]->CurrentlyTurning() )||( !fAllowTurning ))
         return;
@@ -1670,7 +1598,7 @@ int32_t   pfJournalBook::IFindCurrVisibleLink( bool rightNotLeft, bool hoverNotU
 
 //// IHandleLeftSideClick ////////////////////////////////////////////////////
 
-void    pfJournalBook::IHandleLeftSideClick( void )
+void    pfJournalBook::IHandleLeftSideClick()
 {
     if( fBookGUIs[fCurBookGUI]->CurrentlyTurning() )
         return;
@@ -1689,7 +1617,7 @@ void    pfJournalBook::IHandleLeftSideClick( void )
     PreviousPage();
 }
 
-void    pfJournalBook::IHandleRightSideClick( void )
+void    pfJournalBook::IHandleRightSideClick()
 {
     if( fBookGUIs[fCurBookGUI]->CurrentlyTurning() )
         return;
@@ -1768,7 +1696,7 @@ void    pfJournalBook::SetEditable(bool editable)
 //// ForceCacheCalculations //////////////////////////////////////////////////
 // Just forces a full calc of the cached info
 
-void    pfJournalBook::ForceCacheCalculations( void )
+void    pfJournalBook::ForceCacheCalculations()
 {
     // Make sure our page starts are up-to-snuff, at least to this point
     IRecalcPageStarts( -1 );
@@ -1885,8 +1813,10 @@ bool    pfJournalBook::ICompileSource(const wchar_t *source, const plLocation &h
                             chunk->fFlags |= pfEsHTMLChunk::kFloating;
 
                             wchar_t* comma = wcschr(option, L',');
-                            if (comma)
+                            if (comma) {
                                 chunk->fAbsoluteY = (uint16_t)wcstoul(comma + 1, nullptr, 0);
+                                *comma = 0;
+                            }
                             chunk->fAbsoluteX = (uint16_t)wcstoul(option, nullptr, 0);
                         } else if (wcsicmp(name, L"glow") == 0) {
                             chunk->fFlags |= pfEsHTMLChunk::kGlowing;
@@ -1895,9 +1825,12 @@ bool    pfJournalBook::ICompileSource(const wchar_t *source, const plLocation &h
                             wchar_t* comma = wcschr(option, L',');
                             if (comma) {
                                 wchar_t* comma2 = wcschr(comma + 1, L',');
-                                if (comma2)
+                                if (comma2) {
                                     chunk->fMaxOpacity = wcstof(comma2 + 1, nullptr);
+                                    *comma2 = 0;
+                                }
                                 chunk->fMinOpacity = wcstof(comma + 1, nullptr);
+                                *comma = 0;
                             }
                             chunk->fSFXTime = wcstof(option, nullptr);
                         } else if (wcsicmp( name, L"opacity") == 0) {
@@ -1907,20 +1840,22 @@ bool    pfJournalBook::ICompileSource(const wchar_t *source, const plLocation &h
                             chunk->fFlags |= pfEsHTMLChunk::kActAsCB;
                             chunk->fFlags &= ~pfEsHTMLChunk::kGlowing;
 
-                            wchar_t *comma = wcschr(option, L',');
+                            wchar_t* comma = wcschr(option, L',');
                             if (comma) {
-                                wchar_t *comma2 = wcschr(comma + 1, L',');
+                                wchar_t* comma2 = wcschr(comma + 1, L',');
                                 if (comma2) {
                                     if (wcstol(comma2 + 1, nullptr, 0))
                                         chunk->fFlags |= pfEsHTMLChunk::kChecked;
+                                    *comma2 = 0;
                                 }
                                 uint32_t c = IConvertHex(comma + 1);
-                                if (wcslen( comma + 1 ) <= 6)
+                                if (wcslen(comma + 1) <= 6)
                                     c |= 0xff000000;    // Add in full alpha if none specified
                                 chunk->fOffColor.FromARGB32(c);
+                                *comma = 0;
                             }
                             uint32_t c = IConvertHex(option);
-                            if (wcslen( option ) <= 6)
+                            if (wcslen(option) <= 6)
                                 c |= 0xff000000;    // Add in full alpha if none specified
                             chunk->fOnColor.FromARGB32(c);
 
@@ -2100,8 +2035,10 @@ bool    pfJournalBook::ICompileSource(const wchar_t *source, const plLocation &h
                             chunk->fFlags |= pfEsHTMLChunk::kFloating;
 
                             wchar_t* comma = wcschr(option, L',');
-                            if (comma)
+                            if (comma) {
                                 chunk->fAbsoluteY = (uint16_t)wcstoul(comma + 1, nullptr, 0);
+                                *comma = 0;
+                            }
                             chunk->fAbsoluteX = (uint16_t)wcstoul(option, nullptr, 0);
                         } else if (wcsicmp(name, L"resize") == 0) {
                             chunk->fNoResizeImg = (wcsicmp(option, L"no") == 0);
@@ -2141,8 +2078,10 @@ bool    pfJournalBook::ICompileSource(const wchar_t *source, const plLocation &h
                             chunk->fFlags |= pfEsHTMLChunk::kFloating;
 
                             wchar_t* comma = wcschr(option, L',');
-                            if (comma)
+                            if (comma) {
                                 chunk->fAbsoluteY = (uint16_t)wcstoul(comma + 1, nullptr, 0);
+                                *comma = 0;
+                            }
                             chunk->fAbsoluteX = (uint16_t)wcstoul(option, nullptr, 0);
                         } else if (wcsicmp(name, L"resize") == 0) {
                             chunk->fNoResizeImg = (wcsicmp(option, L"no") == 0);
@@ -2316,7 +2255,7 @@ bool    pfJournalBook::IGetNextOption( const wchar_t *&string, wchar_t *name, wc
     return true;
 }
 
-void    pfJournalBook::IFreeSource( void )
+void    pfJournalBook::IFreeSource()
 {
     uint32_t i;
     
@@ -2645,9 +2584,7 @@ void    pfJournalBook::IRenderPage( uint32_t page, uint32_t whichDTMap, bool sup
                     if (movieLayer)
                     {
                         // adjust the starting height of the movie if we are keeping it inline with the text
-                        uint32_t movieHeight = 0, movieWidth = 0;
-                        movieHeight = movieLayer->GetHeight();
-                        movieWidth = movieLayer->GetWidth();
+                        uint32_t movieHeight = movieLayer->GetHeight();
                         if(!(chunk->fFlags & pfEsHTMLChunk::kFloating ))
                         {
                             if( y + movieHeight >= 512 - fPageBMargin )
@@ -2753,7 +2690,7 @@ void    pfJournalBook::IDrawMipmap( pfEsHTMLChunk *chunk, uint16_t x, uint16_t y
         // calc new size based on how the book has been skewed
         float xScale = (fWidthScale == 0) ? 1 : 1/(1-fWidthScale);
         float yScale = (fHeightScale == 0) ? 1 : 1/(1-fHeightScale);
-        yScale *= 0.7; // adjust because the book isn't square
+        yScale *= 0.7f; // adjust because the book isn't square
         uint32_t width = (uint32_t)(mip->GetWidth()*xScale);
         uint32_t height = (uint32_t)(mip->GetHeight()*yScale);
         uint16_t xShift;
@@ -2969,10 +2906,11 @@ plLayerAVI *pfJournalBook::IMakeMovieLayer(pfEsHTMLChunk *chunk, uint16_t x, uin
             // calc new size based on how the book has been skewed
             xScale *= (fWidthScale == 0) ? 1 : (1-fWidthScale);
             yScale *= (fHeightScale == 0) ? 1 : (1-fHeightScale);
-            yScale *= 1/0.7; // adjust because the book isn't square
+            yScale *= 1.f/0.7f; // adjust because the book isn't square
         }
 
-        hsVector3 scaleVec(xScale,yScale,1), translateVec(-(xRel*xScale),-(yRel*yScale),0);
+        hsVector3 scaleVec(xScale, yScale, 1.f);
+        hsVector3 translateVec(-(xRel*xScale), -(yRel*yScale), 0.f);
         hsMatrix44 scaleMat, translateMat;
         scaleMat.MakeScaleMat(&scaleVec);
         translateMat.MakeTranslateMat(&translateVec);
@@ -2980,7 +2918,8 @@ plLayerAVI *pfJournalBook::IMakeMovieLayer(pfEsHTMLChunk *chunk, uint16_t x, uin
         hsMatrix44 flipMat;
         if (chunk->fOnCover) // cover movies need to be y flipped
         {
-            hsVector3 yTransVec(0,-1,0), invertYVec(1,-1,1);
+            hsVector3 yTransVec(0.f, -1.f, 0.f);
+            hsVector3 invertYVec(1.f, -1.f, 1.f);
             hsMatrix44 invertY, transY;
             invertY.MakeScaleMat(&invertYVec);
             transY.MakeTranslateMat(&yTransVec);
@@ -2990,7 +2929,8 @@ plLayerAVI *pfJournalBook::IMakeMovieLayer(pfEsHTMLChunk *chunk, uint16_t x, uin
         {
             if ((whichDTMap == pfJournalDlgProc::kTagLeftDTMap) || (whichDTMap == pfJournalDlgProc::kTagTurnBackDTMap))
             {
-                hsVector3 xTransVec(-1,0,0), invertXVec(-1,1,1);
+                hsVector3 xTransVec(-1.f, 0.f, 0.f);
+                hsVector3 invertXVec(-1.f, 1.f, 1.f);
                 hsMatrix44 invertX, transX;
                 invertX.MakeScaleMat(&invertXVec);
                 transX.MakeTranslateMat(&xTransVec);
@@ -3068,7 +3008,8 @@ plLayerInterface *pfJournalBook::IMakeBaseLayer(plMipmap *image)
     layer->SetUVWSrc(0);
 
     // Set up the transform.
-    hsVector3 yTransVec(0,-1,0), invertYVec(1,-1,1);
+    hsVector3 yTransVec(0.f, -1.f, 0.f);
+    hsVector3 invertYVec(1.f, -1.f, 1.f);
     hsMatrix44 xfm, invertY, transY, flipY;
     invertY.MakeScaleMat(&invertYVec);
     transY.MakeTranslateMat(&yTransVec);
@@ -3148,10 +3089,13 @@ plLayerInterface *pfJournalBook::IMakeDecalLayer(pfEsHTMLChunk *decalChunk, plMi
         // calc new size based on how the book has been skewed
         xScale *= (fWidthScale == 0) ? 1 : (1-fWidthScale);
         yScale *= (fHeightScale == 0) ? 1 : (1-fHeightScale);
-        yScale *= 1/0.7; // adjust because the book isn't square
+        yScale *= 1.f/0.7f; // adjust because the book isn't square
     }
 
-    hsVector3 scaleVec(xScale,yScale,1), translateVec(-(xRel*xScale),-(yRel*yScale),0), yTransVec(0,-1,0), invertYVec(1,-1,1);
+    hsVector3 scaleVec(xScale, yScale, 1.f);
+    hsVector3 translateVec(-(xRel*xScale), -(yRel*yScale), 0.f);
+    hsVector3 yTransVec(0.f, -1.f, 0.f);
+    hsVector3 invertYVec(1.f, -1.f, 1.f);
     hsMatrix44 scaleMat, translateMat, invertY, transY;
     scaleMat.MakeScaleMat(&scaleVec);
     translateMat.MakeTranslateMat(&translateVec);
@@ -3270,7 +3214,7 @@ void    pfJournalBook::IFindFontProps( uint32_t chunkIdx, ST::string &face, uint
 //// IFindLastAlignment //////////////////////////////////////////////////////
 // Find the last paragraph chunk and thus the last par alignment settings
 
-uint8_t   pfJournalBook::IFindLastAlignment( void ) const
+uint8_t   pfJournalBook::IFindLastAlignment() const
 {
     int32_t idx;
 

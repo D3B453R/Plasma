@@ -75,7 +75,9 @@ class plNetLinkingMgr
     static void ExecNextOp ();
 
 
-    plNetLinkingMgr();
+    plNetLinkingMgr()
+        : fLinkingEnabled(true), fLinkedIn(), fDeferredLink()
+    { }
     plNetLinkingMgr(const plNetLinkingMgr &) { }
     ~plNetLinkingMgr();
 
@@ -103,8 +105,8 @@ class plNetLinkingMgr
         kLinkDeferred,
     };
 
-    uint8_t IPreProcessLink( void );
-    void IPostProcessLink( void );
+    uint8_t IPreProcessLink();
+    void IPostProcessLink();
     bool IProcessLinkingMgrMsg( plLinkingMgrMsg * msg );
     bool IProcessLinkToAgeMsg( plLinkToAgeMsg * msg );
     void IDoLink(plLinkToAgeMsg* link);
@@ -118,7 +120,7 @@ public:
     bool MsgReceive( plMessage *msg );    // TODO: Make this a hsKeyedObject so we can really handle messages.
     void Update();
 
-    bool IsEnabled( void ) const { return fLinkingEnabled;}
+    bool IsEnabled() const { return fLinkingEnabled;}
     void SetEnabled( bool b );
     
     bool LinkedIn () const { return  fLinkedIn &&  fLinkingEnabled; }
@@ -164,7 +166,7 @@ public:
     // lobby info
     void SetLobbyAddr( const char * ipaddr ) { fLobbyInfo.SetServerAddr( ipaddr );}
     void SetLobbyPort( int port ) { fLobbyInfo.SetServerPort( port );}
-    const plNetServerSessionInfo * GetLobbyServerInfo( void ) const { return &fLobbyInfo;}
+    const plNetServerSessionInfo * GetLobbyServerInfo() const { return &fLobbyInfo;}
 
     // helpers
     static ST::string GetProperAgeName( const ST::string & ageName );    // attempt to fix wrong case age name.

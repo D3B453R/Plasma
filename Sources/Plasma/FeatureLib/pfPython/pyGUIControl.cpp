@@ -42,7 +42,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <Python.h>
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "pyGUIControl.h"
 
@@ -139,7 +138,7 @@ void pyGUIControl::SetEnabled( bool e )
     }
 }
 
-bool pyGUIControl::IsEnabled( void )
+bool pyGUIControl::IsEnabled()
 {
     if ( fGCkey )
     {
@@ -162,7 +161,7 @@ void pyGUIControl::SetFocused( bool e )
     }
 }
 
-bool pyGUIControl::IsFocused( void )
+bool pyGUIControl::IsFocused()
 {
     if ( fGCkey )
     {
@@ -185,7 +184,7 @@ void pyGUIControl::SetVisible( bool vis )
     }
 }
 
-bool pyGUIControl::IsVisible( void )
+bool pyGUIControl::IsVisible()
 {
     if ( fGCkey )
     {
@@ -197,7 +196,7 @@ bool pyGUIControl::IsVisible( void )
     return false;
 }
 
-bool pyGUIControl::IsInteresting( void )
+bool pyGUIControl::IsInteresting()
 {
     if ( fGCkey )
     {
@@ -220,7 +219,7 @@ void pyGUIControl::SetNotifyOnInteresting( bool state )
     }
 }
 
-void pyGUIControl::Refresh( void )
+void pyGUIControl::Refresh()
 {
     if ( fGCkey )
     {
@@ -252,12 +251,12 @@ PyObject* pyGUIControl::GetObjectCenter()
         if ( pbmod )
             return pyPoint3::New(pbmod->GetObjectCenter());
     }
-    return pyPoint3::New(hsPoint3(0,0,0));
+    return pyPoint3::New();
 }
 
 
 
-PyObject* pyGUIControl::GetOwnerDlg( void )
+PyObject* pyGUIControl::GetOwnerDlg()
 {
     if ( fGCkey )
     {

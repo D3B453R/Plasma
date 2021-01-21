@@ -117,7 +117,7 @@ struct hsMatrix44 {
     hsVector3*      GetTranslate(hsVector3 *pt) const;
     hsPoint3*       GetTranslate(hsPoint3 *pt) const 
         {   return (hsPoint3*)GetTranslate((hsVector3*)pt); }
-    const hsPoint3  GetTranslate() const;
+    const hsPoint3  GetTranslate() const { return hsPoint3(fMap[0][3], fMap[1][3], fMap[2][3]); }
     void            GetAxis(hsVector3* view, hsVector3 *up, hsVector3* right);
     void            GetAxisFromCamera(hsVector3* view, hsVector3 *up, hsVector3* right);
 
@@ -140,9 +140,10 @@ struct hsMatrix44 {
     
     hsPoint3*           MapPoints(long count, hsPoint3 points[]) const;
     
-    bool  IsIdentity(void);
+    bool  IsIdentity();
     void  NotIdentity() { fFlags &= ~kIsIdent; }
 
+    bool Compare(const hsMatrix44& rhs, float tolerance) const;
     bool operator==(const hsMatrix44& ss) const;
     bool operator!=(const hsMatrix44& ss) const { return !(ss == *this); }
 

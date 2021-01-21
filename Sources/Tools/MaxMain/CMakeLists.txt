@@ -1,15 +1,5 @@
-include_directories("../")
-include_directories("../../Plasma/CoreLib")
-include_directories("../../Plasma/FeatureLib")
-include_directories("../../Plasma/FeatureLib/inc")
-include_directories("../../Plasma/NucleusLib")
-include_directories("../../Plasma/NucleusLib/inc")
-include_directories("../../Plasma/PubUtilLib")
-include_directories("../../Plasma/PubUtilLib/inc")
 include_directories(${3dsm_INCLUDE_DIR})
 include_directories(${OPENAL_INCLUDE_DIR})
-include_directories(${PHYSX_INCLUDE_DIRS})
-include_directories(${PYTHON_INCLUDE_DIR})
 
 set(MaxMain_HEADERS
     GlobalUtility.h
@@ -33,7 +23,6 @@ set(MaxMain_HEADERS
     plMtlCollector.h
     plNodeLock.h
     plPhysicalProps.h
-    plPhysXCooking.h
     plPlasmaRefMsgs.h
     plPluginResManager.h
     plPythonMgr.h
@@ -71,7 +60,6 @@ set(MaxMain_SOURCES
     plMtlCollector.cpp
     plNodeLock.cpp
     plPhysicalProps.cpp
-    plPhysXCooking.cpp
     plPluginResManager.cpp
     plPythonMgr.cpp
     plResCollector.cpp
@@ -82,8 +70,8 @@ set(MaxMain_SOURCES
 )
 
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${Plasma_BINARY_DIR}/bin)
-use_precompiled_header(Pch.h Pch.cpp MaxMain_HEADERS MaxMain_SOURCES)
 add_library(MaxMain SHARED ${MaxMain_HEADERS} ${MaxMain_RESOURCES} ${MaxMain_SOURCES})
+plasma_optimize_target(MaxMain PRECOMPILED_HEADERS Pch.h)
 set_target_properties(MaxMain PROPERTIES OUTPUT_NAME "PlasmaMax")
 set_target_properties(MaxMain PROPERTIES SUFFIX ".gup")
 
@@ -93,24 +81,8 @@ target_link_libraries(MaxMain MaxExport)
 target_link_libraries(MaxMain MaxPlasmaMtls)
 target_link_libraries(MaxMain ${3dsm_LIBRARIES})
 
-target_link_libraries(MaxMain ${EXPAT_LIBRARY})
 target_link_libraries(MaxMain ${DirectX_LIBRARIES})
-target_link_libraries(MaxMain ${JPEG_LIBRARY})
-target_link_libraries(MaxMain ${PNG_LIBRARY})
-target_link_libraries(MaxMain ${Ogg_LIBRARIES})
-target_link_libraries(MaxMain ${OPENAL_LIBRARY})
-target_link_libraries(MaxMain ${OPENSSL_LIBRARIES})
-target_link_libraries(MaxMain ${PHYSX_LIBRARIES})
-target_link_libraries(MaxMain ${PYTHON_LIBRARIES})
-target_link_libraries(MaxMain ${Vorbis_LIBRARIES})
 target_link_libraries(MaxMain ${STRING_THEORY_LIBRARIES})
-
-if(PLASMA_USE_OPUS)
-    target_link_libraries(MaxMain ${Opus_LIBRARIES})
-endif()
-if(PLASMA_USE_SPEEX)
-    target_link_libraries(MaxMain ${Speex_LIBRARY})
-endif()
 
 # Carbon copy from plClient
 # TODO: Maybe see if some of these can be removed?
@@ -207,6 +179,11 @@ endif(WIN32)
 if(USE_VLD)
     target_link_libraries(MaxMain ${VLD_LIBRARY})
 endif()
+
+install(
+    TARGETS MaxMain
+    DESTINATION 3dsmax
+)
 
 source_group("Header Files" FILES ${MaxMain_HEADERS})
 source_group("Resource Files" FILES ${MaxMain_RESOURCES})

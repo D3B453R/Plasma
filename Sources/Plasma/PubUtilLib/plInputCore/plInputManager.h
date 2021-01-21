@@ -53,14 +53,11 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 class plDInputMgr;
 class plInputDevice;
-class plDInputDevice;
 class plInputInterfaceMgr;
 class plPipeline;
 
 class plInputManager :public hsKeyedObject
 {
-private:
-    static bool fUseDInput;
 public:
     plInputManager();
     plInputManager( hsWindowHndl hWnd );
@@ -71,9 +68,7 @@ public:
 
 
     void AddInputDevice(plInputDevice* pDev);
-    void InitDInput(hsWindowInst hInst, hsWindowHndl hWnd);
 
-    static void UseDInput(bool b) { fUseDInput = b; }
     void Update();
     static plInputManager*  GetInstance() { return fInstance; }
     static plInputManager*  fInstance;
@@ -85,15 +80,16 @@ public:
 
     void    Activate( bool activating );
 
-    float    GetMouseScale( void ) const { return fMouseScale; }
+    float    GetMouseScale() const { return fMouseScale; }
     void        SetMouseScale( float s );
     
     static plKeyDef UntranslateKey(plKeyDef key, bool extended);
+
+    void HandleKeyEvent(plKeyDef key, bool bKeyDown, bool bKeyRepeat, wchar_t c = 0);
     
 protected:
     
     hsTArray<plInputDevice*>    fInputDevices;
-    plDInputMgr*                fDInputMgr;
     plInputInterfaceMgr         *fInterfaceMgr;
     bool                        fActive, fFirstActivated;       
 
@@ -108,10 +104,5 @@ public:
     void HandleWin32ControlEvent(UINT message, WPARAM Wparam, LPARAM Lparam, HWND hWnd);
 #endif
 };
-
-#if HS_BUILD_FOR_WIN32
-// {049DE53E-23A2-4d43-BF68-36AC1B57E357}
-static const GUID PL_ACTION_GUID = { 0x49de53e, 0x23a2, 0x4d43, { 0xbf, 0x68, 0x36, 0xac, 0x1b, 0x57, 0xe3, 0x57 } };
-#endif
 
 #endif

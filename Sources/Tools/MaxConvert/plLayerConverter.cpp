@@ -70,7 +70,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <istdplug.h>
 #include <iparamb2.h>
 #include <iparamm2.h>
-#pragma hdrstop
 
 #include "plLayerConverter.h"
 
@@ -149,7 +148,7 @@ plLayerConverter::~plLayerConverter()
 {
 }
 
-plLayerConverter    &plLayerConverter::Instance( void )
+plLayerConverter    &plLayerConverter::Instance()
 {
     hsGuardBegin( "plLayerConverter::Instance" );
 
@@ -168,7 +167,7 @@ void    plLayerConverter::Init( bool save, plErrorMsg *msg )
     fInterface = GetCOREInterface();
 }
 
-void    plLayerConverter::DeInit( void )
+void    plLayerConverter::DeInit()
 {
     int i;
     for( i = 0; i < fConvertedLayers.GetCount(); i++ )
@@ -181,13 +180,13 @@ void    plLayerConverter::DeInit( void )
 
 //// Mute/Unmute Warnings /////////////////////////////////////////////////////
 
-void    plLayerConverter::MuteWarnings( void )
+void    plLayerConverter::MuteWarnings()
 {
     fSavedWarned = fWarned; 
     fWarned |= kWarnedNoBaseTexture | kWarnedUpperTextureMissing; 
 }
 
-void    plLayerConverter::UnmuteWarnings( void )
+void    plLayerConverter::UnmuteWarnings()
 {
     fWarned = fSavedWarned; 
 }
@@ -907,10 +906,10 @@ plLayerInterface* plLayerConverter::IConvertAngleAttenLayer(plPlasmaMAXLayer *la
     }
     plAngleAttenLayer* aaLay = (plAngleAttenLayer*)layer;
     Box3 fade = aaLay->GetFade();
-    float tr0 = cosf(DegToRad(180.f - fade.Min().x));
-    float op0 = cosf(DegToRad(180.f - fade.Min().y));
-    float tr1 = cosf(DegToRad(180.f - fade.Max().x));
-    float op1 = cosf(DegToRad(180.f - fade.Max().y));
+    float tr0 = cosf(hsDegreesToRadians(180.f - fade.Min().x));
+    float op0 = cosf(hsDegreesToRadians(180.f - fade.Min().y));
+    float tr1 = cosf(hsDegreesToRadians(180.f - fade.Max().x));
+    float op1 = cosf(hsDegreesToRadians(180.f - fade.Max().y));
 
     int loClamp = aaLay->GetLoClamp();
     int hiClamp = aaLay->GetHiClamp();

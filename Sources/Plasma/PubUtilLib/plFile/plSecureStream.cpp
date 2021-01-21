@@ -294,7 +294,7 @@ bool plSecureStream::Close()
         fRAMStream = nil;
     }
 
-    fWriteFileName = ST::null;
+    fWriteFileName = ST::string();
     fActualFileSize = 0;
     fBufferedStream = false;
     fOpenMode = kOpenFail;
@@ -455,7 +455,7 @@ uint32_t plSecureStream::Read(uint32_t bytes, void* buffer)
 
         // Read in the chunk and decrypt it
         char buf[kEncryptChunkSize];
-        uint32_t numRead = IRead(kEncryptChunkSize, &buf);
+        (void)IRead(kEncryptChunkSize, &buf);   // numRead
         IDecipher((uint32_t*)&buf, kEncryptChunkSize / sizeof(uint32_t));
 
         // Copy the relevant portion to the output buffer
@@ -480,7 +480,7 @@ uint32_t plSecureStream::Read(uint32_t bytes, void* buffer)
         // Read in the final chunk and decrypt it
         char buf[kEncryptChunkSize];
         SetPosition(startPos + startAmt + numMidChunks*kEncryptChunkSize);
-        uint32_t numRead = IRead(kEncryptChunkSize, &buf);
+        (void)IRead(kEncryptChunkSize, &buf);   // numRead
         IDecipher((uint32_t*)&buf, kEncryptChunkSize / sizeof(uint32_t));
 
         memcpy(((char*)buffer)+totalNumRead-endAmt, &buf, endAmt);
@@ -726,7 +726,7 @@ bool plSecureStream::GetSecureEncryptionKey(const plFileName& filename, uint32_t
     }
 
     // file doesn't exist, use default key
-    unsigned memSize = std::min(size_t(length), arrsize(plSecureStream::kDefaultKey));
+    unsigned memSize = std::min(size_t(length), std::size(plSecureStream::kDefaultKey));
     memSize *= sizeof(uint32_t);
     memcpy(key, plSecureStream::kDefaultKey, memSize);
 

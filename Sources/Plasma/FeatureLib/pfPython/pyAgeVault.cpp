@@ -47,7 +47,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <Python.h>
 #include "pnNetCommon/plNetApp.h"
-#pragma hdrstop
 
 #include "pyAgeVault.h"
 #include "pyVault.h"
@@ -89,7 +88,7 @@ PyObject* pyAgeVault::GetAgeInfo()
     PYTHON_RETURN_NONE;
 }
 
-PyObject* pyAgeVault::GetAgeDevicesFolder( void )
+PyObject* pyAgeVault::GetAgeDevicesFolder()
 {
     hsRef<RelVaultNode> rvn = VaultGetAgeDevicesFolder();
     if (rvn)
@@ -99,7 +98,7 @@ PyObject* pyAgeVault::GetAgeDevicesFolder( void )
     PYTHON_RETURN_NONE;
 }
 
-PyObject* pyAgeVault::GetSubAgesFolder( void )
+PyObject* pyAgeVault::GetSubAgesFolder()
 {
     hsRef<RelVaultNode> rvn = VaultGetAgeSubAgesFolder();
     if (rvn)
@@ -109,7 +108,7 @@ PyObject* pyAgeVault::GetSubAgesFolder( void )
     PYTHON_RETURN_NONE;
 }
 
-PyObject* pyAgeVault::GetChronicleFolder( void )
+PyObject* pyAgeVault::GetChronicleFolder()
 {
     hsRef<RelVaultNode> rvn = VaultGetAgeChronicleFolder();
     if (rvn)
@@ -119,7 +118,7 @@ PyObject* pyAgeVault::GetChronicleFolder( void )
     PYTHON_RETURN_NONE;
 }
 
-PyObject* pyAgeVault::GetBookshelfFolder ( void )
+PyObject* pyAgeVault::GetBookshelfFolder ()
 {
     hsRef<RelVaultNode> rvn = VaultAgeGetBookshelfFolder();
     if (rvn)
@@ -129,7 +128,7 @@ PyObject* pyAgeVault::GetBookshelfFolder ( void )
     PYTHON_RETURN_NONE;
 }
 
-PyObject* pyAgeVault::GetPeopleIKnowAboutFolder( void )
+PyObject* pyAgeVault::GetPeopleIKnowAboutFolder()
 {
     hsRef<RelVaultNode> rvn = VaultGetAgePeopleIKnowAboutFolder();
     if (rvn)
@@ -140,7 +139,7 @@ PyObject* pyAgeVault::GetPeopleIKnowAboutFolder( void )
 }
 
 
-PyObject* pyAgeVault::GetPublicAgesFolder(void)
+PyObject* pyAgeVault::GetPublicAgesFolder()
 {
     hsRef<RelVaultNode> rvn = VaultGetAgePublicAgesFolder();
     if (rvn)
@@ -160,7 +159,7 @@ PyObject* pyAgeVault::GetSubAgeLink( const pyAgeInfoStruct & info )
     PYTHON_RETURN_NONE;
 }
 
-plUUID pyAgeVault::GetAgeGuid( void )
+plUUID pyAgeVault::GetAgeGuid()
 {
     hsRef<RelVaultNode> rvn = VaultGetAgeInfoNode();
     if (rvn) {
@@ -264,7 +263,8 @@ void pyAgeVault::UpdateAgeSDL( pySDLStateDataRecord & pyrec )
 PyObject* pyAgeVault::FindNode( pyVaultNode* templateNode ) const
 {
     if (hsRef<RelVaultNode> rvn = VaultGetAgeNode()) {
-        hsRef<RelVaultNode> find = rvn->GetChildNode(templateNode->fNode, 1);
+        hsWeakRef<NetVaultNode> node(templateNode->fNode);
+        hsRef<RelVaultNode> find = rvn->GetChildNode(node, 1);
         if (find)
             return pyVaultNode::New(find);
     }

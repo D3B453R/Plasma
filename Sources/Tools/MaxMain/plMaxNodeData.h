@@ -177,7 +177,7 @@ public:
         fBoneMap(nil),
         fAnimCompression(1), // Should be plAnimCompressComp::kCompressionLow,
                              // but I don't want to include the entire header.
-        fKeyReduceThreshold(0.0002)
+        fKeyReduceThreshold(0.0002f)
     { }
     ~plMaxNodeData() 
     { 
@@ -201,7 +201,7 @@ public:
         return *this; 
     }
     // Ditto
-    void            DeInit( void ) 
+    void            DeInit()
     { 
         fpKey = nil; 
         fpRoomKey = nil;
@@ -405,7 +405,7 @@ public:
 
     plPhysicalProps* GetPhysicalProps()                 { return &fPhysicalProps; }
 
-    hsTArray<int>   *GetAlphaHackLayersCache( void )                        { return fCachedAlphaHackLayerCounts; }
+    hsTArray<int>   *GetAlphaHackLayersCache()                        { return fCachedAlphaHackLayerCounts; }
     void            SetAlphaHackLayersCache( hsTArray<int> *cache )         { fCachedAlphaHackLayerCounts = cache; }
     bool            GetOverrideHighLevelSDL()           { return MaxDatBF.CanBF(MaxDatBF.kOverrideHighLevelSDL); }
     void            SetOverrideHighLevelSDL(bool b)   { MaxDatBF.SetBF(b, MaxDatBF.kOverrideHighLevelSDL); }

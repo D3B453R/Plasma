@@ -51,16 +51,8 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #define PLASMA20_SOURCES_PLASMA_PUBUTILLIB_PLVAULT_PCH_H
 
 
-// 'Old' system is full of compiler warnings at /W4, so just hide them
-#pragma warning(push, 0)
 #include "plVault.h"
-#pragma warning(pop)
 
-
-#ifdef CLIENT
-
-// 'Old' system is full of compiler warnings at /W4, so just hide them
-#pragma warning(push, 0)
 #include <algorithm>
 #include <memory>
 #include <sstream>
@@ -85,15 +77,12 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #define KI_CONSTANTS_ONLY
 #include "pfMessage/pfKIMsg.h"  // for KI level constants =(
 #undef KI_CONSTANTS_ONLY
-#pragma warning(pop)
 
 #include "plNetGameLib/plNetGameLib.h"
 
-#endif  // def CLIENT
-
 #include "Intern.h"
 
-#ifdef HS_BUILD_FOR_OSX
+#ifdef HS_BUILD_FOR_MACOS
 #include <malloc/malloc.h>
 #else
 #include <malloc.h>

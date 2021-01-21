@@ -41,7 +41,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 
 #include <Python.h>
-#pragma hdrstop
 
 #include "pyVaultAgeInfoNode.h"
 #include "plVault/plVault.h"
@@ -97,7 +96,7 @@ PYTHON_METHOD_DEFINITION_NOARGS(ptVaultAgeInfoNode, getParentAgeLink)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultAgeInfoNode, getAgeFilename)
 {
-    return PyString_FromSTString(self->fThis->GetAgeFilename());
+    return PyUnicode_FromSTString(self->fThis->GetAgeFilename());
 }
 
 PYTHON_METHOD_DEFINITION(ptVaultAgeInfoNode, setAgeFilename, args)
@@ -114,7 +113,7 @@ PYTHON_METHOD_DEFINITION(ptVaultAgeInfoNode, setAgeFilename, args)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultAgeInfoNode, getAgeInstanceName)
 {
-    return PyString_FromSTString(self->fThis->GetAgeInstanceName());
+    return PyUnicode_FromSTString(self->fThis->GetAgeInstanceName());
 }
 
 PYTHON_METHOD_DEFINITION(ptVaultAgeInfoNode, setAgeInstanceName, args)
@@ -131,7 +130,7 @@ PYTHON_METHOD_DEFINITION(ptVaultAgeInfoNode, setAgeInstanceName, args)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultAgeInfoNode, getAgeUserDefinedName)
 {
-    return PyString_FromSTString(self->fThis->GetAgeUserDefinedName());
+    return PyUnicode_FromSTString(self->fThis->GetAgeUserDefinedName());
 }
 
 PYTHON_METHOD_DEFINITION(ptVaultAgeInfoNode, setAgeUserDefinedName, args)
@@ -148,7 +147,7 @@ PYTHON_METHOD_DEFINITION(ptVaultAgeInfoNode, setAgeUserDefinedName, args)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultAgeInfoNode, getAgeInstanceGuid)
 {
-    return PyString_FromSTString(self->fThis->GetAgeInstanceGuid().AsString());
+    return PyUnicode_FromSTString(self->fThis->GetAgeInstanceGuid().AsString());
 }
 
 PYTHON_METHOD_DEFINITION(ptVaultAgeInfoNode, setAgeInstanceGuid, args)
@@ -165,7 +164,7 @@ PYTHON_METHOD_DEFINITION(ptVaultAgeInfoNode, setAgeInstanceGuid, args)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultAgeInfoNode, getAgeDescription)
 {
-    return PyString_FromSTString(self->fThis->GetAgeDescription());
+    return PyUnicode_FromSTString(self->fThis->GetAgeDescription());
 }
 
 PYTHON_METHOD_DEFINITION(ptVaultAgeInfoNode, setAgeDescription, args)
@@ -243,7 +242,7 @@ PYTHON_METHOD_DEFINITION_NOARGS(ptVaultAgeInfoNode, isPublic)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultAgeInfoNode, getDisplayName)
 {
-    return PyString_FromSTString(self->fThis->GetDisplayName());
+    return PyUnicode_FromSTString(self->fThis->GetDisplayName());
 }
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultAgeInfoNode, asAgeInfoStruct)
@@ -281,22 +280,10 @@ PYTHON_START_METHODS_TABLE(ptVaultAgeInfoNode)
 PYTHON_END_METHODS_TABLE;
 
 // Type structure definition
-PLASMA_DEFAULT_TYPE_WBASE(ptVaultAgeInfoNode, pyVaultNode, "Params: n=0\nPlasma vault age info node");
+PLASMA_DEFAULT_TYPE_WBASE(ptVaultAgeInfoNode, pyVaultNode, "Plasma vault age info node");
 
 // required functions for PyObject interoperability
-PyObject *pyVaultAgeInfoNode::New(RelVaultNode* nfsNode)
-{
-    ptVaultAgeInfoNode *newObj = (ptVaultAgeInfoNode*)ptVaultAgeInfoNode_type.tp_new(&ptVaultAgeInfoNode_type, NULL, NULL);
-    newObj->fThis->fNode = nfsNode;
-    return (PyObject*)newObj;
-}
-
-PyObject *pyVaultAgeInfoNode::New(int n /* =0 */)
-{
-    ptVaultAgeInfoNode *newObj = (ptVaultAgeInfoNode*)ptVaultAgeInfoNode_type.tp_new(&ptVaultAgeInfoNode_type, NULL, NULL);
-    // oddly enough, nothing to do here
-    return (PyObject*)newObj;
-}
+PYTHON_CLASS_VAULT_NODE_NEW_IMPL(ptVaultAgeInfoNode, pyVaultAgeInfoNode);
 
 PYTHON_CLASS_CHECK_IMPL(ptVaultAgeInfoNode, pyVaultAgeInfoNode)
 PYTHON_CLASS_CONVERT_FROM_IMPL(ptVaultAgeInfoNode, pyVaultAgeInfoNode)

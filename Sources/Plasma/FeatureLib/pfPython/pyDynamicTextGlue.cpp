@@ -42,7 +42,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <Python.h>
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "pyDynamicText.h"
 #include "pyEnum.h"
@@ -260,8 +259,8 @@ PYTHON_BASIC_METHOD_DEFINITION(ptDynamicMap, unsetWrapping, UnsetWrapping)
 PYTHON_METHOD_DEFINITION(ptDynamicMap, drawText, args)
 {
     short x, y;
-    char* text = nullptr;
-    if (!PyArg_ParseTuple(args, "hhet", &x, &y, "utf8", &text))
+    ST::string text;
+    if (!PyArg_ParseTuple(args, "hhO&", &x, &y, PyUnicode_STStringConverter, &text))
     {
         PyErr_SetString(PyExc_TypeError, "drawText expects two short ints and a string");
         PYTHON_RETURN_ERROR;
@@ -313,18 +312,18 @@ PYTHON_METHOD_DEFINITION(ptDynamicMap, drawImageClipped, args)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptDynamicMap, getWidth)
 {
-    return PyInt_FromLong(self->fThis->GetWidth());
+    return PyLong_FromLong(self->fThis->GetWidth());
 }
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptDynamicMap, getHeight)
 {
-    return PyInt_FromLong(self->fThis->GetHeight());
+    return PyLong_FromLong(self->fThis->GetHeight());
 }
 
 PYTHON_METHOD_DEFINITION(ptDynamicMap, calcTextExtents, args)
 {
-    char* text = nullptr;
-    if (!PyArg_ParseTuple(args, "et", "utf8", &text))
+    ST::string text;
+    if (!PyArg_ParseTuple(args, "O&", PyUnicode_STStringConverter, &text))
     {
         PyErr_SetString(PyExc_TypeError, "calcTextExtents expects a string");
         PYTHON_RETURN_ERROR;
@@ -333,8 +332,8 @@ PYTHON_METHOD_DEFINITION(ptDynamicMap, calcTextExtents, args)
     uint16_t height, width;
     self->fThis->CalcTextExtents(text, width, height);
     PyObject* retVal = PyTuple_New(2);
-    PyTuple_SetItem(retVal, 0, PyInt_FromLong(width));
-    PyTuple_SetItem(retVal, 1, PyInt_FromLong(height));
+    PyTuple_SetItem(retVal, 0, PyLong_FromLong(width));
+    PyTuple_SetItem(retVal, 1, PyLong_FromLong(height));
     return retVal;
 }
 

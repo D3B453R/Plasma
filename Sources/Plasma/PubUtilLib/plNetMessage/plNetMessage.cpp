@@ -78,24 +78,6 @@ const uint8_t plNetMessage::kVerMinor = PLASMA2_NETMSG_MINOR_VERSION;
 ////////////////////////////////////////////////////////
 // plNetMessage
 ////////////////////////////////////////////////////////
-plNetMessage::plNetMessage() :
-fTimeRecvd(0),
-fBytesRead(0),
-fNetCoreMsg(nil),
-fContext(0),
-fPeekStatus(0),
-fTransactionID(0),
-fPlayerID(kInvalidPlayerID),
-fFlags(0),
-fProtocolVerMajor(0),
-fProtocolVerMinor(0)
-{
-}
-
-plNetMessage::~plNetMessage()
-{
-    
-}
 
 void plNetMessage::Read(hsStream* s, hsResMgr* mgr)
 {
@@ -856,7 +838,6 @@ int plNetMsgRoomsList::IPeekBuffer(hsStream* stream, uint32_t peekOptions)
         int i, numRooms;
         stream->LogReadLE(&numRooms,"RoomList NumRooms");
         fRooms.resize(numRooms);
-        int oldSize = fRoomNames.size();
         fRoomNames.resize(numRooms);
         for(i=0;i<numRooms;i++)
         {
@@ -1209,7 +1190,7 @@ const char *plNetMsgVoice::GetVoiceData() const
 ////////////////////////////////////////////////////////
 int plNetMsgListenListUpdate::IPokeBuffer(hsStream* stream, uint32_t peekOptions)
 {
-    int bytes=plNetMessage::IPokeBuffer(stream, peekOptions);
+    plNetMessage::IPokeBuffer(stream, peekOptions);
     stream->WriteLE(fAdding);
     fReceivers.Poke(stream, peekOptions);
     return stream->GetPosition();

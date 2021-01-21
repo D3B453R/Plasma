@@ -47,11 +47,10 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #   include <crtdbg.h>
 #endif
 
-#pragma hdrstop
-
 #if defined(HS_BUILD_FOR_UNIX)
 #   include <cstring>
 #   include <sys/stat.h>
+#   include <sys/utsname.h>
 #   include <fcntl.h>
 #   include <unistd.h>
 #   include <signal.h>
@@ -126,7 +125,7 @@ NORETURN void ErrorAssert(int line, const char* file, const char* fmt, ...)
     char msg[1024];
     va_list args;
     va_start(args, fmt);
-    vsnprintf(msg, arrsize(msg), fmt, args);
+    vsnprintf(msg, std::size(msg), fmt, args);
 #if defined(HS_DEBUGGING)
 #if defined(_MSC_VER)
     if (s_GuiAsserts)
@@ -215,7 +214,7 @@ void DebugMsg(const char* fmt, ...)
     char msg[1024];
     va_list args;
     va_start(args, fmt);
-    vsnprintf(msg, arrsize(msg), fmt, args);
+    vsnprintf(msg, std::size(msg), fmt, args);
     fprintf(stderr, "%s\n", msg);
 
 #ifdef _MSC_VER
@@ -254,7 +253,7 @@ void hsStatusMessage(const char* message)
 void hsStatusMessageV(const char * fmt, va_list args)
 {
     char  buffer[2000];
-    vsnprintf(buffer, arrsize(buffer), fmt, args);
+    vsnprintf(buffer, std::size(buffer), fmt, args);
     hsStatusMessage(buffer);
 }
 
@@ -270,7 +269,6 @@ void hsStatusMessageF(const char * fmt, ...)
 
 class hsMinimizeClientGuard
 {
-#ifdef CLIENT
     hsWindowHndl fWnd;
 
 public:
@@ -290,7 +288,6 @@ public:
         ShowWindow(fWnd, SW_RESTORE);
 #endif // HS_BUILD_FOR_WIN32
     }
-#endif // CLIENT
 };
 
 bool hsMessageBox_SuppressPrompts = false;
@@ -564,33 +561,10 @@ std::vector<ST::string> DisplaySystemVersion()
         }
         break;
     }
+#elif HS_BUILD_FOR_UNIX
+    struct utsname sysinfo;
+    uname(&sysinfo);
+    versionStrs.push_back(ST::format("{} {} ({})\n", sysinfo.sysname, sysinfo.release, sysinfo.machine));
 #endif
     return versionStrs;
 }
-
-#ifdef HS_BUILD_FOR_WIN32
-static RTL_OSVERSIONINFOEXW s_WinVer;
-
-const RTL_OSVERSIONINFOEXW& hsGetWindowsVersion()
-{
-    static bool done = false;
-    if (!done) {
-        memset(&s_WinVer, 0, sizeof(RTL_OSVERSIONINFOEXW));
-        HMODULE ntdll = LoadLibraryW(L"ntdll.dll");
-        hsAssert(ntdll, "Failed to LoadLibrary on ntdll???");
-
-        if (ntdll) {
-            s_WinVer.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOEXW);
-            typedef LONG(WINAPI* RtlGetVersionPtr)(RTL_OSVERSIONINFOEXW*);
-            RtlGetVersionPtr getVersion = (RtlGetVersionPtr)GetProcAddress(ntdll, "RtlGetVersion");
-            hsAssert(getVersion, "Could not find RtlGetVersion in ntdll");
-            if (getVersion) {
-                getVersion(&s_WinVer);
-                done = true;
-            }
-        }
-        FreeLibrary(ntdll);
-    }
-    return s_WinVer;
-}
-#endif

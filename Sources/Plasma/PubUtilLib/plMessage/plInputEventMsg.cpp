@@ -44,7 +44,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "hsBitVector.h"
 #include "pnKeyedObject/plKey.h"
 #include "hsResMgr.h"
-#pragma hdrstop
 
 #include "plInputEventMsg.h"
 
@@ -109,9 +108,8 @@ void plInputEventMsg::WriteVersion(hsStream* s, hsResMgr* mgr)
 }
 
 plControlEventMsg::plControlEventMsg() : 
-    fCmd(nil)
+    fCmd()
 {
-    fTurnToPt.Set(0,0,0);
     fControlPct = 1.0f;
     SetBCastFlag(plMessage::kPropagateToModifiers);
     SetBCastFlag(plMessage::kBCastByType, false);
@@ -120,9 +118,8 @@ plControlEventMsg::plControlEventMsg() :
 plControlEventMsg::plControlEventMsg(const plKey &s, 
             const plKey &r, 
             const double* t) :
-    fCmd(nil)
+    fCmd()
 {
-    fTurnToPt.Set(0,0,0);
     fControlPct = 1.0f;
     SetBCastFlag(plMessage::kBCastByType, false);
     SetBCastFlag(plMessage::kPropagateToModifiers);

@@ -41,7 +41,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 
 #include <Python.h>
-#pragma hdrstop
 
 #include "pyVaultSDLNode.h"
 #include "pySDL.h"
@@ -60,7 +59,7 @@ PYTHON_INIT_DEFINITION(ptVaultSDLNode, args, keywords)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultSDLNode, getIdent)
 {
-    return PyInt_FromLong(self->fThis->GetIdent());
+    return PyLong_FromLong(self->fThis->GetIdent());
 }
 
 PYTHON_METHOD_DEFINITION(ptVaultSDLNode, setIdent, args)
@@ -124,14 +123,7 @@ PYTHON_END_METHODS_TABLE;
 PLASMA_DEFAULT_TYPE_WBASE(ptVaultSDLNode, pyVaultNode, "Plasma vault SDL node");
 
 // required functions for PyObject interoperability
-PYTHON_CLASS_NEW_IMPL(ptVaultSDLNode, pyVaultSDLNode)
-
-PyObject *pyVaultSDLNode::New(RelVaultNode* nfsNode)
-{
-    ptVaultSDLNode *newObj = (ptVaultSDLNode*)ptVaultSDLNode_type.tp_new(&ptVaultSDLNode_type, NULL, NULL);
-    newObj->fThis->fNode = nfsNode;
-    return (PyObject*)newObj;
-}
+PYTHON_CLASS_VAULT_NODE_NEW_IMPL(ptVaultSDLNode, pyVaultSDLNode)
 
 PYTHON_CLASS_CHECK_IMPL(ptVaultSDLNode, pyVaultSDLNode)
 PYTHON_CLASS_CONVERT_FROM_IMPL(ptVaultSDLNode, pyVaultSDLNode)

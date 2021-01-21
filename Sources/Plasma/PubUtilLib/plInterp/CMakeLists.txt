@@ -1,8 +1,3 @@
-include_directories("../../CoreLib")
-include_directories("../../NucleusLib/inc")
-include_directories("../../NucleusLib")
-include_directories("../../PubUtilLib")
-
 set(plInterp_SOURCES
     hsInterp.cpp
     hsKeys.cpp
@@ -27,9 +22,14 @@ set(plInterp_HEADERS
 
 add_library(plInterp STATIC ${plInterp_SOURCES} ${plInterp_HEADERS})
 
-target_link_libraries(plInterp pnFactory)
-target_link_libraries(plInterp pnNetCommon)
-target_link_libraries(plInterp plTransform)
+target_link_libraries(plInterp
+    PUBLIC
+        CoreLib
+        pnFactory
+        pnNetCommon
+        plIntersect
+        plTransform
+)
 
 source_group("Source Files" FILES ${plInterp_SOURCES})
 source_group("Header Files" FILES ${plInterp_HEADERS})

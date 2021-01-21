@@ -111,8 +111,8 @@ void    plGBufferCell::Write( hsStream *s )
 //// Constructor //////////////////////////////////////////////////////////////
 
 plGBufferGroup::plGBufferGroup(uint8_t format, bool vertsVolatile, bool idxVolatile, int LOD)
-    : fNumVerts(0), fNumIndices(0), fFormat(format), fVertsVolatile(vertsVolatile),
-      fIdxVolatile(idxVolatile), fLOD(LOD)
+    : fNumVerts(), fNumIndices(), fNumSkinWeights(), fFormat(format),
+      fVertsVolatile(vertsVolatile), fIdxVolatile(idxVolatile), fLOD(LOD)
 {
     fStride = ICalcVertexSize(fLiteStride);
 }
@@ -145,7 +145,7 @@ void plGBufferGroup::DirtyIndexBuffer(size_t i)
 
 //// TidyUp ///////////////////////////////////////////////////////////////////
 
-void    plGBufferGroup::TidyUp( void )
+void    plGBufferGroup::TidyUp()
 {
 /*  if( fVertBuffStorage.GetCount() == 0 && fNumVerts > 0 )
         return;     // Already tidy'd!
@@ -186,7 +186,7 @@ void plGBufferGroup::PurgeIndexBuffer(uint32_t idx)
 
 //// CleanUp //////////////////////////////////////////////////////////////////
 
-void    plGBufferGroup::CleanUp( void )
+void    plGBufferGroup::CleanUp()
 {
     // Clean up the storage
     for (size_t i = 0; i < fVertBuffSizes.size(); ++i)
@@ -336,14 +336,14 @@ uint8_t   plGBufferGroup::ICalcVertexSize( uint8_t &liteStride )
 
 void    plGBufferGroup::Read( hsStream *s ) 
 {
-    uint32_t          totalDynSize, i, count, temp = 0, j;
+    uint32_t          i, count, temp = 0, j;
     uint8_t           *vData;
     uint16_t          *iData;
     plGBufferColor  *cData;
 
 
     s->ReadLE( &fFormat );
-    totalDynSize = s->ReadLE32();
+    (void)s->ReadLE32();    // totalDynSize
     fStride = ICalcVertexSize( fLiteStride );
 
     fVertBuffSizes.clear();
@@ -379,7 +379,7 @@ void    plGBufferGroup::Read( hsStream *s )
 
             vData = new uint8_t[size];
             fVertBuffStorage.push_back( vData );
-            plProfile_NewMem(MemBufGrpVertex, temp);
+            plProfile_NewMem(MemBufGrpVertex, size);
 
             coder.Read(s, vData, fFormat, fStride, numVerts);
 
@@ -638,7 +638,7 @@ void    plGBufferGroup::DeleteIndicesFromStorage( uint32_t which, uint32_t start
 //// GetNumPrimaryVertsLeft ///////////////////////////////////////////////////
 //  Base on the cells, so we can take instanced cells into account
 
-uint32_t  plGBufferGroup::GetNumPrimaryVertsLeft( void ) const
+uint32_t  plGBufferGroup::GetNumPrimaryVertsLeft() const
 {
     return GetNumVertsLeft( 0 );
 }

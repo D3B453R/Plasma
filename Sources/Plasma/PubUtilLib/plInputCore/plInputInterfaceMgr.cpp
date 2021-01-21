@@ -145,7 +145,7 @@ plInputInterfaceMgr::~plInputInterfaceMgr()
 #include "plDebugInputInterface.h"
 #include "plTelescopeInputInterface.h"
 
-void    plInputInterfaceMgr::Init( void )
+void    plInputInterfaceMgr::Init()
 {
     RegisterAs( kInputInterfaceMgr_KEY );
 
@@ -174,7 +174,7 @@ void    plInputInterfaceMgr::Init( void )
 
 //// Shutdown ////////////////////////////////////////////////////////////////
 
-void    plInputInterfaceMgr::Shutdown( void )
+void    plInputInterfaceMgr::Shutdown()
 {
     int i;
 
@@ -249,7 +249,7 @@ void plInputInterfaceMgr::ResetClickableState()
 
 void    plInputInterfaceMgr::IUpdateCursor( int32_t newCursor )
 {
-    char*     mouseCursorResID;
+    const char*     mouseCursorResID;
 
 
     fCurrentCursor = newCursor;
@@ -737,7 +737,7 @@ const plKeyBinding* plInputInterfaceMgr::FindBindingByConsoleCmd( const char *cm
 
 //// InitDefaultKeyMap ///////////////////////////////////////////////////////
 
-void    plInputInterfaceMgr::InitDefaultKeyMap( void )
+void    plInputInterfaceMgr::InitDefaultKeyMap()
 {
     int     i;
 
@@ -749,7 +749,7 @@ void    plInputInterfaceMgr::InitDefaultKeyMap( void )
 
 //// RefreshInterfaceKeyMaps /////////////////////////////////////////////////
 
-void    plInputInterfaceMgr::RefreshInterfaceKeyMaps( void )
+void    plInputInterfaceMgr::RefreshInterfaceKeyMaps()
 {
     int     i;
 
@@ -760,12 +760,13 @@ void    plInputInterfaceMgr::RefreshInterfaceKeyMaps( void )
 
 //// WriteKeyMap /////////////////////////////////////////////////////////////
 
-void    plInputInterfaceMgr::WriteKeyMap( void )
+void    plInputInterfaceMgr::WriteKeyMap()
 {
 #ifdef PLASMA_EXTERNAL_RELEASE
     return;
 #endif
-    FILE* gKeyFile = fopen("init\\keyboard.fni", "wt");
+    plFileName fname = plFileName::Join("init", "keyboard.fni");
+    FILE* gKeyFile = plFileSystem::Open(fname, "wt");
 
     if (gKeyFile)
     {
@@ -837,6 +838,8 @@ void    plInputInterfaceMgr::WriteKeyMap( void )
             //  keyConvert = &plKeyMap::fKeyConversionItalian[0];
             //  break;
             // default is English
+            default:
+                break;
         }
         for (i = 0; keyConvert[i].fVKey != 0xffffffff; i++)
         {   

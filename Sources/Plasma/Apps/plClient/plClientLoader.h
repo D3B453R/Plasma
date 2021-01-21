@@ -49,16 +49,16 @@ class plClientLoader : private hsThread
     class plClient* fClient;
     HWND fWindow;
 
-    virtual void OnQuit() HS_OVERRIDE
+    virtual void OnQuit() override
     {
         SetQuit(true);
     }
 
     /** Does the heavy lifting of client init */
-    virtual void Run() HS_OVERRIDE;
+    virtual void Run() override;
 
 public:
-    plClientLoader() : fClient(nullptr) { }
+    plClientLoader() : fClient(), fWindow() { }
 
     /**
      * Initializes the client asyncrhonouslynn including: loading the localization, 

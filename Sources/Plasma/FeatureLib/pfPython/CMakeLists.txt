@@ -1,13 +1,4 @@
-include_directories(../../CoreLib)
-include_directories(../../FeatureLib)
-include_directories(../../NucleusLib)
-include_directories(../../NucleusLib/inc)
-include_directories(../../PubUtilLib)
-include_directories(../../)
-
-include_directories(${PYTHON_INCLUDE_DIR})
-include_directories(${OPENAL_INCLUDE_DIR})
-
+include_directories(${PLASMA_SOURCE_ROOT})
 set(pfPython_SOURCES
     cyAccountManagement.cpp
     cyAnimation.cpp
@@ -19,6 +10,7 @@ set(pfPython_SOURCES
     cyParticleSys.cpp
     cyPhysics.cpp
     cyPythonInterface.cpp
+    cyPythonModule451.cpp
     plPythonFileMod.cpp
     plPythonPack.cpp
     plPythonSDLModifier.cpp
@@ -154,6 +146,7 @@ set(pfPython_HEADERS
     pyNetLinkingMgr.h
     pyNetServerSessionInfo.h
     pyNotify.h
+    pyObjectRef.h
     pyPlayer.h
     pySceneObject.h
     pySDL.h
@@ -262,8 +255,9 @@ set(pfPython_GLUE
     pyWaveSetGlue.cpp
 )
 
-use_precompiled_header(Pch.h Pch.cpp pfPython_HEADERS pfPython_SOURCES)
 add_library(pfPython STATIC ${pfPython_SOURCES} ${pfPython_HEADERS} ${pfPython_GLUE})
+plasma_optimize_target(pfPython UNITY_BUILD PRECOMPILED_HEADERS Pch.h)
+target_link_libraries(pfPython Python3::Python)
 
 source_group("Source Files" FILES ${pfPython_SOURCES})
 source_group("Header Files" FILES ${pfPython_HEADERS})

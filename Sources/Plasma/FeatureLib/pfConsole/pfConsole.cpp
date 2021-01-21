@@ -137,9 +137,9 @@ class pfConsoleInputInterface : public plInputInterface
             // RestoreDefaultKeyMappings()!!!!
         }
 
-        virtual uint32_t  GetPriorityLevel( void ) const          { return kConsolePriority; }
-        virtual uint32_t  GetCurrentCursorID( void ) const        { return kCursorHidden; }
-        virtual bool    HasInterestingCursorID( void ) const    { return false; }
+        virtual uint32_t  GetPriorityLevel() const          { return kConsolePriority; }
+        virtual uint32_t  GetCurrentCursorID() const        { return kCursorHidden; }
+        virtual bool    HasInterestingCursorID() const    { return false; }
 
         virtual bool    InterpretInputEvent( plInputEventMsg *pMsg )
         {
@@ -156,11 +156,11 @@ class pfConsoleInputInterface : public plInputInterface
             return false;
         }
 
-        virtual void    RefreshKeyMap( void )
+        virtual void    RefreshKeyMap()
         {
         }
 
-        virtual void    RestoreDefaultKeyMappings( void )
+        virtual void    RestoreDefaultKeyMappings()
         {
             if( fControlMap != nil )
             {
@@ -175,11 +175,12 @@ class pfConsoleInputInterface : public plInputInterface
 //// Constructor & Destructor ////////////////////////////////////////////////
 
 pfConsole::pfConsole()
+    : fNumDisplayLines(32), fDisplayBuffer(), fFXEnabled(true), fEffectCounter(), fLastTime(),
+      fHelpTimer(), fMode(), fInited(), fHelpMode(), fCursorTicks(), fMsgTimeoutTimer(),
+      fPythonMode(), fPythonFirstTime(true), fPythonMultiLines(), fHistory(), fWorkingCursor(),
+      fInputInterface(), fEngine()
 {
-    fNumDisplayLines = 32;
-    fDisplayBuffer = nil;
     fTheConsole = this;
-    fFXEnabled = true;
 }
 
 pfConsole::~pfConsole()
@@ -676,8 +677,7 @@ void    pfConsole::IHandleKey( plKeyEventMsg *msg )
                 if ( fPythonFirstTime )
                 {
                     IAddLine( "" );     // add a blank line
-                    PyObject* mymod = PythonInterface::FindModule("__main__");
-                    PythonInterface::RunStringInteractive("import sys;print 'Python',sys.version",mymod);
+                    PythonInterface::RunStringInteractive("import sys;print(f'Python {sys.version}')", nullptr);
                     std::string output;
                     // get the messages
                     PythonInterface::getOutputAndReset(&output);
@@ -692,7 +692,8 @@ void    pfConsole::IHandleKey( plKeyEventMsg *msg )
             for( i = strlen( fWorkingLine ) + 1; i > fWorkingCursor; i-- )
                 fWorkingLine[ i ] = fWorkingLine[ i - 1 ];
 
-            fWorkingLine[ fWorkingCursor++ ] = key;
+            // TODO: What about keys outside of `char` range?
+            fWorkingLine[fWorkingCursor++] = char(key);
 
             findAgain = false;
             findCounter = 0;
@@ -791,7 +792,7 @@ void    pfConsole::IAddParagraph( const char *s, short margin )
 
 //// IClear //////////////////////////////////////////////////////////////////
 
-void    pfConsole::IClear( void )
+void    pfConsole::IClear()
 {
     memset( fDisplayBuffer, 0, kMaxCharsWide * fNumDisplayLines );
 }
@@ -979,7 +980,7 @@ void    pfConsole::Draw( plPipeline *p )
 
 //// IUpdateTooltip //////////////////////////////////////////////////////////
 
-void    pfConsole::IUpdateTooltip( void )
+void    pfConsole::IUpdateTooltip()
 {
     char    tmpStr[ kWorkingLineSize ];
     char    *c;
@@ -997,7 +998,7 @@ void    pfConsole::IUpdateTooltip( void )
 
 //// IPrintSomeHelp //////////////////////////////////////////////////////////
 
-void    pfConsole::IPrintSomeHelp( void )
+void    pfConsole::IPrintSomeHelp()
 {
     char    msg1[] = "The console contains commands arranged under groups and subgroups. \
 To use a command, you type the group name plus the command, such as 'Console.Clear' or \
@@ -1028,7 +1029,7 @@ void pfConsole::AddLineF(const char * fmt, ...) {
     char str[1024];
     va_list args;
     va_start(args, fmt);
-    hsVsnprintf(str, arrsize(str), fmt, args);
+    vsnprintf(str, std::size(str), fmt, args);
     va_end(args);
     AddLine(str);
 }

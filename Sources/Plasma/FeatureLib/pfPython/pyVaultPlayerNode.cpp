@@ -46,7 +46,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 //////////////////////////////////////////////////////////////////////
 
 #include <Python.h>
-#pragma hdrstop
 
 #include "pyVaultPlayerNode.h"
 #include "pyAgeInfoStruct.h"
@@ -64,23 +63,16 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 //============================================================================
 static PyObject * GetPlayerVaultFolder (unsigned folderType) {
-    PyObject * result = nil;
     if (hsRef<RelVaultNode> rvnPlr = VaultGetPlayerNode()) {
         if (hsRef<RelVaultNode> rvnFldr = rvnPlr->GetChildFolderNode(folderType, 1))
-            result = pyVaultFolderNode::New(rvnFldr);
+            return pyVaultFolderNode::New(rvnFldr);
     }
-    
-    return result;
-}
-
-pyVaultPlayerNode::pyVaultPlayerNode(RelVaultNode *nfsNode)
-: pyVaultNode(nfsNode)
-{
+    return nullptr;
 }
 
 //create from the Python side
 pyVaultPlayerNode::pyVaultPlayerNode()
-: pyVaultNode(nil)  // may not create player nodes from python
+    : pyVaultNode(nullptr)
 {
 }
 
@@ -248,7 +240,7 @@ ST::string pyVaultPlayerNode::GetPlayerName() const
         VaultPlayerNode player(fNode);
         return player.GetPlayerName();
     }
-    return ST::null;
+    return ST::string();
 }
 
 void pyVaultPlayerNode::SetAvatarShapeName(const char *value)
@@ -262,7 +254,7 @@ ST::string pyVaultPlayerNode::GetAvatarShapeName() const
         VaultPlayerNode player(fNode);
         return player.GetAvatarShapeName();
     }
-    return ST::null;
+    return ST::string();
 }
 
 void pyVaultPlayerNode::SetDisabled(bool value)

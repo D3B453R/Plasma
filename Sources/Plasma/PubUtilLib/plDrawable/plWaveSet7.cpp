@@ -114,18 +114,13 @@ using namespace plShaderID;
 
 // #define TEST_UVWS
 
-static const float kPiOverTwo = M_PI * 0.5f;
+static constexpr float kGravConst = 30.f;
 
-static const float kGravConst = 30.f;
+static constexpr float FreqToLen(float f) { return hsConstants::two_pi<float> / f; }
+static constexpr float LenToFreq(float l) { return hsConstants::two_pi<float> / l; }
 
-static const float kOOEightNsqPI = 1.f / (8.f * M_PI * 4.f * 4.f);
-static float currOOEightNsqPI = kOOEightNsqPI;
-
-static inline float FreqToLen(float f) { return 2.f * M_PI / f; }
-static inline float LenToFreq(float l) { return 2.f * M_PI / l; }
-
-static inline float MPH2FPS(float f) { return f * 5280.f / 3600.f; }
-static inline float FPS2MPH(float f) { return f / 5280.f * 3600.f; }
+static constexpr float MPH2FPS(float f) { return f * 5280.f / 3600.f; }
+static constexpr float FPS2MPH(float f) { return f / 5280.f * 3600.f; }
 
 plCONST(float) kTimeClamp(0.3f);
 
@@ -184,28 +179,6 @@ void plWaveSet7::StopGraph()
     fStatusGraph = nil;
 }
 
-inline void plWaveSet7::LogF(const char *format, ...) const
-{
-    if( fStatusLog )
-    {
-        va_list args;
-        va_start(args,format);
-        fStatusLog->AddLineV(format, args);
-        va_end(args);
-    }
-}
-
-inline void plWaveSet7::LogF(uint32_t color, const char *format, ...) const
-{
-    if( fStatusLog )
-    {
-        va_list args;
-        va_start(args,format);
-        fStatusLog->AddLineV(color, format, args);
-        va_end(args);
-    }
-}
-
 inline void plWaveSet7::IRestartLog() const
 {
     if( fStatusLog )
@@ -238,14 +211,6 @@ void plWaveSet7::StartGraph()
 }
 
 void plWaveSet7::StopGraph()
-{
-}
-
-inline void plWaveSet7::LogF(const char *format, ...) const
-{
-}
-
-inline void plWaveSet7::LogF(uint32_t color, const char *format, ...) const
 {
 }
 
@@ -910,12 +875,12 @@ void plWaveSet7::IUpdateWave(float dt, int i)
 
     float len = FreqToLen(wave.fFreq);
 
-    float speed = hsFastMath::InvSqrtAppr(len / (2.f * M_PI * kGravConst));
+    float speed = hsFastMath::InvSqrtAppr(len / (hsConstants::two_pi<float> * kGravConst));
 
     static float speedHack = 1.f;
     speed *= speedHack;
     wave.fPhase += speed * dt;
-//  wave.fPhase = fmod( speed * t, 2.f * M_PI);
+//  wave.fPhase = fmod( speed * t, hsConstants::two_pi<float>);
 
     float amp = GeoState().fAmpOverLen * len / float(kNumWaves);
 
@@ -989,7 +954,6 @@ float plWaveSet7::EvalPoint(hsPoint3& pos, hsVector3& norm)
     hsPoint3 accumPos;
     hsVector3 accumNorm;
     accumPos.Set(pos.fX, pos.fY, State().fWaterHeight);
-    accumNorm.Set(0,0,0);
 
     int i;
     for( i = 0; i < kNumWaves; i++ )
@@ -1039,7 +1003,6 @@ void plWaveSet7::IFloatBuoy(float dt, plSceneObject* so)
 {
     // Compute force based on world bounds
     hsBounds3Ext wBnd = so->GetDrawInterface()->GetWorldBounds();
-    hsBounds3Ext lBnd = so->GetDrawInterface()->GetLocalBounds();
 
     hsPoint3 pos(wBnd.GetCenter());
     hsPoint3 surfPos(pos);
@@ -1075,12 +1038,12 @@ void plWaveSet7::IFloatBuoy(float dt, plSceneObject* so)
 
     plKey physKey = so->GetSimulationInterface()->GetPhysical()->GetKey();
 
-//  plImpulseMsg* iMsg = new plImpulseMsg(GetKey(), physKey, hsVector3(0, 0, 1.f) * forceMag * dt);
+//  plImpulseMsg* iMsg = new plImpulseMsg(GetKey(), physKey, hsVector3(0.f, 0.f, 1.f) * forceMag * dt);
 //  iMsg->Send();
 
 #if 0
     plCONST(float) kRotScale(1.f);
-    hsVector3 rotAx = hsVector3(0, 0, 1.f) % surfNorm;
+    hsVector3 rotAx = hsVector3(0.f, 0.f, 1.f) % surfNorm;
     rotAx *= kRotScale * dt * volume;
 
     plAngularImpulseMsg* aMsg = new plAngularImpulseMsg(GetKey(), physKey, rotAx);
@@ -1172,8 +1135,7 @@ void plWaveSet7::ICheckTargetMaterials()
         
         plConst(float) kMaxWaveHeight(5.f);
 
-        hsPoint3 p;
-        p = targBnd.GetMins();
+        hsPoint3 p = targBnd.GetMins();
         p.fZ = GetHeight() - kMaxWaveHeight;
         fTargBnds[0].Reset(&p);
         p = targBnd.GetMaxs();
@@ -1263,18 +1225,18 @@ void plWaveSet7::IInitState()
     plConst(float) kGeoMinLen(3.f);
     plConst(float) kGeoMaxLen(8.f);
     plConst(float) kGeoAmpOverLen(0.1f);
-    plConst(float) kGeoAngleDev(30.f * M_PI / 180.f);
+    plConst(float) kGeoAngleDev(hsDegreesToRadians(30.f));
     plConst(float) kGeoChop(1.f);
 
     plConst(float) kTexMinLen(4.f);
     plConst(float) kTexMaxLen(30.f);
     plConst(float) kTexAmpOverLen(0.1f);
-    plConst(float) kTexAngleDev(30.f * M_PI / 180.f);
+    plConst(float) kTexAngleDev(hsDegreesToRadians(30.f));
     plConst(float) kTexChop(1.f);
 
     plFixedWaterState7 state;
 
-    state.fWindDir = hsVector3(0, 1.f, 0);
+    state.fWindDir = hsVector3(0.f, 1.f, 0.f);
 
     state.fGeoState.fMaxLength = kGeoMaxLen;
     state.fGeoState.fMinLength = kGeoMinLen;
@@ -1319,7 +1281,7 @@ void plWaveSet7::IInitState()
     state.fWaterTint = hsColorRGBA().Set(0.1f, 0.2f, 0.2f, 1.f);
     state.fSpecularTint = hsColorRGBA().Set(1.f, 1.f, 1.f, 1.f);
 
-    state.fEnvCenter = hsPoint3(0,0,0);
+    state.fEnvCenter = hsPoint3();
     state.fEnvRadius = 500.f;
     state.fEnvRefresh = 0.f;
 
@@ -1429,7 +1391,7 @@ void plWaveSet7::IInitTexWave(int i)
 
     float effK = hsFastMath::InvSqrt(dx*dx + dy*dy);
     fTexWaves[i].fLen = float(kCompositeSize) * effK;
-    fTexWaves[i].fFreq = M_PI * 2.f / fTexWaves[i].fLen;
+    fTexWaves[i].fFreq = hsConstants::two_pi<float> / fTexWaves[i].fLen;
     fTexWaves[i].fAmp = fTexWaves[i].fLen * TexState().fAmpOverLen;
     fTexWaves[i].fPhase = fRand.RandZeroToOne();
     
@@ -1482,7 +1444,7 @@ void plWaveSet7::IUpdateBumpLayers(float dt)
     int i;
     for( i = 0; i < kNumTexWaves; i++ )
     {
-        float speed = hsFastMath::InvSqrtAppr(fTexWaves[i].fLen / (2.f * M_PI * kGravConst)) * speedHack;
+        float speed = hsFastMath::InvSqrtAppr(fTexWaves[i].fLen / (hsConstants::two_pi<float> * kGravConst)) * speedHack;
         fTexWaves[i].fPhase -= dt * speed;
         fTexWaves[i].fPhase -= int(fTexWaves[i].fPhase);
 
@@ -1499,7 +1461,7 @@ void plWaveSet7::IUpdateBumpLayers(float dt)
             fBumpLayers[i]->SetTransform(xfm);
         }
 
-        LogF("%.4d - L%8.4f R(%5.3f, %5.3f)", i, fTexWaves[i].fLen, fTexWaves[i].fRotScale00, fTexWaves[i].fRotScale01);
+        Log("{.4d} - L{8.4f} R({5.3f}, {5.3f})", i, fTexWaves[i].fLen, fTexWaves[i].fRotScale00, fTexWaves[i].fRotScale01);
         GraphLen(fTexWaves[i].fLen);
     }
 }
@@ -1678,8 +1640,7 @@ plMipmap* plWaveSet7::ICreateBumpMipmapPS()
         int i;
         for( i = 0; i < sizeU; i++ )
         {
-            float y = float(i);
-            float dist = float(i) / float(sizeU-1) * 2.f * M_PI;
+            float dist = float(i) / float(sizeU-1) * hsConstants::two_pi<float>;
             float c = cos(dist);
             float s = sin(dist);
             s *= 0.5f;
@@ -1723,7 +1684,7 @@ void plWaveSet7::IAddBumpBiasLayer(hsGMaterial* mat)
                 | hsGMatState::kShadeNoShade);
             layer->SetClampFlags(0);
             layer->SetMiscFlags(0);
-            layer->SetMiscFlags(i ? 0 : hsGMatState::kMiscRestartPassHere);
+            layer->SetMiscFlags(i ? hsGMatState::hsGMatMiscFlags(0) : hsGMatState::kMiscRestartPassHere);
 
             layer->SetAmbientColor(hsColorRGBA().Set(0.25f, 0.25f, 0.f, 0.f));
             layer->SetRuntimeColor(hsColorRGBA().Set(0.f, 0.f, 0.f, 0.f));
@@ -2270,7 +2231,7 @@ void plWaveSet7::ICreateFixedMat(hsGMaterial* mat, const int numUVWs)
         plDynamicEnvMap* env = new plDynamicEnvMap((uint16_t)fEnvSize, (uint16_t)fEnvSize, 32);
         hsgResMgr::ResMgr()->NewKey(GetKey()->GetName(), env, GetKey()->GetUoid().GetLocation());
         fEnvMap = env;
-        env->SetPosition(hsPoint3(0, 0, 50.f));
+        env->SetPosition(hsPoint3(0.f, 0.f, 50.f));
         env->SetPosition(State().fEnvCenter);
         env->SetYon(10000.f);
         env->SetRefreshRate(State().fEnvRefresh);
@@ -2301,7 +2262,10 @@ void plWaveSet7::IAddShoreVertexShader(hsGMaterial* mat)
 
         vShader->SetVector(plShoreVS::kSinConsts, 1.f, -1.f/6.f, 1.f/120.f, -1.f/5040.f);
         vShader->SetVector(plShoreVS::kCosConsts, 1.f, -1.f/2.f, 1.f/24.f, -1.f/720.f);
-        vShader->SetVector(plShoreVS::kPiConsts, 1.f / (8.f*M_PI*4.f*4.f), M_PI/2.f, M_PI, M_PI*2.f);
+        vShader->SetVector(plShoreVS::kPiConsts, 1.f / (8.f*hsConstants::pi<float>*4.f*4.f),
+                                                 hsConstants::half_pi<float>,
+                                                 hsConstants::pi<float>,
+                                                 hsConstants::two_pi<float>);
         vShader->SetVector(plShoreVS::kNumericConsts, 0, 0.5f, 1.f, 2.f);
 
         plConst(float) kK1(0.5f);
@@ -2377,7 +2341,10 @@ void plWaveSet7::IAddFixedVertexShader(hsGMaterial* mat, const int numUVWs)
 
         vShader->SetVector(plFixedVS7::kSinConsts, 1.f, -1.f/6.f, 1.f/120.f, -1.f/5040.f);
         vShader->SetVector(plFixedVS7::kCosConsts, 1.f, -1.f/2.f, 1.f/24.f, -1.f/720.f);
-        vShader->SetVector(plFixedVS7::kPiConsts, 1.f / (8.f*M_PI*4.f*4.f), M_PI/2.f, M_PI, M_PI*2.f);
+        vShader->SetVector(plFixedVS7::kPiConsts, 1.f / (8.f*hsConstants::pi<float>*4.f*4.f),
+                                                  hsConstants::half_pi<float>,
+                                                  hsConstants::pi<float>,
+                                                  hsConstants::two_pi<float>);
         vShader->SetVector(plFixedVS7::kNumericConsts, 0, 0.5f, 1.f, 2.f);
 
         vShader->SetNumPipeConsts(5);
@@ -2474,7 +2441,10 @@ void plWaveSet7::IAddRipVertexShader(hsGMaterial* mat, const plRipVSConsts& ripC
 
         vShader->SetVector(plRipVS::kSinConsts, 1.f, -1.f/6.f, 1.f/120.f, -1.f/5040.f);
         vShader->SetVector(plRipVS::kCosConsts, 1.f, -1.f/2.f, 1.f/24.f, -1.f/720.f);
-        vShader->SetVector(plRipVS::kPiConsts, 1.f / (8.f*M_PI*4.f*4.f), M_PI/2.f, M_PI, M_PI*2.f);
+        vShader->SetVector(plRipVS::kPiConsts, 1.f / (8.f*hsConstants::pi<float>*4.f*4.f),
+                                               hsConstants::half_pi<float>,
+                                               hsConstants::pi<float>,
+                                               hsConstants::two_pi<float>);
         vShader->SetVector(plRipVS::kNumericConsts, 0, 0.5f, 1.f, 2.f);
 
         hsVector3 waterOffset = State().fWaterOffset;
@@ -2514,7 +2484,7 @@ void plWaveSet7::IAddRipVertexShader(hsGMaterial* mat, const plRipVSConsts& ripC
             ripConsts.fLife,
             1.f / (ripConsts.fLife - ripConsts.fDecay));
 
-        plConst(float) kRipBias(0.1);
+        plConst(float) kRipBias(0.1f);
         vShader->SetVector(plRipVS::kRampBias,
             ripConsts.fRamp,
             1.f / ripConsts.fRamp,
@@ -2618,7 +2588,10 @@ plShader* plWaveSet7::ICreateDecalVShader(DecalVType t)
 
         vShader->SetVector(plWaveDecVS::kSinConsts, 1.f, -1.f/6.f, 1.f/120.f, -1.f/5040.f);
         vShader->SetVector(plWaveDecVS::kCosConsts, 1.f, -1.f/2.f, 1.f/24.f, -1.f/720.f);
-        vShader->SetVector(plWaveDecVS::kPiConsts, 1.f / (8.f*M_PI*4.f*4.f), M_PI/2.f, M_PI, M_PI*2.f);
+        vShader->SetVector(plWaveDecVS::kPiConsts, 1.f / (8.f*hsConstants::pi<float>*4.f*4.f),
+                                                   hsConstants::half_pi<float>,
+                                                   hsConstants::pi<float>,
+                                                   hsConstants::two_pi<float>);
         vShader->SetVector(plWaveDecVS::kNumericConsts, 0, 0.5f, 1.f, 2.f);
 
         hsVector3 waterOffset = State().fWaterOffset;
@@ -2644,7 +2617,7 @@ plShader* plWaveSet7::ICreateDecalVShader(DecalVType t)
             0.f
             );
 
-        plConst(float) kBias(0.1);
+        plConst(float) kBias(0.1f);
         vShader->SetVector(plWaveDecVS::kBias,
             kBias,
             0,
@@ -2842,7 +2815,6 @@ void plWaveSet7::IUpdateBumpPShader(plPipeline* pipe, const hsMatrix44& l2w, con
             float scale = 1.f / (float(kNumBumpShaders) + specVec[State().kNoise]);
 
             float maxLen = TexState().fMaxLength * kCompositeSize / State().fRippleScale;
-            float rescale = fTexWaves[iTex].fLen / maxLen;
 
             float bias = 0.5f * scale;
             fBumpPShader[i]->SetVector(plBumpPS::kHalfOne, scale, scale, 1.f, 1.f);
@@ -2888,7 +2860,7 @@ void plWaveSet7::IUpdateBiasVShader()
         ty += fBiasVShader->GetFloat(plBiasVS::kTexV0, 3);
         ty -= float(int(ty));
 
-        float scale = 1.f + (4.f - 1.f) * TexState().fAngleDev/M_PI;
+        float scale = 1.f + (4.f - 1.f) * TexState().fAngleDev/hsConstants::pi<float>;
 
         float m00 = IRound(fWindDir.fY * scale);
         float m01 = IRound(fWindDir.fX * scale);
@@ -2989,7 +2961,7 @@ void plWaveSet7::IUpdateRipVShader(plPipeline* pipe, const hsMatrix44& l2w, cons
         int i; 
         for( i = 0; i < kNumWaves; i++ )
         {
-            normQ[i] = GeoState().fChop / (2.f*M_PI * GeoState().fAmpOverLen * kNumWaves);
+            normQ[i] = GeoState().fChop / (hsConstants::two_pi<float> * GeoState().fAmpOverLen * kNumWaves);
         }
 
         fRipVShader->SetVector(plRipVS::kQADirX,
@@ -3073,7 +3045,7 @@ void plWaveSet7::IUpdateDecVShader(int t, plPipeline* pipe)
         int i;
         for( i = 0; i < kNumWaves; i++ )
         {
-            normQ[i] = GeoState().fChop / (2.f*M_PI * GeoState().fAmpOverLen * kNumWaves);
+            normQ[i] = GeoState().fChop / (hsConstants::two_pi<float> * GeoState().fAmpOverLen * kNumWaves);
         }
 
         shader->SetVector(plWaveDecVS::kQADirX,
@@ -3200,7 +3172,7 @@ void plWaveSet7::IUpdateShoreVShader(plPipeline* pipe, const hsMatrix44& l2w, co
         int i;
         for( i = 0; i < kNumWaves; i++ )
         {
-            normQ[i] = GeoState().fChop / (2.f*M_PI * GeoState().fAmpOverLen * kNumWaves);
+            normQ[i] = GeoState().fChop / (hsConstants::two_pi<float> * GeoState().fAmpOverLen * kNumWaves);
         }
 
         fShoreVShader->SetVector(plShoreVS::kQADirX,
@@ -3276,7 +3248,7 @@ void plWaveSet7::IUpdateFixedVShader(plPipeline* pipe, const hsMatrix44& l2w, co
             0,
             0);
 
-        float specAtten = State().fTexState.fAmpOverLen * M_PI * 2.f;
+        float specAtten = State().fTexState.fAmpOverLen * hsConstants::two_pi<float>;
 
         plCONST(float) kScaleHack(0.1f);
         float baseScale = kScaleHack;
@@ -3348,7 +3320,7 @@ void plWaveSet7::IUpdateFixedVShader(plPipeline* pipe, const hsMatrix44& l2w, co
         int i;
         for( i = 0; i < kNumWaves; i++ )
         {
-            normQ[i] = GeoState().fChop / (2.f*M_PI * GeoState().fAmpOverLen * kNumWaves);
+            normQ[i] = GeoState().fChop / (hsConstants::two_pi<float> * GeoState().fAmpOverLen * kNumWaves);
         }
 
         fFixedVShader->SetVector(plFixedVS7::kDirXK,
@@ -3643,7 +3615,6 @@ plDrawableSpans* plWaveSet7::ICreateGraphDrawable(plDrawableSpans* drawable, hsG
 
     uint16_t* idx = idxArr.AcquireArray();
 
-    int iBase = 0;
     for( i = 0; i < nTris; i += 2 )
     {
         *idx++ = i;
@@ -3874,8 +3845,7 @@ plMipmap* plWaveSet7::ICreateBubbleShoreTex(int width, int height)
     // If we haven't already made one...
     if( !fBubbleShoreTex )
     {
-        plMipmap* mipMap = ICreateBlankTex("Bubble", width, height, kRefBubbleShoreTex);
-
+        (void)ICreateBlankTex("Bubble", width, height, kRefBubbleShoreTex);
         IRefillBubbleShoreTex();
     }
 
@@ -3924,7 +3894,7 @@ void plWaveSet7::IRefillEdgeShoreTex()
 #else // like cos
             float a = float(j - center);
             a /= float(radius);
-            a *= M_PI;
+            a *= hsConstants::pi<float>;
             a = hsFastMath::CosInRange(a);
             a += 1.f;
             a *= 0.5f;
@@ -3959,8 +3929,7 @@ plMipmap* plWaveSet7::ICreateEdgeShoreTex(int width, int height)
     // If we haven't already made one...
     if( !fEdgeShoreTex )
     {
-        plMipmap* mipMap = ICreateBlankTex("Edge", width, height, kRefEdgeShoreTex);
-
+        (void)ICreateBlankTex("Edge", width, height, kRefEdgeShoreTex);
         IRefillEdgeShoreTex();
     }
 
@@ -4127,7 +4096,10 @@ void plWaveSet7::IAddGraphVShader(hsGMaterial* mat, int iPass)
         vShader->SetNumConsts(plGraphVS::kNumConsts);
         
         vShader->SetVector(plGraphVS::kNumericConsts, 0, 0.5f, 1.f, 2.f);
-        vShader->SetVector(plGraphVS::kPiConsts, 1.f / (2.f*M_PI), M_PI/2.f, M_PI, M_PI*2.f);
+        vShader->SetVector(plGraphVS::kPiConsts, 1.f / hsConstants::two_pi<float>,
+                                                 hsConstants::half_pi<float>,
+                                                 hsConstants::pi<float>,
+                                                 hsConstants::two_pi<float>);
         vShader->SetVector(plGraphVS::kCosConsts, 1.f, -1.f/2.f, 1.f/24.f, -1.f/720.f);
 
 #ifndef TEST_UVWS
@@ -4319,7 +4291,7 @@ void plWaveSet7::IInitGraph(int iPass)
     {
         // Okay, phase we don't have to think too hard about,
         // it doesn't matter as long as it's random.
-        gs.fPhase[i] = fRand.RandZeroToOne() * 2.f * M_PI;
+        gs.fPhase[i] = fRand.RandZeroToOne() * hsConstants::two_pi<float>;
 
         // Next up is frequency, but frequency is the hard one.
         // Remember frequency has to preserve tiling, so freq = k * 2 * PI.
@@ -4340,7 +4312,7 @@ void plWaveSet7::IInitGraph(int iPass)
         }
 
         // Input will be in range [0..2], so we'll omit the customary 2*PI here.
-        gs.fFreq[i] = k * M_PI; 
+        gs.fFreq[i] = k * hsConstants::pi<float>;
 
         // Amplitude depends on freqency, or roughly inversely proportional
         // to frequency (randomized about linear on period).
@@ -4390,7 +4362,7 @@ void plWaveSet7::IUpdateGraphShader(float dt, int iPass)
 
         gs.fAge += dt;
         float rads = gs.fAge * gs.fInvLife;
-        if( rads >= M_PI )
+        if (rads >= hsConstants::pi<float>)
         {
             // Recycle this one and restart the upper.
             IShuffleDownGraphs(iPass);
@@ -4436,5 +4408,4 @@ void plWaveSet7::IUpdateGraphShaders(plPipeline* pipe, float dt)
         }
     }
 }
-
 

@@ -56,15 +56,13 @@ protected:
     hsVector3       fVel;
 
 public:
-    plListenerMsg() : plMessage(nil, nil, nil),
-                        fPos(0,0,0),
-                        fDir(0,1.f,0),
-                        fUp(0,0,1.f),
-                        fVel(0,0,0)
-            { SetBCastFlag(kBCastByExactType); }
+    plListenerMsg()
+        : plMessage(nullptr, nullptr, nullptr),
+          fDir(0.f ,1.f, 0.f), fUp(0.f, 0.f, 1.f)
+    {
+        SetBCastFlag(kBCastByExactType);
+    }
 
-    ~plListenerMsg() {}
-    
     CLASSNAME_REGISTER( plListenerMsg );
     GETINTERFACE_ANY( plListenerMsg, plMessage );
 
@@ -113,9 +111,9 @@ public:
 
     void    Set( const plKey &key, uint8_t type, bool binding );
 
-    plKey       &GetSrcKey( void ) { return fSrcKey; }
-    uint8_t       GetType( void ) const { return fType; }
-    bool        IsBinding( void ) const { return fBinding; }
+    plKey       &GetSrcKey() { return fSrcKey; }
+    uint8_t       GetType() const { return fType; }
+    bool        IsBinding() const { return fBinding; }
 };
 
 #endif // plListenerMsg_inc

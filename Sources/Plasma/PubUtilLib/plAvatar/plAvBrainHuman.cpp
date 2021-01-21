@@ -93,7 +93,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 float plAvBrainHuman::fWalkTimeToMaxTurn = .3f;
 float plAvBrainHuman::fRunTimeToMaxTurn = .1f;
 float plAvBrainHuman::fWalkMaxTurnSpeed = 2.0f;
-float plAvBrainHuman::fRunMaxTurnSpeed = 1.7;
+float plAvBrainHuman::fRunMaxTurnSpeed = 1.7f;
 plAvBrainHuman::TurnCurve plAvBrainHuman::fWalkTurnCurve = plAvBrainHuman::kTurnExponential;
 plAvBrainHuman::TurnCurve plAvBrainHuman::fRunTurnCurve = plAvBrainHuman::kTurnExponential;
 
@@ -163,7 +163,7 @@ bool plAvBrainHuman::Apply(double timeNow, float elapsed)
 #ifndef _DEBUG
     } catch (std::exception &e) {
         plStatusLog *log = plAvatarMgr::GetInstance()->GetLog();
-        log->AddLineF("plAvBrainHuman::Apply - exception caught: %s", e.what());
+        log->AddLineF("plAvBrainHuman::Apply - exception caught: {}", e.what());
     } catch (...) {
         // just catch all the crashes on exit...
         plStatusLog *log = plAvatarMgr::GetInstance()->GetLog();
@@ -189,9 +189,6 @@ void plAvBrainHuman::Activate(plArmatureModBase *avMod)
         controller->SetMovementStrategy(fWalkingStrategy);
     }
     
-    
-    plSceneObject *avSO = fAvMod->GetTarget(0);
-    bool isLocal = avSO->IsLocallyOwned();
     
     if (fAvMod->GetClothingOutfit() && fAvMod->GetClothingOutfit()->fGroup != plClothingMgr::kClothingBaseNoOptions)
     {
@@ -472,26 +469,8 @@ bool plAvBrainHuman::MsgReceive(plMessage * msg)
     plRideAnimatedPhysMsg *ride = plRideAnimatedPhysMsg::ConvertNoRef(msg);
     if(ride)
     {
-        if(ride->Entering())
-        {
-            // Switch to dynamic walking strategy
-            delete fWalkingStrategy;
-            plSceneObject* avObj = fArmature->GetTarget(0);
-            plAGModifier* agMod = const_cast<plAGModifier*>(plAGModifier::ConvertNoRef(FindModifierByClass(avObj, plAGModifier::Index())));
-            plPhysicalControllerCore* controller = fAvMod->GetController();
-            fWalkingStrategy = new plDynamicWalkingStrategy(agMod->GetApplicator(kAGPinTransform), controller);
-            controller->SetMovementStrategy(fWalkingStrategy);
-        }
-        else
-        {
-            // Restore default walking strategy
-            delete fWalkingStrategy;
-            plSceneObject* avObj = fArmature->GetTarget(0);
-            plAGModifier* agMod = const_cast<plAGModifier*>(plAGModifier::ConvertNoRef(FindModifierByClass(avObj, plAGModifier::Index())));
-            plPhysicalControllerCore* controller = fAvMod->GetController();
-            fWalkingStrategy = new plWalkingStrategy(agMod->GetApplicator(kAGPinTransform), controller);
-            controller->SetMovementStrategy(fWalkingStrategy);
-        }
+        fWalkingStrategy->ToggleRiding(ride->Entering());
+        return true;
     }
 
     return plArmatureBrain::MsgReceive(msg);
@@ -879,14 +858,11 @@ bool plAvBrainHuman::LeaveAge()
 {
     plPhysicalControllerCore* controller = fAvMod->GetController();
 
-    // If our current walking strategy is dynamic, restore the default kinematic strategy.
-    if (!fWalkingStrategy->IsKinematic())
-    {
-        delete fWalkingStrategy;
-        plSceneObject* avObj = fArmature->GetTarget(0);
-        plAGModifier* agMod = const_cast<plAGModifier*>(plAGModifier::ConvertNoRef(FindModifierByClass(avObj, plAGModifier::Index())));
-        fWalkingStrategy = new plWalkingStrategy(agMod->GetApplicator(kAGPinTransform), controller);
-    }
+    // Restore a clean walking strategy in case of an animated platform.
+    delete fWalkingStrategy;
+    plSceneObject* avObj = fArmature->GetTarget(0);
+    plAGModifier* agMod = const_cast<plAGModifier*>(plAGModifier::ConvertNoRef(FindModifierByClass(avObj, plAGModifier::Index())));
+    fWalkingStrategy = new plWalkingStrategy(agMod->GetApplicator(kAGPinTransform), controller);
 
     fWalkingStrategy->Reset(true);
 
@@ -996,9 +972,10 @@ void plHBehavior::IStop()
     fStopMsgSent = true; // we just sent a stop message
 }
 
-static plRandom sRandom;
 void Idle::IStart()
 {
+    static plRandom sRandom;
+
     plHBehavior::IStart();
     if (fAnim)
     {       
@@ -1262,8 +1239,6 @@ GroundImpact::GroundImpact() : fDuration(0.0f) {}
 
 bool GroundImpact::PreCondition(double time, float elapsed)
 {
-    
-    bool result = false;
     if (fDuration > 0.0f)
         fDuration = fDuration - elapsed;
     else if (fHuBrain->fWalkingStrategy->IsOnGround() && fHuBrain->fWalkingStrategy->GetImpactTime() > kMinAirTime) 
@@ -1322,7 +1297,7 @@ void Push::Process(double time, float elapsed)
     hsPoint3 lookAt;
     fHuBrain->fWalkingStrategy->GetPushingPhysical()->GetPositionSim(lookAt);
     hsVector3 up(0.f, 0.f, 1.f);
-    float angle = atan2(lookAt.fY - pos.fY, lookAt.fX - pos.fX) + M_PI / 2;
+    float angle = std::atan2(lookAt.fY - pos.fY, lookAt.fX - pos.fX) + hsConstants::half_pi<float>;
     hsQuat targRot(angle, &up);
     
     const float kTurnSpeed = 3.f;
@@ -1383,7 +1358,7 @@ bool PushSimpleMultiStage(plArmatureMod *avatar, const char *enterAnim, const ch
                           bool netPropagate, bool autoExit, plAGAnim::BodyUsage bodyUsage, plAvBrainGeneric::BrainType type /* = kGeneric */)
 {
     const char* names[3] = {enterAnim, idleAnim, exitAnim};
-    if (!CanPushGenericBrain(avatar, names, arrsize(names), type))
+    if (!CanPushGenericBrain(avatar, names, std::size(names), type))
         return false;
 
     // if autoExit is true, then we will immediately exit the idle loop when the user hits a move
@@ -1426,7 +1401,7 @@ bool PushSimpleMultiStage(plArmatureMod *avatar, const char *enterAnim, const ch
 bool PushRepeatEmote(plArmatureMod* avatar, const ST::string& anim)
 {
     const char* names[1] = { anim.c_str() };
-    if (!CanPushGenericBrain(avatar, names, arrsize(names), plAvBrainGeneric::kGeneric))
+    if (!CanPushGenericBrain(avatar, names, std::size(names), plAvBrainGeneric::kGeneric))
         return false;
 
      plAnimStageVec* v = new plAnimStageVec;
@@ -1468,8 +1443,6 @@ bool AvatarEmote(plArmatureMod *avatar, const char *emoteName)
         emote && !alreadyActive && avatar->IsPhysicsEnabled())
     {
         plKey avKey = avatar->GetKey();
-        float fadeIn = emote->GetFadeIn();
-        float fadeOut = emote->GetFadeOut();
         plAnimStage *s1 = new plAnimStage(emoteName,
                                           0,
                                           plAnimStage::kForwardAuto,

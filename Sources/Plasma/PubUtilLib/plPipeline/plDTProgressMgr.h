@@ -61,7 +61,7 @@ class plPipeline;
 class plDTProgressMgr : public plProgressMgr
 {
     protected:
-        int32_t     fCurrentImage;
+        uint32_t    fCurrentImage;
         float       fLastDraw;
         plPlate*    fActivePlate;
         plPlate*    fStaticTextPlate;
@@ -80,7 +80,7 @@ class plDTProgressMgr : public plProgressMgr
 
         virtual void    Draw( plPipeline *p );
 
-        static void     DeclareThyself( void );
+        static void     DeclareThyself();
 };
 
 

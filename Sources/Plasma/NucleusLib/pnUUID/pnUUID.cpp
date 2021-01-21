@@ -61,9 +61,17 @@ plUUID::plUUID(const ST::string& s)
     FromString(s.c_str());
 }
 
-plUUID::plUUID(const plUUID& other)
+void plUUID::CopyFrom(const plUUID* v)
 {
-    CopyFrom(&other);
+    if (!v)
+        Clear();
+    else
+        *this = *v;
+}
+
+void plUUID::CopyFrom(const plUUID& v)
+{
+    *this = v;
 }
 
 void plUUID::Read(hsStream* s)

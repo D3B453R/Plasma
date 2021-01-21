@@ -102,7 +102,7 @@ plStatusLogMgr::~plStatusLogMgr()
     }
 }
 
-plStatusLogMgr  &plStatusLogMgr::GetInstance( void )
+plStatusLogMgr  &plStatusLogMgr::GetInstance()
 {
     static plStatusLogMgr   theManager;
     return theManager;
@@ -110,7 +110,7 @@ plStatusLogMgr  &plStatusLogMgr::GetInstance( void )
 
 //// Draw ////////////////////////////////////////////////////////////////////
 
-void    plStatusLogMgr::Draw( void )
+void    plStatusLogMgr::Draw()
 {
     /// Just draw current plStatusLog
     if( fCurrDisplay != nil && fDrawer != nil )
@@ -168,7 +168,7 @@ void plStatusLogMgr::SetCurrStatusLog(const plFileName& logName)
 
 //// NextStatusLog ///////////////////////////////////////////////////////////
 
-void    plStatusLogMgr::NextStatusLog( void )
+void    plStatusLogMgr::NextStatusLog()
 {
     if( fCurrDisplay == nil )
         fCurrDisplay = fDisplays;
@@ -178,7 +178,7 @@ void    plStatusLogMgr::NextStatusLog( void )
     fLastLogChangeTime = hsTimer::GetSysSeconds();
 }
 
-void    plStatusLogMgr::PrevStatusLog( void )
+void    plStatusLogMgr::PrevStatusLog()
 {
     if( fCurrDisplay == nil )
     {
@@ -265,13 +265,9 @@ bool plStatusLogMgr::DumpLogs( const plFileName &newFolderName )
 uint32_t plStatusLog::fLoggingOff = false;
 
 plStatusLog::plStatusLog( uint8_t numDisplayLines, const plFileName &filename, uint32_t flags )
+    : fFileHandle(), fSema(), fSize(), fForceLog(), fMaxNumLines(numDisplayLines),
+      fDisplayPointer()
 {
-    fFileHandle = nil;
-    fSema = nil;
-    fSize = 0;
-    fForceLog = false;
-
-    fMaxNumLines = numDisplayLines;
     if (filename.IsValid())
     {
         fFilename = filename;
@@ -314,7 +310,7 @@ void    plStatusLog::IInit()
 
 }
 
-bool plStatusLog::IReOpen( void )
+bool plStatusLog::IReOpen()
 {
     if( fFileHandle != nil )
     {
@@ -361,7 +357,7 @@ bool plStatusLog::IReOpen( void )
     return fFileHandle != nil;
 }
 
-void    plStatusLog::IFini( void )
+void    plStatusLog::IFini()
 {
     int     i;
 
@@ -403,9 +399,14 @@ void plStatusLog::IParseFileName(plFileName& fileNoExt, ST::string& ext) const
     ext = file.GetFileExt();
 }
 
+plStatusLog* plStatusLog::IFindLog(const plFileName& filename)
+{
+    return plStatusLogMgr::GetInstance().FindLog(filename);
+}
+
 //// IUnlink /////////////////////////////////////////////////////////////////
 
-void    plStatusLog::IUnlink( void )
+void    plStatusLog::IUnlink()
 {
     hsAssert( fBack, "plStatusLog not in list" );
     if( fNext )
@@ -495,24 +496,7 @@ bool plStatusLog::IAddLine( const char *line, int32_t count, uint32_t color )
 
 //// AddLine /////////////////////////////////////////////////////////////////
 
-bool plStatusLog::AddLine(const ST::string& line)
-{
-    if (fLoggingOff && !fForceLog) {
-        return true;
-    }
-
-    bool ret = true;
-    std::vector<ST::string> lines = line.split('\n');
-
-    for (const ST::string& str : lines)
-    {
-        ret &= IAddLine(str.c_str(), -1, kWhite);
-    }
-
-    return ret;
-}
-
-bool plStatusLog::AddLine( const char *line, uint32_t color )
+bool plStatusLog::AddLine(uint32_t color, const char *line)
 {
     char    *c, *str;
     if(fLoggingOff && !fForceLog)
@@ -536,79 +520,9 @@ bool plStatusLog::AddLine( const char *line, uint32_t color )
     return ret;
 }
 
-//// AddLine printf-style Variations /////////////////////////////////////////
-
-bool plStatusLog::AddLineV( const char *format, va_list arguments )
-{
-    if(fLoggingOff && !fForceLog)
-        return true;
-    return AddLineV( kWhite, format, arguments );
-}
-
-bool plStatusLog::AddLineV( uint32_t color, const char *format, va_list arguments )
-{
-    if(fLoggingOff && !fForceLog)
-        return true;
-    char buffer[2048];
-    vsnprintf(buffer, arrsize(buffer), format, arguments);
-    return AddLine( buffer, color );
-}
-
-bool plStatusLog::AddLineF( const char *format, ... )
-{
-    if(fLoggingOff && !fForceLog)
-        return true;
-    va_list arguments;
-    va_start( arguments, format );
-
-    return AddLineV( kWhite, format, arguments );
-}
-
-bool plStatusLog::AddLineF( uint32_t color, const char *format, ... )
-{
-    if(fLoggingOff && !fForceLog)
-        return true;
-    va_list arguments;
-    va_start( arguments, format );
-
-    return AddLineV( color, format, arguments );
-}
-
-//// AddLine Static Variations ///////////////////////////////////////////////
-
-bool plStatusLog::AddLineS( const plFileName &filename, const char *format, ... )
-{
-    plStatusLog *log = plStatusLogMgr::GetInstance().FindLog( filename );
-    if (!log)
-        return false;
-
-    if(fLoggingOff && !log->fForceLog)
-        return true;
-
-    va_list arguments;
-    va_start( arguments, format );
-
-    return log->AddLineV( format, arguments );
-}
-
-bool plStatusLog::AddLineS( const plFileName &filename, uint32_t color, const char *format, ... )
-{
-    plStatusLog *log = plStatusLogMgr::GetInstance().FindLog( filename );
-    if (!log)
-        return false;
-
-    if(fLoggingOff && !log->fForceLog)
-        return true;
-
-    va_list arguments;
-    va_start( arguments, format );
-
-    return log->AddLineV( color, format, arguments );
-}
-
 //// Clear ///////////////////////////////////////////////////////////////////
 
-void    plStatusLog::Clear( void )
+void    plStatusLog::Clear()
 {
     int     i;
 
@@ -667,32 +581,32 @@ bool plStatusLog::IPrintLineToFile( const char *line, uint32_t count )
         {
             if ( fFlags & kTimestamp )
             {
-                snprintf(work, arrsize(work), "(%s) ", plUnifiedTime(kNow).Format("%m/%d %H:%M:%S").c_str());
+                snprintf(work, std::size(work), "(%s) ", plUnifiedTime(kNow).Format("%m/%d %H:%M:%S").c_str());
                 buf.append(work);
             }
             if ( fFlags & kTimestampGMT )
             {
-                snprintf(work, arrsize(work), "(%s) ", plUnifiedTime::GetCurrent().Format("%m/%d %H:%M:%S UTC").c_str());
+                snprintf(work, std::size(work), "(%s) ", plUnifiedTime::GetCurrent().Format("%m/%d %H:%M:%S UTC").c_str());
                 buf.append(work);
             }
             if ( fFlags & kTimeInSeconds )
             {
-                snprintf(work, arrsize(work), "(%lu) ", (unsigned long)plUnifiedTime(kNow).GetSecs());
+                snprintf(work, std::size(work), "(%lu) ", (unsigned long)plUnifiedTime(kNow).GetSecs());
                 buf.append(work);
             }
             if ( fFlags & kTimeAsDouble )
             {
-                snprintf(work, arrsize(work), "(%f) ", plUnifiedTime(kNow).GetSecsDouble());
+                snprintf(work, std::size(work), "(%f) ", plUnifiedTime(kNow).GetSecsDouble());
                 buf.append(work);
             }
             if (fFlags & kRawTimeStamp)
             {
-                snprintf(work, arrsize(work), "[t=%10f] ", hsTimer::GetSeconds());
+                snprintf(work, std::size(work), "[t=%10f] ", hsTimer::GetSeconds());
                 buf.append(work);
             }
             if (fFlags & kThreadID)
             {
-                snprintf(work, arrsize(work), "[t=%lu] ", hsThread::ThisThreadHash());
+                snprintf(work, std::size(work), "[t=%lu] ", hsThread::ThisThreadHash());
                 buf.append(work);
             }
 

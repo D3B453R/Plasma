@@ -162,11 +162,10 @@ void plKeyboardDevice::Shutdown()
 {
 }
 
-void plKeyboardDevice::HandleKeyEvent(plOSMsg message, plKeyDef key, bool bKeyDown, bool bKeyRepeat, wchar_t c)
+void plKeyboardDevice::HandleKeyEvent(plKeyDef key, bool bKeyDown, bool bKeyRepeat, wchar_t c)
 {
     // update the internal keyboard state
-    unsigned int keyCode = (unsigned int)key;
-    if (key < 256)
+    if (key < 256 && key > 0)
         fKeyboardState[key] = bKeyDown;
 
     if (key == KEY_SHIFT)
@@ -181,7 +180,9 @@ void plKeyboardDevice::HandleKeyEvent(plOSMsg message, plKeyDef key, bool bKeyDo
     {
         if (!bKeyRepeat)
         {
+#ifdef HS_BUILD_FOR_WIN32
             fCapsLockLock = (GetKeyState(KEY_CAPSLOCK) & 1) == 1;
+#endif
             plAvatarInputInterface::GetInstance()->ForceAlwaysRun(fCapsLockLock);
         }
     }
@@ -198,12 +199,12 @@ void plKeyboardDevice::HandleKeyEvent(plOSMsg message, plKeyDef key, bool bKeyDo
     plgDispatch::MsgSend( pMsg );
 }
 
-void plKeyboardDevice::HandleWindowActivate(bool bActive, HWND hWnd)
+void plKeyboardDevice::HandleWindowActivate(bool bActive, hsWindowHndl hWnd)
 {
     if (bActive)
     {
         // Refresh the caps lock state
-        HandleKeyEvent(KEYDOWN, KEY_CAPSLOCK, nil, false);
+        HandleKeyEvent(KEY_CAPSLOCK, false, false);
     }
     else
     {
@@ -229,27 +230,14 @@ float plMouseDevice::fHeight = BASE_HEIGHT;
 plMouseDevice* plMouseDevice::fInstance = 0;
 
 plMouseDevice::plMouseDevice()
+    : fXPos(), fYPos(), fOpacity(1.f), fButtonState(),
+      fCursor(), fCursorID(CURSOR_UP),
+      fXMsg(), fYMsg(), fB2Msg(),
+      fLeftBMsg(), fMiddleBMsg(), fRightBMsg(),
+      fWXPos(), fWYPos()
 {
-    fXPos = 0;
-    fYPos = 0;
-    fCursorID = CURSOR_UP;
-    fButtonState = 0;
-    fOpacity = 1.f;
-
-    fCursor = nil;
     CreateCursor( fCursorID );
     plMouseDevice::fInstance = this;
-    fXMsg = nil;
-    fYMsg = nil;
-    fB2Msg = nil;
-
-    fLeftBMsg[0] = nil;
-    fLeftBMsg[1] = nil;
-    fRightBMsg[0] = nil;
-    fRightBMsg[1] = nil;
-    fMiddleBMsg[0] = nil;
-    fMiddleBMsg[1] = nil;
-    
 }
 
 plMouseDevice::~plMouseDevice()
@@ -265,7 +253,7 @@ void plMouseDevice::SetDisplayResolution(float Width, float Height)
     IUpdateCursorSize();
 }
 
-void    plMouseDevice::CreateCursor( char* cursor )
+void    plMouseDevice::CreateCursor( const char* cursor )
 {
     if( fCursor == nil )
     {
@@ -377,7 +365,7 @@ void plMouseDevice::ShowCursor(bool override)
     }
 }
 
-void plMouseDevice::NewCursor(char* cursor)
+void plMouseDevice::NewCursor(const char* cursor)
 {
     fInstance->fCursorID = cursor;
     fInstance->CreateCursor(cursor);
@@ -490,10 +478,10 @@ bool plMouseDevice::MsgReceive(plMessage* msg)
         fXMsg = pMsg;
         
         if (pXMsg->fX == 999)
-            fXPos += 0.01;
+            fXPos += 0.01f;
         else
         if (pXMsg->fX == -999)
-            fXPos -= 0.01;
+            fXPos -= 0.01f;
         else
             fXPos = pXMsg->fX;
 
@@ -528,10 +516,10 @@ bool plMouseDevice::MsgReceive(plMessage* msg)
         fYMsg = pMsg;
         
         if (pYMsg->fY == 999)
-            fYPos += 0.01;
+            fYPos += 0.01f;
         else
         if (pYMsg->fY == -999)
-            fYPos -= 0.01;
+            fYPos -= 0.01f;
         else
             fYPos = pYMsg->fY;
 

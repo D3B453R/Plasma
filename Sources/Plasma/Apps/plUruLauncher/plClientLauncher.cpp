@@ -85,7 +85,7 @@ public:
 
     plShardStatus() : fLastUpdate() { }
 
-    void Run() HS_OVERRIDE;
+    void Run() override;
     void Shutdown();
     void Update();
 };
@@ -94,8 +94,8 @@ static size_t ICurlCallback(void* buffer, size_t size, size_t nmemb, void* threa
 {
     static char status[256];
 
-    strncpy(status, (const char *)buffer, std::min<size_t>(size * nmemb, arrsize(status)));
-    status[arrsize(status) - 1] = 0;
+    strncpy(status, (const char *)buffer, std::min<size_t>(size * nmemb, std::size(status)));
+    status[std::size(status) - 1] = 0;
     static_cast<plShardStatus*>(thread)->fShardFunc(status);
     return size * nmemb;
 }
@@ -109,6 +109,8 @@ void plShardStatus::Run()
     curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER, fCurlError);
     curl_easy_setopt(curl.get(), CURLOPT_USERAGENT, "UruClient/1.0");
     curl_easy_setopt(curl.get(), CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl.get(), CURLOPT_FOLLOWLOCATION, 1);
+    curl_easy_setopt(curl.get(), CURLOPT_MAXREDIRS, 5);
     curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, this);
     curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION, ICurlCallback);
 
@@ -152,7 +154,7 @@ public:
     std::deque<plFileName> fRedistQueue;
 
     plRedistUpdater()
-        : fSuccess(true)
+        : fParent(), fSuccess(true)
     { }
 
     ~plRedistUpdater()
@@ -166,14 +168,14 @@ public:
         );
     }
 
-    void OnQuit() HS_OVERRIDE
+    void OnQuit() override
     {
         // If we succeeded, then we should launch the game client...
         if (fSuccess)
             fParent->LaunchClient();
     }
 
-    void Run() HS_OVERRIDE
+    void Run() override
     {
         while (!fRedistQueue.empty()) {
             if (fInstallProc(fRedistQueue.back()))
@@ -186,7 +188,7 @@ public:
         }
     }
 
-    void Start() HS_OVERRIDE
+    void Start() override
     {
         if (fRedistQueue.empty())
             OnQuit();
@@ -217,7 +219,7 @@ ST::string plClientLauncher::GetAppArgs() const
 {
     // If -Repair was specified, there are no args for the next call...
     if (hsCheckBits(fFlags, kRepairGame)) {
-        return ST::null;
+        return ST::string();
     }
 
     ST::string_stream ss;
@@ -309,7 +311,7 @@ void plClientLauncher::PatchClient()
     patcher->Start();
 }
 
-bool plClientLauncher::CompleteSelfPatch(std::function<void(void)> waitProc) const
+bool plClientLauncher::CompleteSelfPatch(std::function<void()> waitProc) const
 {
     if (hsCheckBits(fFlags, kHaveSelfPatched))
         return false;
@@ -461,7 +463,7 @@ void plClientLauncher::ParseArguments()
         args.push_back(ST::string::from_utf8(__argv[i]));
     }
 
-    plCmdParser cmdParser(cmdLineArgs, arrsize(cmdLineArgs));
+    plCmdParser cmdParser(cmdLineArgs, std::size(cmdLineArgs));
     cmdParser.Parse(args);
 
     // cache 'em
@@ -475,7 +477,7 @@ void plClientLauncher::ParseArguments()
 
     // last chance setup
     if (hsCheckBits(fFlags, kPatchOnly))
-        fClientExecutable = ST::null;
+        fClientExecutable = plFileName();
     else if (hsCheckBits(fFlags, kRepairGame))
         fClientExecutable = plManifest::PatcherExecutable();
 

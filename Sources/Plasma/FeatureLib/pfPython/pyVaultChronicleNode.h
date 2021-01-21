@@ -57,19 +57,15 @@ struct RelVaultNode;
 class pyVaultChronicleNode : public pyVaultNode
 {
 protected:
-    // should only be created from C++ side
-    pyVaultChronicleNode(RelVaultNode* nfsNode);
-
     //create from the Python side
-    pyVaultChronicleNode(int n=0);
+    pyVaultChronicleNode();
 
 public:
     ~pyVaultChronicleNode() { }
 
     // required functions for PyObject interoperability
     PYTHON_CLASS_NEW_FRIEND(ptVaultChronicleNode);
-    static PyObject *New(RelVaultNode* nfsNode);
-    static PyObject *New(int n=0);
+    PYTHON_CLASS_VAULT_NODE_NEW_DEFINITION;
     PYTHON_CLASS_CHECK_DEFINITION; // returns true if the PyObject is a pyVaultChronicleNode object
     PYTHON_CLASS_CONVERT_FROM_DEFINITION(pyVaultChronicleNode); // converts a PyObject to a pyVaultChronicleNode (throws error if not correct type)
 
@@ -83,7 +79,7 @@ public:
     void Chronicle_SetValue( const char * text );
     ST::string Chronicle_GetValue() const;
     void Chronicle_SetType( uint32_t type );
-    uint32_t Chronicle_GetType( void );
+    uint32_t Chronicle_GetType();
 };
 
 #endif // _pyVaultChronicleNode_h_

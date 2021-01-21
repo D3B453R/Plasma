@@ -63,7 +63,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <ISkin.h>
 #include <meshdlib.h> 
 #include <stdmat.h>
-#pragma hdrstop
 
 #include "plMeshConverter.h"
 #include "MaxMain/plMaxNode.h"
@@ -163,7 +162,7 @@ class plMAXVertexAccumulator
         void        StuffMyData( plMaxNode* node, plGeometrySpan *span, Mesh* mesh, ISkinContextData* skinData );
 
         int         GetVertexCount();
-        uint32_t      GetIndexCount( void ) { return fIndices.GetCount(); }
+        uint32_t      GetIndexCount() { return fIndices.GetCount(); }
 };
 
 class plMAXVertNormal
@@ -178,7 +177,7 @@ class plMAXVertNormal
         plMAXVertNormal() { fSmGroup = 0; fNext = nil; fInited = false; fNormal = Point3( 0, 0, 0 ); }
         plMAXVertNormal( Point3 &n, DWORD s ) { fNext = nil; fInited = true; fNormal = n; fSmGroup = s; }
         ~plMAXVertNormal() { /*delete fNext; */}
-        void    DestroyChain( void ) { if( fNext != nil ) fNext->DestroyChain(); delete fNext; fNext = nil; }
+        void    DestroyChain() { if( fNext != nil ) fNext->DestroyChain(); delete fNext; fNext = nil; }
 
         // Adding normalization of input n. Input is usually just crossproduct of face edges. Non-normalized,
         // large faces will overwhelm small faces on summation, which is the opposite of what we want, since
@@ -217,7 +216,7 @@ class plMAXVertNormal
             return pt;
         }
 
-        void    Normalize( void )
+        void    Normalize()
         {
             plMAXVertNormal *ptr = fNext, *prev = this;
 
@@ -261,7 +260,7 @@ plMeshConverter::plMeshConverter() :
     hsGuardEnd;
 }
 
-plMeshConverter::~plMeshConverter()
+plMeshConverter::~plMeshConverter() noexcept(false)
 {
     hsGuardBegin("plMeshConverter::~plMeshConverter");
     hsGuardEnd;
@@ -495,7 +494,7 @@ bool plMeshConverter::IValidateUVs(plMaxNode* node)
     if (uvsAreBad)
     {
         plFileName logfile = ST::format("UV_{}.log", GetCOREInterface()->GetCurFileName().data());
-        plStatusLog::AddLineS(logfile, "%s has suspicious UVs", node->GetName());
+        plStatusLog::AddLineSF(logfile, "{} has suspicious UVs", node->GetName());
 
         if (fWarnSuspiciousUVs)
         {
@@ -1358,7 +1357,7 @@ uint32_t  plMeshConverter::ICreateHexColor( float r, float g, float b )
 
 uint32_t  plMeshConverter::ISetHexAlpha( uint32_t color, float alpha)
 {
-    uint32_t alphaBits = alpha * 255;
+    uint32_t alphaBits = uint32_t(alpha * 255);
     alphaBits <<= 24;
     return color & 0x00ffffff | alphaBits;
 }

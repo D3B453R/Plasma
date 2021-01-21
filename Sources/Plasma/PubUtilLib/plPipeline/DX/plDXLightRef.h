@@ -76,19 +76,15 @@ class plDXLightRef : public plDXDeviceRef
         IDirect3DDevice9    *fD3DDevice;
 
         void            Link( plDXLightRef **back ) { plDXDeviceRef::Link( (plDXDeviceRef **)back ); }
-        plDXLightRef    *GetNext( void ) { return (plDXLightRef *)fNext; }
+        plDXLightRef    *GetNext() { return (plDXLightRef *)fNext; }
 
         plDXLightRef()
-        {
-            fOwner = nil;
-            fParentSettings = nil;
-            fD3DDevice = nil;
-            fD3DIndex = -1;
-            fScale = 1.f;
-        }
+            : fOwner(), fParentSettings(), fD3DDevice(),
+              fD3DIndex(-1), fScale(1.f), fD3DInfo()
+        { }
 
         virtual ~plDXLightRef();
-        void    Release( void );
+        void    Release();
 
         void    UpdateD3DInfo( IDirect3DDevice9 *dev, plDXLightSettings *settings );
 };

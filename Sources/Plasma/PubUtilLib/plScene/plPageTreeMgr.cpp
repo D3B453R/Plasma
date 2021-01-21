@@ -309,7 +309,6 @@ int plPageTreeMgr::IPrepForRenderSortingSpans(plPipeline* pipe, hsTArray<plDrawV
         && drawVis[iDraw].fDrawable->GetNativeProperty(plDrawable::kPropSortSpans);
         iDraw++ )
     {
-        plDrawable* drawable = drawVis[iDraw].fDrawable;
         hsTArray<int16_t>& visList = drawVis[iDraw].fVisList;
         for( i = 0; i < visList.GetCount(); i++ )
         {
@@ -490,7 +489,8 @@ bool plPageTreeMgr::IBuildSpaceTree()
 
 bool plPageTreeMgr::IRefreshTree(plPipeline* pipe)
 {
-    for (size_t i = 0; i < fNodes.size(); ++i)
+    hsAssert(fNodes.size() < std::numeric_limits<uint16_t>::max(), "Too many nodes");
+    for (uint16_t i = 0; i < fNodes.size(); ++i)
     {
         plSceneNode* node = fNodes[i];
         if (node->GetSpaceTree()->IsDirty())

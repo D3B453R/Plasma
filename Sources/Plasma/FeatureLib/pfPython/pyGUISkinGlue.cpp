@@ -42,7 +42,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <Python.h>
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "pyGUISkin.h"
 
@@ -115,11 +114,12 @@ PYTHON_START_METHODS_TABLE(ptGUISkin)
 PYTHON_END_METHODS_TABLE;
 
 // Type structure definition
-#define ptGUISkin_COMPARE       PYTHON_NO_COMPARE
 #define ptGUISkin_AS_NUMBER     PYTHON_NO_AS_NUMBER
 #define ptGUISkin_AS_SEQUENCE   PYTHON_NO_AS_SEQUENCE
 #define ptGUISkin_AS_MAPPING    PYTHON_NO_AS_MAPPING
 #define ptGUISkin_STR           PYTHON_NO_STR
+#define ptGUISkin_GETATTRO      PYTHON_NO_GETATTRO
+#define ptGUISkin_SETATTRO      PYTHON_NO_SETATTRO
 #define ptGUISkin_RICH_COMPARE  PYTHON_DEFAULT_RICH_COMPARE(ptGUISkin)
 #define ptGUISkin_GETSET        PYTHON_NO_GETSET
 #define ptGUISkin_BASE          PYTHON_NO_BASE

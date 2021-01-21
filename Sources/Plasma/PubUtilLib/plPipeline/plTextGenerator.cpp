@@ -211,7 +211,7 @@ uint32_t      *plTextGenerator::IAllocateOSSurface( uint16_t width, uint16_t hei
 //// Detach ///////////////////////////////////////////////////////////////////
 //  Release the mipmap unto itself.
 
-void    plTextGenerator::Detach( void )
+void    plTextGenerator::Detach()
 {
     if( fHost == nil )
         return;
@@ -226,7 +226,9 @@ void    plTextGenerator::Detach( void )
     // Destroy the old texture ref, since we're no longer using it
     fHost->SetDeviceRef( nil );
 
+#ifdef MCN_DO_REFS
     plMipmap    *oldHost = fHost;
+#endif
 
     fHost = nil;
 
@@ -241,7 +243,7 @@ void    plTextGenerator::Detach( void )
 //// IDestroyOSSurface ////////////////////////////////////////////////////////
 //  Opposite of allocate. DUH!
 
-void    plTextGenerator::IDestroyOSSurface( void )
+void    plTextGenerator::IDestroyOSSurface()
 {
 #if HS_BUILD_FOR_WIN32
 
@@ -529,7 +531,7 @@ void    plTextGenerator::FrameRect( uint16_t x, uint16_t y, uint16_t width, uint
 
 //// FlushToHost //////////////////////////////////////////////////////////////
 
-void    plTextGenerator::FlushToHost( void )
+void    plTextGenerator::FlushToHost()
 {
 #if HS_BUILD_FOR_WIN32
     // Flush the GDI first, to make sure it's done
@@ -564,12 +566,12 @@ void    plTextGenerator::FlushToHost( void )
 
 //// GetTextWidth/Height //////////////////////////////////////////////////////
 
-uint16_t  plTextGenerator::GetTextWidth( void )
+uint16_t  plTextGenerator::GetTextWidth()
 {
     return ( fHost != nil ) ? (uint16_t)(fHost->fWidth) : 0;
 }
 
-uint16_t  plTextGenerator::GetTextHeight( void )
+uint16_t  plTextGenerator::GetTextHeight()
 {
     return ( fHost != nil ) ? (uint16_t)(fHost->fHeight) : 0;
 }
@@ -579,13 +581,11 @@ uint16_t  plTextGenerator::GetTextHeight( void )
 //  you want to be able to apply a layer texture transform that will compensate. This
 //  function will give you that transform. Just feed it into plLayer->SetTransform().
 
-hsMatrix44  plTextGenerator::GetLayerTransform( void )
+hsMatrix44  plTextGenerator::GetLayerTransform()
 {
     hsMatrix44  xform;
-    hsVector3   scale;
-
-    scale.Set( (float)GetWidth() / (float)GetTextWidth(), 
-               (float)GetHeight() / (float)GetTextHeight(), 1.f );
+    hsVector3   scale((float)GetWidth() / (float)GetTextWidth(),
+                      (float)GetHeight() / (float)GetTextHeight(), 1.f);
 
     xform.MakeScaleMat( &scale );
     return xform;

@@ -45,22 +45,15 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 //
 //////////////////////////////////////////////////////////////////////
 
-#pragma hdrstop
 
 #include "pyVaultAgeInfoListNode.h"
 #include "pyVaultFolderNode.h"
 
 #include "plVault/plVault.h"
 
-// should only be created from C++ side
-pyVaultAgeInfoListNode::pyVaultAgeInfoListNode(RelVaultNode* nfsNode)
-: pyVaultFolderNode(nfsNode)
-{
-}
-
 //create from the Python side
-pyVaultAgeInfoListNode::pyVaultAgeInfoListNode(int n)
-: pyVaultFolderNode(n)
+pyVaultAgeInfoListNode::pyVaultAgeInfoListNode()
+    : pyVaultFolderNode()
 {
     fNode->SetNodeType(plVault::kNodeType_AgeInfoList);
 }

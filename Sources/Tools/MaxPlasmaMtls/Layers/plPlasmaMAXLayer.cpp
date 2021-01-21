@@ -61,7 +61,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <iparamm2.h>
 #include <istdplug.h>
 #include <stdmat.h>
-#pragma hdrstop
 
 #include "plPlasmaMAXLayer.h"
 
@@ -181,7 +180,7 @@ void    plPlasmaMAXLayer::IAddConversionTarget( plLayerInterface *target )
                                         plRefFlags::kPassiveRef );
 }
 
-void    plPlasmaMAXLayer::IClearConversionTargets( void )
+void    plPlasmaMAXLayer::IClearConversionTargets()
 {
     if( fConversionTargets != nil )
     {
@@ -190,7 +189,7 @@ void    plPlasmaMAXLayer::IClearConversionTargets( void )
     }
 }
 
-int     plPlasmaMAXLayer::GetNumConversionTargets( void )
+int     plPlasmaMAXLayer::GetNumConversionTargets()
 {
     if( fConversionTargets == nil )
         return 0;

@@ -70,18 +70,11 @@ plProfile_CreateAsynchTimer( "Stream Shove Time", "Sound", StreamSndShoveTime );
 plProfile_CreateAsynchTimer( "Stream Swizzle Time", "Sound", StreamSwizzleTime );
 plProfile_Extern( SoundLoadTime );
 
-plWin32StreamingSound::plWin32StreamingSound() :
-fDataStream(nil),
-fBlankBufferFillCounter(0),
-fDeswizzler(nil),
-fStreamType(kNoStream),
-fLastStreamingUpdate(0),
-fStopping(false),
-fPlayWhenStopped(false),
-fStartPos(0)
-{
-    fBufferLengthInSecs = plgAudioSys::GetStreamingBufferSize();
-}
+plWin32StreamingSound::plWin32StreamingSound()
+    : fDataStream(), fBlankBufferFillCounter(), fDeswizzler(), fStreamType(kNoStream),
+      fLastStreamingUpdate(), fStopping(), fPlayWhenStopped(), fStartPos(),
+      fTimeAtBufferStart(), fIsCompressed(), fBufferLengthInSecs(plgAudioSys::GetStreamingBufferSize())
+{ }
 
 plWin32StreamingSound::~plWin32StreamingSound()
 {
@@ -169,7 +162,6 @@ plSoundBuffer::ELoadReturnVal plWin32StreamingSound::IPreLoadBuffer( bool playWh
         }
         
         fSrcFilename = buffer->GetFileName();
-        bool streamCompressed = (buffer->HasFlag(plSoundBuffer::kStreamCompressed) != 0);
 
         delete fDataStream;
         fDataStream = buffer->GetAudioReader();
@@ -200,11 +192,11 @@ plSoundBuffer::ELoadReturnVal plWin32StreamingSound::IPreLoadBuffer( bool playWh
         return fDataStream ? plSoundBuffer::kSuccess : plSoundBuffer::kError;
     }
 
-    plStatusLog::AddLineS("audio.log", "EnsureLoadable failed for streaming sound %d", fDataBufferKey->GetName().c_str());
+    plStatusLog::AddLineSF("audio.log", "EnsureLoadable failed for streaming sound {}", fDataBufferKey->GetName());
     return plSoundBuffer::kError;
 }
 
-void plWin32StreamingSound::IFreeBuffers( void )
+void plWin32StreamingSound::IFreeBuffers()
 {
     plWin32Sound::IFreeBuffers();
     if( fLoadFromDiskOnDemand && !IsPropertySet( kPropLoadOnlyOnCall ) )
@@ -310,7 +302,7 @@ bool plWin32StreamingSound::LoadSound( bool is3D )
         if(fStartPos && fStartPos <= fDataStream->NumBytesLeft())
         {
             fDataStream->SetPosition(fStartPos);
-            plStatusLog::AddLineS("syncaudio.log", "startpos %d", fStartPos);
+            plStatusLog::AddLineSF("syncaudio.log", "startpos {}", fStartPos);
         }
 
         // if we get here we are not starting from the beginning of the sound. We still have an audio loaded and need to pick up where we left off
@@ -336,7 +328,7 @@ bool plWin32StreamingSound::LoadSound( bool is3D )
         delete fDSoundBuffer;
         fDSoundBuffer = nil;
 
-        plStatusLog::AddLineS("audio.log", "Could not play streaming sound, no voices left %s", GetKeyName().c_str());
+        plStatusLog::AddLineSF("audio.log", "Could not play streaming sound, no voices left {}", GetKeyName());
         return false;
     }
     FreeSoundData();
@@ -347,8 +339,8 @@ bool plWin32StreamingSound::LoadSound( bool is3D )
     ST::string dbg = ST::format("   Streaming {}.", fSrcFilename);
     IPrintDbgMessage(dbg.c_str());
 
-    plStatusLog::AddLineS( "audioTimes.log", 0xffffffff, "Streaming %4.2f secs of %s",
-                           fDataStream->GetLengthInSecs(), GetKey()->GetUoid().GetObjectName().c_str() );
+    plStatusLog::AddLineSF("audioTimes.log", 0xffffffff, "Streaming {4.2f} secs of {}",
+                           fDataStream->GetLengthInSecs(), GetKey()->GetUoid().GetObjectName() );
 
     // Get pertinent info
     SetLength( (float)fDataStream->GetLengthInSecs() );
@@ -391,7 +383,7 @@ void plWin32StreamingSound::IStreamUpdate()
 
         if(!fDSoundBuffer->StreamingFillBuffer(fDataStream))
         {
-            plStatusLog::AddLineS("audio.log", "%s Streaming buffer fill failed", GetKeyName().c_str());
+            plStatusLog::AddLineSF("audio.log", "{} Streaming buffer fill failed", GetKeyName());
         }
     }
     plProfile_EndTiming( StreamSndShoveTime );
@@ -403,7 +395,7 @@ void plWin32StreamingSound::Update()
     IStreamUpdate();
 }
 
-void plWin32StreamingSound::IDerivedActuallyPlay( void )
+void plWin32StreamingSound::IDerivedActuallyPlay()
 {
     fStopping = false;
     if( !fReallyPlaying )

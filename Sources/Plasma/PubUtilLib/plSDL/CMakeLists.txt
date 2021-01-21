@@ -1,8 +1,3 @@
-include_directories("../../CoreLib")
-include_directories("../../NucleusLib/inc")
-include_directories("../../NucleusLib")
-include_directories("../../PubUtilLib")
-
 set(plSDL_SOURCES
     plSDLMgr.cpp
     plSDLParser.cpp
@@ -33,6 +28,13 @@ set(plSDL_SDLFILES
 )
 
 add_library(plSDL STATIC ${plSDL_SOURCES} ${plSDL_HEADERS} ${plSDL_SDLFILES})
+
+target_link_libraries(plSDL
+    PUBLIC
+        CoreLib
+        plFile
+        plNetMessage
+)
 
 source_group("Source Files" FILES ${plSDL_SOURCES})
 source_group("Header Files" FILES ${plSDL_HEADERS})

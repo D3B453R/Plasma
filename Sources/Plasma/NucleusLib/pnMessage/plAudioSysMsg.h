@@ -78,7 +78,7 @@ public:
     plAudioSysMsg(const plKey &s, 
                     const plKey &r, 
                     const double* t) : pObj(nil){SetBCastFlag(plMessage::kBCastByExactType);}
-    ~plAudioSysMsg(){;}
+    ~plAudioSysMsg() { }
 
     CLASSNAME_REGISTER(plAudioSysMsg);
     GETINTERFACE_ANY(plAudioSysMsg, plMessage);
@@ -91,13 +91,13 @@ public:
     void    SetBoolFlag( bool b ) { fBoolFlag = b; }
 
     // IO
-    void Read(hsStream* stream, hsResMgr* mgr) HS_OVERRIDE {
+    void Read(hsStream* stream, hsResMgr* mgr) override {
         plMessage::IMsgRead(stream, mgr);
         stream->WriteLE(fAudFlag);
         mgr->WriteKey(stream, pObj);
     }
 
-    void Write(hsStream* stream, hsResMgr* mgr) HS_OVERRIDE {
+    void Write(hsStream* stream, hsResMgr* mgr) override {
         plMessage::IMsgWrite(stream, mgr);
         stream->ReadLE(&fAudFlag);
         pObj = mgr->ReadKey(stream);

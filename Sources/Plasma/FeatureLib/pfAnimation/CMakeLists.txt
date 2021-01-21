@@ -1,8 +1,3 @@
-include_directories("../../CoreLib")
-include_directories("../../NucleusLib")
-include_directories("../../NucleusLib/inc")
-include_directories("../../PubUtilLib")
-
 set(pfAnimation_SOURCES
     pfObjectFlocker.cpp
     plAnimDebugList.cpp
@@ -31,6 +26,13 @@ set(pfAnimation_HEADERS
 )
 
 add_library(pfAnimation STATIC ${pfAnimation_SOURCES} ${pfAnimation_HEADERS})
+
+target_link_libraries(pfAnimation
+    PUBLIC
+        CoreLib
+        pnModifier
+        plModifier
+)
 
 source_group("Source Files" FILES ${pfAnimation_SOURCES})
 source_group("Header Files" FILES ${pfAnimation_HEADERS})

@@ -44,7 +44,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "plgDispatch.h"
 #include "hsResMgr.h"
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "cyMisc.h"
 
@@ -294,7 +293,7 @@ void cyMisc::PopUpConsole(const char* command)
 //
 //  PURPOSE    : Execute a console command from a python script
 //
-void cyMisc::TimerCallback(pyKey& selfkey, float time, uint32_t id)
+void cyMisc::TimerCallback(pyKey& selfkey, float time, int32_t id)
 {
     // setup the message to come back to whoever the pyKey is pointing to
     plTimerCallbackMsg* pTimerMsg = new plTimerCallbackMsg(selfkey.getKey(),id);
@@ -641,7 +640,7 @@ ST::string cyMisc::GetPrevAgeName()
         if (als)
             return als->GetAgeInfo()->GetAgeFilename();
     }
-    return ST::null;
+    return ST::string();
 }
 
 PyObject* cyMisc::GetPrevAgeInfo()
@@ -657,14 +656,14 @@ PyObject* cyMisc::GetPrevAgeInfo()
 }
 
 // current time in current age
-uint32_t cyMisc::GetAgeTime( void )
+uint32_t cyMisc::GetAgeTime()
 {
     return VaultAgeGetAgeTime();
 }
 
 
 
-time_t cyMisc::GetDniTime(void)
+time_t cyMisc::GetDniTime()
 {
     const plUnifiedTime utime = plNetClientMgr::GetInstance()->GetServerTime();
     if ( utime.GetSecs() != 0)
@@ -673,13 +672,13 @@ time_t cyMisc::GetDniTime(void)
         return 0;
 }
 
-time_t cyMisc::GetServerTime(void)
+time_t cyMisc::GetServerTime()
 {
     const plUnifiedTime utime = plNetClientMgr::GetInstance()->GetServerTime();
     return utime.GetSecs();
 }
 
-float cyMisc::GetAgeTimeOfDayPercent(void)
+float cyMisc::GetAgeTimeOfDayPercent()
 {
     return plNetClientMgr::GetInstance()->GetCurrentAgeTimeOfDayPercent();
 }
@@ -1018,7 +1017,7 @@ PyObject* cyMisc::GetNPC(int npcID)
 
 PyObject* cyMisc::GetNPCCount()
 {
-    return PyInt_FromLong(plNetClientMgr::GetInstance()->NPCKeys().size());
+    return PyLong_FromLong(plNetClientMgr::GetInstance()->NPCKeys().size());
 }
 
 #if 1
@@ -1035,7 +1034,7 @@ void cyMisc::PrintToScreen(const char* msg)
             plStatusLog::kDontWriteFile | plStatusLog::kDeleteForMe | plStatusLog::kFilledBackground );
         plStatusLogMgr::GetInstance().ToggleStatusLog(gStatusLog);
     }
-    gStatusLog->AddLine(msg, plStatusLog::kBlue);   
+    gStatusLog->AddLine(plStatusLog::kBlue, msg);
 }
 #endif
 
@@ -1290,7 +1289,7 @@ void cyMisc::SendKIRegisterImagerMsg(const char* imagerName, pyKey& sender)
 //  RETURNS    : nothing
 //
 
-void cyMisc::YesNoDialog(pyKey& sender, const char* thestring)
+void cyMisc::YesNoDialog(pyKey& sender, const ST::string& thestring)
 {
     // create the mesage to send
     pfKIMsg *msg = new pfKIMsg( pfKIMsg::kYesNoDialog );
@@ -1299,13 +1298,6 @@ void cyMisc::YesNoDialog(pyKey& sender, const char* thestring)
     msg->SetString(thestring);
     // send it off
     plgDispatch::MsgSend( msg );
-}
-
-void cyMisc::YesNoDialog(pyKey& sender, std::wstring thestring)
-{
-    char *temp = hsWStringToString(thestring.c_str());
-    YesNoDialog(sender,temp);
-    delete [] temp;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2105,10 +2097,10 @@ bool cyMisc::RequestLOSScreen(pyKey &selfkey, int32_t ID, float xPos, float yPos
         int32_t x=(int32_t) ( xPos * pipe->Width() );
         int32_t y=(int32_t) ( yPos * pipe->Height() );
 
-        hsPoint3 endPos, startPos;
+        hsPoint3 endPos;
         
         pipe->ScreenToWorldPoint( 1,0, &x, &y, distance, 0, &endPos );
-        startPos = pipe->GetViewPositionWorld();
+        hsPoint3 startPos = pipe->GetViewPositionWorld();
 
         // move the start pos out a little to avoid backing up against physical objects...
         hsVector3 view(endPos - startPos);
@@ -2120,16 +2112,20 @@ bool cyMisc::RequestLOSScreen(pyKey &selfkey, int32_t ID, float xPos, float yPos
         {
             case kClickables:
                 pMsg = new plLOSRequestMsg( selfkey.getKey(), startPos, endPos, plSimDefs::kLOSDBUIItems, plLOSRequestMsg::kTestClosest );
+                pMsg->SetRequestName(ST::format("Python [{}]: Clickables", selfkey.getName()));
                 pMsg->SetCullDB(plSimDefs::kLOSDBUIBlockers);
                 break;
             case kCameraBlockers:
                 pMsg = new plLOSRequestMsg( selfkey.getKey(), startPos, endPos, plSimDefs::kLOSDBCameraBlockers, plLOSRequestMsg::kTestClosest );
+                pMsg->SetRequestName(ST::format("Python [{}]: Camera Blockers", selfkey.getName()));
                 break;
             case kCustom:
                 pMsg = new plLOSRequestMsg( selfkey.getKey(), startPos, endPos, plSimDefs::kLOSDBCustom, plLOSRequestMsg::kTestClosest );
+                pMsg->SetRequestName(ST::format("Python [{}]: Custom", selfkey.getName()));
                 break;
             case kShootable:
                 pMsg = new plLOSRequestMsg( selfkey.getKey(), startPos, endPos, plSimDefs::kLOSDBShootableItems, plLOSRequestMsg::kTestClosest );
+                pMsg->SetRequestName(ST::format("Python [{}]: Shootables", selfkey.getName()));
                 break;
         }
 
@@ -2256,10 +2252,10 @@ void cyMisc::ShootBulletFromScreen(pyKey &selfkey, float xPos, float yPos, float
         int32_t x=(int32_t) ( xPos * pipe->Width() );
         int32_t y=(int32_t) ( yPos * pipe->Height() );
 
-        hsPoint3 endPos, startPos;
+        hsPoint3 endPos;
         
         pipe->ScreenToWorldPoint( 1,0, &x, &y, range, 0, &endPos );
-        startPos = pipe->GetViewPositionWorld();
+        hsPoint3 startPos = pipe->GetViewPositionWorld();
 
         // move the start pos out a little to avoid backing up against physical objects...
         hsVector3 view(endPos - startPos);
@@ -2609,19 +2605,19 @@ void cyMisc::DebugPrint(const ST::string& msg, uint32_t level)
 
     switch (level) {
     case kDebugDump:
-        log->AddLine(msg.c_str(), plStatusLog::kGreen);
+        log->AddLine(plStatusLog::kGreen, msg);
         break;
     case kWarningLevel:
-        log->AddLine(msg.c_str(), plStatusLog::kYellow);
+        log->AddLine(plStatusLog::kYellow, msg);
         break;
     case kAssertLevel:
         hsAssert(false, msg.c_str());
         // ... fall thru to the actual log-print
     case kErrorLevel:
-        log->AddLine(msg.c_str(), plStatusLog::kRed);
+        log->AddLine(plStatusLog::kRed, msg);
         break;
     default:
-        log->AddLine(msg.c_str(), plStatusLog::kWhite);
+        log->AddLine(plStatusLog::kWhite, msg);
         break;
     }
 }
@@ -2755,7 +2751,7 @@ void cyMisc::FakeLinkToObjectNamed(const ST::string& name)
     plgDispatch::MsgSend(msg);
 }
 
-PyObject* cyMisc::LoadAvatarModel(const char* modelName, pyKey& spawnPoint, const char* userStr)
+PyObject* cyMisc::LoadAvatarModel(const char* modelName, pyKey& spawnPoint, const ST::string& userStr)
 {
     plKey SpawnedKey = plAvatarMgr::GetInstance()->LoadAvatar(modelName, "", false, spawnPoint.getKey(), nil, userStr);
     return pyKey::New(SpawnedKey);
@@ -2841,12 +2837,9 @@ void cyMisc::SetGraphicsOptions(int Width, int Height, int ColorDepth, bool Wind
     //plClient::GetInstance()->ResetDisplayDevice(Width, Height, ColorDepth, Windowed, NumAASamples, MaxAnisotropicSamples);
 }
 
-bool cyMisc::DumpLogs(const std::wstring & folder)
+bool cyMisc::DumpLogs(const ST::string& folder)
 {
-    char* temp = hsWStringToString(folder.c_str());
-    bool retVal = plStatusLogMgr::GetInstance().DumpLogs(temp);
-    delete [] temp;
-    return retVal;
+    return plStatusLogMgr::GetInstance().DumpLogs(folder);
 }
 
 bool cyMisc::FileExists(const plFileName & filename)
@@ -2900,7 +2893,7 @@ PyObject* cyMisc::PyGuidGenerate()
 {
     plUUID newGuid = plUUID::Generate();
 
-    return PyString_FromString(newGuid.AsString().c_str());
+    return PyUnicode_FromSTString(newGuid.AsString());
 }
 
 PyObject* cyMisc::GetAIAvatarsByModelName(const char* name)
@@ -2918,7 +2911,7 @@ PyObject* cyMisc::GetAIAvatarsByModelName(const char* name)
         {
             PyObject* tuple = PyTuple_New(2);
             PyTuple_SetItem(tuple, 0, pyCritterBrain::New(critterBrain));
-            PyTuple_SetItem(tuple, 1, PyString_FromSTString(armMod->GetUserStr()));
+            PyTuple_SetItem(tuple, 1, PyUnicode_FromSTString(armMod->GetUserStr()));
 
             PyList_Append(avList, tuple);
             Py_DECREF(tuple);

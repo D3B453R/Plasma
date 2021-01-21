@@ -56,7 +56,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "MaxMain/MaxCompat.h"
 #include <iparamm2.h>
-#pragma hdrstop
 
 #include "plAnimStealthNode.h"
 #include "plPassMtlBase.h"
@@ -255,7 +254,7 @@ plAnimStealthNode   *plAnimStealthNode::ConvertToStealth( INode *objNode )
 }
 
 
-ST::string plAnimStealthNode::GetSegmentName( void ) const
+ST::string plAnimStealthNode::GetSegmentName() const
 {
     const char *str = fParamBlock->GetStr( (ParamID)kPBName );
     if( str == nil || str[ 0 ] == 0 )
@@ -407,7 +406,7 @@ IOResult plAnimStealthNode::Load(ILoad* iload)
     return IO_OK;
 }
 
-plPassMtlBase   *plAnimStealthNode::GetParentMtl( void )
+plPassMtlBase   *plAnimStealthNode::GetParentMtl()
 {
     return fParentMtl;
 }
@@ -427,7 +426,7 @@ class plGetRefs : public DependentEnumProc
         }
 };
 
-bool        plAnimStealthNode::IsParentUsedInScene( void )
+bool        plAnimStealthNode::IsParentUsedInScene()
 {
     if( GetParentMtl() == nil )
         return false;
@@ -760,7 +759,7 @@ void plAnimStealthNode::EndEditParams(IObjParam *ip, ULONG flags, Animatable *ne
 
 //// ReleaseDlg //////////////////////////////////////////////////////////////
 
-void    plAnimStealthNode::ReleaseDlg( void )
+void    plAnimStealthNode::ReleaseDlg()
 {
     IParamMap2 *map = fParamBlock->GetMap();
     fParamBlock->SetMap( nil );
@@ -822,7 +821,7 @@ bool    plAnimStealthNode::CreateAndEmbedDlg( IParamMap2 *parentMap, IMtlParams 
 //// GetWinDlg ///////////////////////////////////////////////////////////////
 //  Get the actual window handle of the currently active dialog displaying us
 
-HWND    plAnimStealthNode::GetWinDlg( void ) const
+HWND    plAnimStealthNode::GetWinDlg() const
 {
     IParamMap2 *map = fParamBlock->GetMap();
     if( map != nil )
@@ -887,28 +886,26 @@ ST::string plAnimStealthNode::GetIfaceSegmentName( bool allowNil )
 {
     // When sending messages to material animations, they're already addressed for the right
     // layer, no need for a segment name
-    return ST::null;
+    return ST::string();
 }
 
 //// Parameter Access Functions //////////////////////////////////////////////
 
-#pragma warning( push ) 
-#pragma warning( disable:4800 ) // Forcing value to bool true or false (go figure, i'm even explicitly casting)
-bool    plAnimStealthNode::GetAutoStart( void ) const   { return (bool)fParamBlock->GetInt( (ParamID)kPBAutoStart ); }
+bool    plAnimStealthNode::GetAutoStart() const   { return (bool)fParamBlock->GetInt( (ParamID)kPBAutoStart ); }
 void    plAnimStealthNode::SetAutoStart( bool b )       { fParamBlock->SetValue( (ParamID)kPBAutoStart, 0, (int)b ); };
 
-bool        plAnimStealthNode::GetLoop( void ) const                    { return fParamBlock->GetInt( (ParamID)kPBLoop ); }
-ST::string  plAnimStealthNode::GetLoopName( void ) const                { return ST::string::from_utf8( fParamBlock->GetStr( (ParamID)kPBLoopName ) ); }
+bool        plAnimStealthNode::GetLoop() const                    { return fParamBlock->GetInt( (ParamID)kPBLoop ); }
+ST::string  plAnimStealthNode::GetLoopName() const                { return ST::string::from_utf8( fParamBlock->GetStr( (ParamID)kPBLoopName ) ); }
 void        plAnimStealthNode::SetLoop( bool b, const ST::string &name )
 {
     fParamBlock->SetValue( (ParamID)kPBLoop, 0, (int)b );
     fParamBlock->SetValue( (ParamID)kPBLoopName, 0, (char *)name.c_str() );
 }
 
-uint8_t       plAnimStealthNode::GetEaseInType( void ) const      { return (uint8_t)fParamBlock->GetInt( (ParamID)kPBEaseInType ); }
-float    plAnimStealthNode::GetEaseInLength( void ) const    { return (float)fParamBlock->GetFloat( (ParamID)kPBEaseInLength ); }
-float    plAnimStealthNode::GetEaseInMin( void ) const       { return (float)fParamBlock->GetFloat( (ParamID)kPBEaseInMin ); }
-float    plAnimStealthNode::GetEaseInMax( void ) const       { return (float)fParamBlock->GetFloat( (ParamID)kPBEaseInMax ); }
+uint8_t       plAnimStealthNode::GetEaseInType() const      { return (uint8_t)fParamBlock->GetInt( (ParamID)kPBEaseInType ); }
+float    plAnimStealthNode::GetEaseInLength() const    { return (float)fParamBlock->GetFloat( (ParamID)kPBEaseInLength ); }
+float    plAnimStealthNode::GetEaseInMin() const       { return (float)fParamBlock->GetFloat( (ParamID)kPBEaseInMin ); }
+float    plAnimStealthNode::GetEaseInMax() const       { return (float)fParamBlock->GetFloat( (ParamID)kPBEaseInMax ); }
 void        plAnimStealthNode::SetEaseIn( uint8_t type, float length, float min, float max )
 {
     fParamBlock->SetValue( (ParamID)kPBEaseInType, 0, (int)type );
@@ -917,10 +914,10 @@ void        plAnimStealthNode::SetEaseIn( uint8_t type, float length, float min,
     fParamBlock->SetValue( (ParamID)kPBEaseInMax, 0, (float)max );
 }
 
-uint8_t       plAnimStealthNode::GetEaseOutType( void ) const     { return (uint8_t)fParamBlock->GetInt( (ParamID)kPBEaseOutType ); }
-float    plAnimStealthNode::GetEaseOutLength( void ) const   { return (float)fParamBlock->GetFloat( (ParamID)kPBEaseOutLength ); }
-float    plAnimStealthNode::GetEaseOutMin( void ) const      { return (float)fParamBlock->GetFloat( (ParamID)kPBEaseOutMin ); }
-float    plAnimStealthNode::GetEaseOutMax( void ) const      { return (float)fParamBlock->GetFloat( (ParamID)kPBEaseOutMax ); }
+uint8_t       plAnimStealthNode::GetEaseOutType() const     { return (uint8_t)fParamBlock->GetInt( (ParamID)kPBEaseOutType ); }
+float    plAnimStealthNode::GetEaseOutLength() const   { return (float)fParamBlock->GetFloat( (ParamID)kPBEaseOutLength ); }
+float    plAnimStealthNode::GetEaseOutMin() const      { return (float)fParamBlock->GetFloat( (ParamID)kPBEaseOutMin ); }
+float    plAnimStealthNode::GetEaseOutMax() const      { return (float)fParamBlock->GetFloat( (ParamID)kPBEaseOutMax ); }
 void        plAnimStealthNode::SetEaseOut( uint8_t type, float length, float min, float max )
 {
     fParamBlock->SetValue( (ParamID)kPBEaseOutType, 0, (int)type );
@@ -928,11 +925,10 @@ void        plAnimStealthNode::SetEaseOut( uint8_t type, float length, float min
     fParamBlock->SetValue( (ParamID)kPBEaseOutMin, 0, (float)min );
     fParamBlock->SetValue( (ParamID)kPBEaseOutMax, 0, (float)max );
 }
-#pragma warning( pop )  // Forcing value to bool true or false (go figure, i'm even explicitly casting)
 
 //// Parent Accessor Functions ///////////////////////////////////////////////
 
-plStealthNodeAccessor   &plStealthNodeAccessor::GetInstance( void )
+plStealthNodeAccessor   &plStealthNodeAccessor::GetInstance()
 {
     static plStealthNodeAccessor    instance;
     return instance;

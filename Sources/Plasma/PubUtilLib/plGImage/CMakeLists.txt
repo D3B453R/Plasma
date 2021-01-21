@@ -1,14 +1,5 @@
-include_directories("../../CoreLib")
-include_directories("../../NucleusLib/inc")
-include_directories("../../NucleusLib")
-include_directories("../../PubUtilLib")
-
-include_directories(${JPEG_INCLUDE_DIR})
-include_directories(${PNG_INCLUDE_DIR})
-
 set(plGImage_SOURCES
     hsCodecManager.cpp
-    hsDXTDirectXCodec.cpp
     hsDXTSoftwareCodec.cpp
     plAVIWriter.cpp
     plBitmap.cpp
@@ -27,7 +18,6 @@ set(plGImage_SOURCES
 set(plGImage_HEADERS
     hsCodec.h
     hsCodecManager.h
-    hsDXTDirectXCodec.h
     hsDXTSoftwareCodec.h
     plAVIWriter.h
     plBitmap.h
@@ -45,6 +35,18 @@ set(plGImage_HEADERS
 )
 
 add_library(plGImage STATIC ${plGImage_SOURCES} ${plGImage_HEADERS})
+
+target_link_libraries(
+    plGImage
+    PUBLIC
+        CoreLib
+        pnKeyedObject
+        plMessage
+        plResMgr
+    PRIVATE
+        JPEG::JPEG
+        PNG::PNG
+)
 
 source_group("Source Files" FILES ${plGImage_SOURCES})
 source_group("Header Files" FILES ${plGImage_HEADERS})

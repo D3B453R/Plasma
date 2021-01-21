@@ -42,7 +42,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <Python.h>
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "pyColor.h"
 #include "cyPythonInterface.h"
@@ -184,7 +183,7 @@ void pyGUIDialog::SetEnabled( bool e )
     }
 }
 
-bool pyGUIDialog::IsEnabled( void )
+bool pyGUIDialog::IsEnabled()
 {
     if ( fGCkey )
     {
@@ -195,7 +194,7 @@ bool pyGUIDialog::IsEnabled( void )
     return false;
 }
 
-const char* pyGUIDialog::GetName( void )
+const char* pyGUIDialog::GetName()
 {
     if ( fGCkey )
     {
@@ -207,7 +206,7 @@ const char* pyGUIDialog::GetName( void )
 }
 
 
-uint32_t pyGUIDialog::GetVersion(void)
+uint32_t pyGUIDialog::GetVersion()
 {
     if ( fGCkey )
     {
@@ -219,7 +218,7 @@ uint32_t pyGUIDialog::GetVersion(void)
 }
 
 
-uint32_t pyGUIDialog::GetNumControls( void )
+uint32_t pyGUIDialog::GetNumControls()
 {
     if ( fGCkey )
     {
@@ -264,7 +263,7 @@ void pyGUIDialog::SetFocus( pyKey& gcKey )
     }
 }
 
-void pyGUIDialog::Show( void )
+void pyGUIDialog::Show()
 {
     if ( fGCkey )
     {
@@ -277,7 +276,7 @@ void pyGUIDialog::Show( void )
     }
 }
 
-void pyGUIDialog::ShowNoReset( void )
+void pyGUIDialog::ShowNoReset()
 {
     if ( fGCkey )
     {
@@ -287,7 +286,7 @@ void pyGUIDialog::ShowNoReset( void )
     }
 }
 
-void pyGUIDialog::Hide( void )
+void pyGUIDialog::Hide()
 {
     if ( fGCkey )
     {
@@ -485,7 +484,7 @@ void pyGUIDialog::SetFontSize(uint32_t fontsize)
     }
 }
 
-void pyGUIDialog::UpdateAllBounds( void )
+void pyGUIDialog::UpdateAllBounds()
 {
     if ( fGCkey )
     {
@@ -495,7 +494,7 @@ void pyGUIDialog::UpdateAllBounds( void )
     }
 }
 
-void pyGUIDialog::RefreshAllControls( void )
+void pyGUIDialog::RefreshAllControls()
 {
     if ( fGCkey )
     {

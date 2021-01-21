@@ -187,8 +187,12 @@ public:
     void WriteVersion(hsStream* s, hsResMgr* mgr);
 
     // ctor
-    plNetMessage();
-    virtual ~plNetMessage();
+    plNetMessage()
+        : fTimeRecvd(), fBytesRead(), fNetCoreMsg(), fContext(),
+          fPeekStatus(), fTransactionID(), fPlayerID(kInvalidPlayerID),
+          fNetProtocol(), fProtocolVerMajor(), fProtocolVerMinor(),
+          fFlags(0)
+    { }
 
     static plNetMessage* CreateAndRead(const plNetCommonMessage*, plStreamLogger::EventList* el = nil);
     static plNetMessage* Create(const plNetCommonMessage*);
@@ -328,7 +332,7 @@ public:
     void WriteVersion(hsStream* s, hsResMgr* mgr);
 
     // debug
-    ST::string AsString() const HS_OVERRIDE
+    ST::string AsString() const override
     {
         return ST::format("object={}, {}",fObjectHelper.GetUoid(), plNetMessage::AsString());
     }
@@ -403,7 +407,7 @@ public:
     void SetIsAvatarState(bool b) { fIsAvatarState = b; }
     
     // debug
-    ST::string AsString() const HS_OVERRIDE;
+    ST::string AsString() const override;
     bool IsInitialState() const {return fIsInitialState!=0; }
     void SetIsInitialState( bool v ) { fIsInitialState=v; }
 
@@ -503,7 +507,7 @@ public:
     void WriteVersion(hsStream* s, hsResMgr* mgr);
 
     // debug
-    ST::string AsString() const HS_OVERRIDE
+    ST::string AsString() const override
     {
         const char* noc=plFactory::GetTheFactory()->GetNameOfClass(StreamInfo()->GetStreamType());
         return ST::format("{} {}", plNetMsgStream::AsString(), noc ? noc : "?");
@@ -554,7 +558,7 @@ public:
 
 
     // debug
-    ST::string AsString() const HS_OVERRIDE
+    ST::string AsString() const override
     {
         return ST::format("object={} initial={}, {}",fObjectHelper.GetUoid(), fIsInitialState,
             plNetMsgGameMessage::AsString());
@@ -645,7 +649,7 @@ public:
     bool GetRequestingState() const { return (fPageFlags & kRequestState) != 0; } 
 
     // debug
-    ST::string AsString() const HS_OVERRIDE
+    ST::string AsString() const override
     {
         return ST::format("pageFlags:{02X}, paging {}, requestingState:{}, resetting={}",
             fPageFlags, (fPageFlags&kPagingOut)?"out":"in",
@@ -752,7 +756,7 @@ public:
     void WriteVersion(hsStream* s, hsResMgr* mgr);
 
     // debug
-    ST::string AsString() const HS_OVERRIDE
+    ST::string AsString() const override
     {
         return ST::format("len={}",fVoiceData.size());
     }
@@ -790,7 +794,7 @@ public:
     void WriteVersion(hsStream* s, hsResMgr* mgr);
 
     // debug
-    ST::string AsString() const HS_OVERRIDE
+    ST::string AsString() const override
     {
         return ST::format("lockReq={}, {}",fLockRequest, plNetMsgStreamedObject::AsString());
     }
@@ -974,7 +978,7 @@ public:
     const hsBitVector& GetRegionsICareAbout() const { return fRegionsICareAbout;    }
     const hsBitVector& GetRegionsImIn() const       { return fRegionsImIn;  }
 
-    ST::string AsString() const HS_OVERRIDE
+    ST::string AsString() const override
     {
         ST::string b1, b2;
         int i;
@@ -990,5 +994,4 @@ public:
 #endif  // plNetMessage_h_inc
 ////////////////////////////////////////////////////////////////////
 // End.
-
 

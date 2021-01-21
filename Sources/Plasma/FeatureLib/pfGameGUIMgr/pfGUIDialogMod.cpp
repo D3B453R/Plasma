@@ -72,24 +72,13 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 //// Constructor/Destructor //////////////////////////////////////////////////
 
-pfGUIDialogMod::pfGUIDialogMod() : fRenderMod( nil ), fNext( nil ), fPrevPtr( nil )
-{
-    memset( fName, 0, sizeof( fName ) );
-    fEnabled = false;
-    fControlOfInterest = nil;
-    fFocusCtrl = nil;
-    fMousedCtrl = nil;
-    fTagID = 0;
-    fHandler = nil;
-    fVersion = 0;
-
-    fDragMode = false;
-    fDragReceptive = false;
-    fDragTarget = nil;
-    fProcReceiver = nil;
-
-    fColorScheme = new pfGUIColorScheme();
-}
+pfGUIDialogMod::pfGUIDialogMod()
+    : fRenderMod(), fNext(), fPrevPtr(), fEnabled(),
+      fControlOfInterest(), fFocusCtrl(), fMousedCtrl(),
+      fTagID(), fHandler(), fVersion(), fProcReceiver(),
+      fDragMode(), fDragReceptive(), fDragTarget(),
+      fDragSource(), fColorScheme(new pfGUIColorScheme()), fName()
+{ }
 
 pfGUIDialogMod::~pfGUIDialogMod()
 {
@@ -348,7 +337,7 @@ void    pfGUIDialogMod::Write( hsStream *s, hsResMgr *mgr )
     mgr->WriteKey( s, fSceneNodeKey );
 }
 
-plKey   pfGUIDialogMod::GetSceneNodeKey( void )
+plKey   pfGUIDialogMod::GetSceneNodeKey()
 {
     if( fSceneNodeKey != nil )
         return fSceneNodeKey;
@@ -367,10 +356,7 @@ plKey   pfGUIDialogMod::GetSceneNodeKey( void )
 void    pfGUIDialogMod::UpdateInterestingThings( float mouseX, float mouseY, uint8_t modifiers, bool modalPreset )
 {
     int         i;
-    hsPoint3    mousePoint;
-
-
-    mousePoint.Set( mouseX, mouseY, 0.f );
+    hsPoint3    mousePoint(mouseX, mouseY, 0.f);
 
     for( i = 0; i < fControls.GetCount(); i++ )
     {
@@ -411,7 +397,6 @@ bool        pfGUIDialogMod::HandleMouseEvent( pfGameGUIMgr::EventType event, flo
     hsPoint3    mousePoint;
     uint32_t      i;
 
-    pfGUIControlMod *oldInterestingCtrl = nil;
     float        smallestZ;
 
 #ifdef HS_DEBUGGING  // Debugging bounds rects
@@ -468,7 +453,6 @@ static bool     showBounds = false;
         return true;        // We ALWAYS handle events if we're in drag mode
     }
 
-    oldInterestingCtrl = fMousedCtrl;
     if( fControlOfInterest != nil )
     {
         // A particular control already has interest--pass messages directly to it no matter what
@@ -612,17 +596,17 @@ void    pfGUIDialogMod::SetFocus( pfGUIControlMod *ctrl )
 
 //// Show/Hide ///////////////////////////////////////////////////////////////
 
-void    pfGUIDialogMod::Show( void )
+void    pfGUIDialogMod::Show()
 {
     pfGameGUIMgr::GetInstance()->ShowDialog( this );
 }
 
-void    pfGUIDialogMod::ShowNoReset( void )
+void    pfGUIDialogMod::ShowNoReset()
 {
     pfGameGUIMgr::GetInstance()->ShowDialog( this, false );
 }
 
-void    pfGUIDialogMod::Hide( void )
+void    pfGUIDialogMod::Hide()
 {
     pfGameGUIMgr::GetInstance()->HideDialog( this );
 }
@@ -712,7 +696,7 @@ void    pfGUIDialogMod::SetControlHandler( uint32_t tagID, pfGUIDialogProc *hdlr
 
 //// UpdateAspectRatio ///////////////////////////////////////////////////////
 
-void    pfGUIDialogMod::UpdateAspectRatio( void )
+void    pfGUIDialogMod::UpdateAspectRatio()
 {
     if (fRenderMod)
     {
@@ -725,7 +709,7 @@ void    pfGUIDialogMod::UpdateAspectRatio( void )
 
 //// UpdateAllBounds /////////////////////////////////////////////////////////
 
-void    pfGUIDialogMod::UpdateAllBounds( void )
+void    pfGUIDialogMod::UpdateAllBounds()
 {
     int i;
     for( i = 0; i < fControls.GetCount(); i++ )
@@ -737,7 +721,7 @@ void    pfGUIDialogMod::UpdateAllBounds( void )
 
 //// RefreshAllControls //////////////////////////////////////////////////////
 
-void    pfGUIDialogMod::RefreshAllControls( void )
+void    pfGUIDialogMod::RefreshAllControls()
 {
     int i;
     for( i = 0; i < fControls.GetCount(); i++ )
@@ -750,7 +734,7 @@ void    pfGUIDialogMod::RefreshAllControls( void )
 
 //// ClearDragList ///////////////////////////////////////////////////////////
 
-void    pfGUIDialogMod::ClearDragList( void )
+void    pfGUIDialogMod::ClearDragList()
 {
     fDragElements.Reset();
 }
@@ -838,7 +822,7 @@ void    pfGUIDialogMod::IHandleDrag( hsPoint3 &mousePoint, pfGameGUIMgr::EventTy
 
 //// GetDesiredCursor ////////////////////////////////////////////////////////
 
-uint32_t      pfGUIDialogMod::GetDesiredCursor( void ) const
+uint32_t      pfGUIDialogMod::GetDesiredCursor() const
 {
     if( fMousedCtrl != nil ) 
         return fMousedCtrl->IGetDesiredCursor();

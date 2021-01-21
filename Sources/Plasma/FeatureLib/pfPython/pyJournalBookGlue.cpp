@@ -42,7 +42,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <Python.h>
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "pyJournalBook.h"
 #include "pyEnum.h"
@@ -112,20 +111,9 @@ PYTHON_INIT_DEFINITION(ptBook, args, keywords)
     // convert the sourcecode object
     if (PyUnicode_Check(sourceObj))
     {
-        int len = PyUnicode_GetSize(sourceObj);
-        wchar_t* temp = new wchar_t[len + 1];
-        PyUnicode_AsWideChar((PyUnicodeObject*)sourceObj, temp, len);
-        temp[len] = L'\0';
-
+        wchar_t* temp = PyUnicode_AsWideCharString(sourceObj, nullptr);
         std::wstring source = temp;
-        delete [] temp;
-
-        self->fThis->MakeBook(source, coverKey, callbackKey, guiNameStr);
-        PYTHON_RETURN_INIT_OK;
-    }
-    else if (PyString_Check(sourceObj))
-    {
-        std::string source = PyString_AsString(sourceObj);
+        PyMem_Free(temp);
 
         self->fThis->MakeBook(source, coverKey, callbackKey, guiNameStr);
         PYTHON_RETURN_INIT_OK;
@@ -258,7 +246,7 @@ PYTHON_METHOD_DEFINITION(ptBook, setEditable, args)
 
 PYTHON_METHOD_DEFINITION(ptBook, getEditableText, args)
 {
-    return PyString_FromString(self->fThis->GetEditableText().c_str());
+    return PyUnicode_FromStdString(self->fThis->GetEditableText());
 }
 
 PYTHON_METHOD_DEFINITION(ptBook, setEditableText, args)
@@ -351,11 +339,13 @@ PYTHON_GLOBAL_METHOD_DEFINITION(PtUnloadBookGUI, args, "Params: guiName\nUnloads
 
 PYTHON_BASIC_GLOBAL_METHOD_DEFINITION(PtUnloadAllBookGUIs, pyJournalBook::UnloadAllGUIs, "Unloads all loaded guis except for the default one")
 
-void pyJournalBook::AddPlasmaMethods(std::vector<PyMethodDef> &methods)
+void pyJournalBook::AddPlasmaMethods(PyObject* m)
 {
-    PYTHON_GLOBAL_METHOD(methods, PtLoadBookGUI);
-    PYTHON_GLOBAL_METHOD(methods, PtUnloadBookGUI);
-    PYTHON_BASIC_GLOBAL_METHOD(methods, PtUnloadAllBookGUIs);
+    PYTHON_START_GLOBAL_METHOD_TABLE(ptJournalBook)
+        PYTHON_GLOBAL_METHOD(PtLoadBookGUI)
+        PYTHON_GLOBAL_METHOD(PtUnloadBookGUI)
+        PYTHON_BASIC_GLOBAL_METHOD(PtUnloadAllBookGUIs)
+    PYTHON_END_GLOBAL_METHOD_TABLE(m, ptJournalBook)
 }
 
 void pyJournalBook::AddPlasmaConstantsClasses(PyObject *m)

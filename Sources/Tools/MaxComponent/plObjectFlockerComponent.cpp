@@ -47,7 +47,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include "resource.h"
 
 #include <iparamm2.h>
-#pragma hdrstop
 
 #include "pnEncryption/plRandom.h"
 #include "plObjectFlockerComponent.h"
@@ -276,7 +275,7 @@ bool plObjectFlockerComponent::PreConvert(plMaxNode *node, plErrorMsg *pErrMsg)
 
 bool plObjectFlockerComponent::Convert(plMaxNode *node, plErrorMsg *pErrMsg)
 {
-    node->AddModifier(fFlocker, ST::null);
+    node->AddModifier(fFlocker, ST::string());
 
     return true;
 }

@@ -50,7 +50,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include "MaxMain/plMaxNode.h"
 #include "MaxMain/plMaxNodeData.h"
-#pragma hdrstop
 
 //Messages related
 #include "pnMessage/plObjRefMsg.h"
@@ -270,7 +269,7 @@ bool plAnimAvatarComponent::ConvertNodeSegmentBranch(plMaxNode *node, plAGAnim *
 {
     // Check for a suppression marker
     plNotetrackAnim noteAnim(node, pErrMsg);
-    plAnimInfo info = noteAnim.GetAnimInfo(ST::null);
+    plAnimInfo info = noteAnim.GetAnimInfo(ST::string());
     bool suppressed = info.IsSuppressed(mod->GetName());
 
     // Get the affine parts and the TM Controller

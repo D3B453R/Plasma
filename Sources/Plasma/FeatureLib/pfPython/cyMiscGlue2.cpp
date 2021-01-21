@@ -42,7 +42,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <Python.h>
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "cyMisc.h"
 #include "pyGlueHelpers.h"
@@ -60,37 +59,15 @@ PYTHON_GLOBAL_METHOD_DEFINITION(PtYesNoDialog, args, "Params: selfkey,dialogMess
             "This dialog _has_ to be answered by the user.\n"
             "And their answer will be returned in a Notify message.")
 {
-    PyObject* keyObj = NULL;
-    PyObject* dialogMsgObj = NULL;
-    if (!PyArg_ParseTuple(args, "OO", &keyObj, &dialogMsgObj))
-    {
-        PyErr_SetString(PyExc_TypeError, "PtYesNoDialog expects a ptKey and a string or unicode string");
-        PYTHON_RETURN_ERROR;
-    }
-    if (!pyKey::Check(keyObj))
-    {
-        PyErr_SetString(PyExc_TypeError, "PtYesNoDialog expects a ptKey and a string or unicode string");
+    PyObject* keyObj = nullptr;
+    ST::string text;
+    if (!PyArg_ParseTuple(args, "OO&", &keyObj, PyUnicode_STStringConverter, &text) || !pyKey::Check(keyObj)) {
+        PyErr_SetString(PyExc_TypeError, "PtYesNoDialog expects a ptKey and a string");
         PYTHON_RETURN_ERROR;
     }
     pyKey* key = pyKey::ConvertFrom(keyObj);
-    if (PyUnicode_Check(dialogMsgObj))
-    {
-        int len = PyUnicode_GetSize(dialogMsgObj);
-        wchar_t* text = new wchar_t[len + 1];
-        PyUnicode_AsWideChar((PyUnicodeObject*)dialogMsgObj, text, len);
-        text[len] = L'\0';
-        cyMisc::YesNoDialog(*key, text);
-        delete [] text;
-        PYTHON_RETURN_NONE;
-    }
-    else if (PyString_Check(dialogMsgObj))
-    {
-        char* text = PyString_AsString(dialogMsgObj);
-        cyMisc::YesNoDialog(*key, text);
-        PYTHON_RETURN_NONE;
-    }
-    PyErr_SetString(PyExc_TypeError, "PtYesNoDialog expects a ptKey and a string or unicode string");
-    PYTHON_RETURN_ERROR;
+    cyMisc::YesNoDialog(*key, text);
+    PYTHON_RETURN_NONE
 }
 
 PYTHON_GLOBAL_METHOD_DEFINITION(PtRateIt, args, "Params: chronicleName,dialogPrompt,onceFlag\nShows a dialog with dialogPrompt and stores user input rating into chronicleName")
@@ -194,9 +171,9 @@ PYTHON_GLOBAL_METHOD_DEFINITION(PtPageInNode, args, "Params: nodeName, netForce=
         PYTHON_RETURN_ERROR;
     }
     std::vector<std::string> nodeNames;
-    if (PyString_Check(nodeNameObj))
+    if (PyUnicode_Check(nodeNameObj))
     {
-        nodeNames.push_back(PyString_AsString(nodeNameObj));
+        nodeNames.emplace_back(PyUnicode_AsUTF8(nodeNameObj));
     }
     else if (PyList_Check(nodeNameObj))
     {
@@ -204,12 +181,12 @@ PYTHON_GLOBAL_METHOD_DEFINITION(PtPageInNode, args, "Params: nodeName, netForce=
         for (int i = 0; i < num; i++)
         {
             PyObject* listItem = PyList_GetItem(nodeNameObj, i);
-            if (!PyString_Check(listItem))
+            if (!PyUnicode_Check(listItem))
             {
                 PyErr_SetString(PyExc_TypeError, "PtPageInNode expects a string or list of strings, and optionally a string");
                 PYTHON_RETURN_ERROR;
             }
-            nodeNames.push_back(PyString_AsString(listItem));
+            nodeNames.emplace_back(PyUnicode_AsUTF8(listItem));
         }
     }
     else
@@ -461,41 +438,43 @@ PYTHON_GLOBAL_METHOD_DEFINITION(PtClearPrivateChatList, args, "Params: memberKey
 // AddPlasmaMethods - the python method definitions
 //
 
-void cyMisc::AddPlasmaMethods2(std::vector<PyMethodDef> &methods)
+void cyMisc::AddPlasmaMethods2(PyObject* m)
 {
-    PYTHON_GLOBAL_METHOD(methods, PtYesNoDialog);
-    PYTHON_GLOBAL_METHOD(methods, PtRateIt);
-    
-    PYTHON_GLOBAL_METHOD(methods, PtExcludeRegionSet);
-    PYTHON_GLOBAL_METHOD(methods, PtExcludeRegionSetNow);
+    PYTHON_START_GLOBAL_METHOD_TABLE(cyMisc2)
+        PYTHON_GLOBAL_METHOD(PtYesNoDialog)
+        PYTHON_GLOBAL_METHOD(PtRateIt)
 
-    PYTHON_GLOBAL_METHOD(methods, PtAcceptInviteInGame);
+        PYTHON_GLOBAL_METHOD(PtExcludeRegionSet)
+        PYTHON_GLOBAL_METHOD(PtExcludeRegionSetNow)
 
-    PYTHON_GLOBAL_METHOD_NOARGS(methods, PtGetTime);
-    PYTHON_GLOBAL_METHOD_NOARGS(methods, PtGetGameTime);
-    PYTHON_GLOBAL_METHOD_NOARGS(methods, PtGetFrameDeltaTime);
+        PYTHON_GLOBAL_METHOD(PtAcceptInviteInGame)
 
-    PYTHON_GLOBAL_METHOD(methods, PtPageInNode);
-    PYTHON_GLOBAL_METHOD(methods, PtPageOutNode);
-    
-    PYTHON_GLOBAL_METHOD(methods, PtLimitAvatarLOD);
+        PYTHON_GLOBAL_METHOD_NOARGS(PtGetTime)
+        PYTHON_GLOBAL_METHOD_NOARGS(PtGetGameTime)
+        PYTHON_GLOBAL_METHOD_NOARGS(PtGetFrameDeltaTime)
 
-    PYTHON_GLOBAL_METHOD(methods, PtFogSetDefColor);
-    PYTHON_GLOBAL_METHOD(methods, PtFogSetDefLinear);
-    PYTHON_GLOBAL_METHOD(methods, PtFogSetDefExp);
-    PYTHON_GLOBAL_METHOD(methods, PtFogSetDefExp2);
+        PYTHON_GLOBAL_METHOD(PtPageInNode)
+        PYTHON_GLOBAL_METHOD(PtPageOutNode)
 
-    PYTHON_GLOBAL_METHOD(methods, PtLoadDialog);
-    PYTHON_GLOBAL_METHOD(methods, PtUnloadDialog);
-    PYTHON_GLOBAL_METHOD(methods, PtIsDialogLoaded);
-    PYTHON_GLOBAL_METHOD(methods, PtShowDialog);
-    PYTHON_GLOBAL_METHOD(methods, PtHideDialog);
-    PYTHON_GLOBAL_METHOD(methods, PtGetDialogFromTagID);
-    PYTHON_GLOBAL_METHOD(methods, PtGetDialogFromString);
-    PYTHON_GLOBAL_METHOD_NOARGS(methods, PtIsGUIModal);
+        PYTHON_GLOBAL_METHOD(PtLimitAvatarLOD)
 
-    PYTHON_GLOBAL_METHOD(methods, PtSendPrivateChatList);
-    PYTHON_GLOBAL_METHOD(methods, PtClearPrivateChatList);
+        PYTHON_GLOBAL_METHOD(PtFogSetDefColor)
+        PYTHON_GLOBAL_METHOD(PtFogSetDefLinear)
+        PYTHON_GLOBAL_METHOD(PtFogSetDefExp)
+        PYTHON_GLOBAL_METHOD(PtFogSetDefExp2)
+
+        PYTHON_GLOBAL_METHOD(PtLoadDialog)
+        PYTHON_GLOBAL_METHOD(PtUnloadDialog)
+        PYTHON_GLOBAL_METHOD(PtIsDialogLoaded)
+        PYTHON_GLOBAL_METHOD(PtShowDialog)
+        PYTHON_GLOBAL_METHOD(PtHideDialog)
+        PYTHON_GLOBAL_METHOD(PtGetDialogFromTagID)
+        PYTHON_GLOBAL_METHOD(PtGetDialogFromString)
+        PYTHON_GLOBAL_METHOD_NOARGS(PtIsGUIModal)
+
+        PYTHON_GLOBAL_METHOD(PtSendPrivateChatList)
+        PYTHON_GLOBAL_METHOD(PtClearPrivateChatList)
+    PYTHON_END_GLOBAL_METHOD_TABLE(m, cyMisc2)
 }
 
 void cyMisc::AddPlasmaConstantsClasses(PyObject *m)

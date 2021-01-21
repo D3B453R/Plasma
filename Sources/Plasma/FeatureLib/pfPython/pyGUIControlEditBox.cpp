@@ -42,7 +42,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <Python.h>
 #include "pyKey.h"
-#pragma hdrstop
 
 #include "pfGameGUIMgr/pfGUIEditBoxMod.h"
 
@@ -77,7 +76,7 @@ void pyGUIControlEditBox::SetBufferSize( uint32_t size )
 }
 
 
-std::string pyGUIControlEditBox::GetBuffer( void )
+std::string pyGUIControlEditBox::GetBuffer()
 {
     if ( fGCkey )
     {
@@ -89,7 +88,7 @@ std::string pyGUIControlEditBox::GetBuffer( void )
     return "";
 }
 
-std::wstring pyGUIControlEditBox::GetBufferW( void )
+std::wstring pyGUIControlEditBox::GetBufferW()
 {
     if ( fGCkey )
     {
@@ -101,7 +100,7 @@ std::wstring pyGUIControlEditBox::GetBufferW( void )
     return L"";
 }
 
-void pyGUIControlEditBox::ClearBuffer( void )
+void pyGUIControlEditBox::ClearBuffer()
 {
     if ( fGCkey )
     {
@@ -134,7 +133,7 @@ void pyGUIControlEditBox::SetTextW( const wchar_t *str )
     }
 }
 
-void pyGUIControlEditBox::SetCursorToHome(void)
+void pyGUIControlEditBox::SetCursorToHome()
 {
     if ( fGCkey )
     {
@@ -145,7 +144,7 @@ void pyGUIControlEditBox::SetCursorToHome(void)
     }
 }
 
-void pyGUIControlEditBox::SetCursorToEnd(void)
+void pyGUIControlEditBox::SetCursorToEnd()
 {
     if ( fGCkey )
     {

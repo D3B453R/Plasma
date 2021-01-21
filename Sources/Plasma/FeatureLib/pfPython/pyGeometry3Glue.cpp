@@ -42,7 +42,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <Python.h>
 #include "pyGeometry3.h"
-#pragma hdrstop
 
 // glue functions
 PYTHON_CLASS_DEFINITION(ptPoint3, pyPoint3);
@@ -431,15 +430,16 @@ PYTHON_START_AS_NUMBER_TABLE(ptVector3)
 PYTHON_END_AS_NUMBER_TABLE;
 
 // Type structure definition
-#define ptVector3_COMPARE       PYTHON_NO_COMPARE
 #define ptVector3_AS_NUMBER     PYTHON_DEFAULT_AS_NUMBER(ptVector3)
 #define ptVector3_AS_SEQUENCE   PYTHON_NO_AS_SEQUENCE
 #define ptVector3_AS_MAPPING    PYTHON_NO_AS_MAPPING
 #define ptVector3_STR           PYTHON_NO_STR
+#define ptVector3_GETATTRO      PYTHON_NO_GETATTRO
+#define ptVector3_SETATTRO      PYTHON_NO_SETATTRO
 #define ptVector3_RICH_COMPARE  PYTHON_NO_RICH_COMPARE
 #define ptVector3_GETSET        PYTHON_NO_GETSET
 #define ptVector3_BASE          PYTHON_NO_BASE
-PLASMA_CUSTOM_TYPE(ptVector3, "Params: x=0, y=0, z=0\nPlasma Point class");
+PLASMA_CUSTOM_TYPE(ptVector3, "Params: x=0, y=0, z=0\nPlasma 3D Vector class");
 
 // required functions for PyObject interoperability
 PYTHON_CLASS_NEW_IMPL(ptVector3, pyVector3)

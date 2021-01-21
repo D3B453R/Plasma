@@ -41,7 +41,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 *==LICENSE==*/
 
 #include <Python.h>
-#pragma hdrstop
 
 #include "pyVaultNode.h"
 #include "pnUUID/pnUUID.h"
@@ -57,49 +56,46 @@ PYTHON_NO_INIT_DEFINITION(ptVaultNode)
 
 PYTHON_RICH_COMPARE_DEFINITION(ptVaultNode, obj1, obj2, compareType)
 {
-    if ((obj1 == Py_None) || (obj2 == Py_None))
-    {
-        bool isEqual = (obj1 == obj2);
-
-        if (compareType == Py_EQ)
-        {
-            if (isEqual)
-                PYTHON_RCOMPARE_TRUE;
-            else
-                PYTHON_RCOMPARE_FALSE;
-        }
-        else if (compareType == Py_NE)
-        {
-            if (isEqual)
-                PYTHON_RCOMPARE_FALSE;
-            else
-                PYTHON_RCOMPARE_TRUE;
-        }
-        PyErr_SetString(PyExc_NotImplementedError, "invalid comparison for a ptVaultNode object");
-        PYTHON_RCOMPARE_ERROR;
+    // Only allow == or !=
+    if (compareType != Py_EQ && compareType != Py_NE) {
+        PyErr_SetString(PyExc_TypeError, "ptVaultNode comparison not supported");
+        return nullptr;
     }
 
-    if (!pyVaultNode::Check(obj1) || !pyVaultNode::Check(obj2))
-    {
-        PyErr_SetString(PyExc_NotImplementedError, "cannot compare ptVaultNode objects to non-ptVaultNode objects");
-        PYTHON_RCOMPARE_ERROR;
+    // tp_richcompare documentation indicates obj1 should ALWAYS be an instance of this type.
+    hsAssert(pyVaultNode::Check(obj1), "left hand of richcompare is not a ptVaultNode????");
+
+    // Truth testing
+    if (PyBool_Check(obj2)) {
+        pyVaultNode* node = pyVaultNode::ConvertFrom(obj1);
+        bool value = node->fNode->IsUsed();
+        bool cmp = PyLong_AsLong(obj2);
+        if (compareType == Py_EQ) {
+            PYTHON_RETURN_BOOL(value == cmp);
+        } else if (compareType == Py_NE) {
+            PYTHON_RETURN_BOOL(value != cmp);
+        }
     }
-    pyVaultNode *vnObj1 = pyVaultNode::ConvertFrom(obj1);
-    pyVaultNode *vnObj2 = pyVaultNode::ConvertFrom(obj2);
-    if (compareType == Py_EQ)
-    {
-        if ((*vnObj1) == (*vnObj2))
-            PYTHON_RCOMPARE_TRUE;
-        PYTHON_RCOMPARE_FALSE;
+
+    // Vault nodes can only be equal to vault nodes
+    if (!pyVaultNode::Check(obj2)) {
+        if (compareType == Py_EQ) {
+            Py_RETURN_FALSE;
+        } else if (compareType == Py_NE) {
+            Py_RETURN_TRUE;
+        }
     }
-    else if (compareType == Py_NE)
-    {
-        if ((*vnObj1) != (*vnObj2))
-            PYTHON_RCOMPARE_TRUE;
-        PYTHON_RCOMPARE_FALSE;
+
+    pyVaultNode* vnObj1 = pyVaultNode::ConvertFrom(obj1);
+    pyVaultNode* vnObj2 = pyVaultNode::ConvertFrom(obj2);
+    if (compareType == Py_EQ) {
+        PYTHON_RETURN_BOOL((*vnObj1) == (*vnObj2));
+    } else if (compareType == Py_NE) {
+        PYTHON_RETURN_BOOL((*vnObj1) != (*vnObj2));
     }
-    PyErr_SetString(PyExc_NotImplementedError, "invalid comparison for a ptVaultNode object");
-    PYTHON_RCOMPARE_ERROR;
+
+    // Should never happen.
+    PYTHON_RETURN_NOT_IMPLEMENTED;
 }
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultNode, getID)
@@ -149,12 +145,12 @@ PYTHON_METHOD_DEFINITION_NOARGS(ptVaultNode, getCreateAgeTime)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultNode, getCreateAgeName)
 {
-    return PyString_FromSTString(self->fThis->GetCreateAgeName());
+    return PyUnicode_FromSTString(self->fThis->GetCreateAgeName());
 }
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultNode, getCreateAgeGuid)
 {
-    return PyString_FromSTString(self->fThis->GetCreateAgeGuid().AsString());
+    return PyUnicode_FromSTString(self->fThis->GetCreateAgeGuid().AsString());
 }
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultNode, getCreateAgeCoords)
@@ -169,7 +165,7 @@ PYTHON_METHOD_DEFINITION_NOARGS(ptVaultNode, getChildNodeRefList)
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultNode, getChildNodeCount)
 {
-    return PyInt_FromLong(self->fThis->GetChildNodeCount());
+    return PyLong_FromLong(self->fThis->GetChildNodeCount());
 }
 
 PYTHON_METHOD_DEFINITION_NOARGS(ptVaultNode, getClientID)
@@ -271,17 +267,6 @@ PYTHON_METHOD_DEFINITION(ptVaultNode, getNode, args)
         PYTHON_RETURN_ERROR;
     }
     return self->fThis->GetNode2(id);
-}
-
-PYTHON_METHOD_DEFINITION(ptVaultNode, getChildNode, args)
-{
-    unsigned long id;
-    if (!PyArg_ParseTuple(args, "l", &id))
-    {
-        PyErr_SetString(PyExc_TypeError, "getNode expects an unsigned long");
-        PYTHON_RETURN_ERROR;
-    }
-    return self->fThis->GetChildNode(id);
 }
 
 
@@ -526,11 +511,12 @@ PYTHON_START_METHODS_TABLE(ptVaultNode)
 PYTHON_END_METHODS_TABLE;
 
 // Type structure definition
-#define ptVaultNode_COMPARE         PYTHON_NO_COMPARE
 #define ptVaultNode_AS_NUMBER       PYTHON_NO_AS_NUMBER
 #define ptVaultNode_AS_SEQUENCE     PYTHON_NO_AS_SEQUENCE
 #define ptVaultNode_AS_MAPPING      PYTHON_NO_AS_MAPPING
 #define ptVaultNode_STR             PYTHON_NO_STR
+#define ptVaultNode_GETATTRO        PYTHON_NO_GETATTRO
+#define ptVaultNode_SETATTRO        PYTHON_NO_SETATTRO
 #define ptVaultNode_RICH_COMPARE    PYTHON_DEFAULT_RICH_COMPARE(ptVaultNode)
 #define ptVaultNode_GETSET          PYTHON_NO_GETSET
 #define ptVaultNode_BASE            PYTHON_NO_BASE
@@ -538,13 +524,7 @@ PLASMA_CUSTOM_TYPE(ptVaultNode, "Vault node class");
 PYTHON_EXPOSE_TYPE_DEFINITION(ptVaultNode, pyVaultNode);
 
 // required functions for PyObject interoperability
-PyObject *pyVaultNode::New(RelVaultNode* nfsNode)
-{
-    ptVaultNode *newObj = (ptVaultNode*)ptVaultNode_type.tp_new(&ptVaultNode_type, NULL, NULL);
-    newObj->fThis->fNode = nfsNode;
-    return (PyObject*)newObj;
-}
-
+PYTHON_CLASS_VAULT_NODE_NEW_IMPL(ptVaultNode, pyVaultNode);
 PYTHON_CLASS_CHECK_IMPL(ptVaultNode, pyVaultNode)
 PYTHON_CLASS_CONVERT_FROM_IMPL(ptVaultNode, pyVaultNode)
 

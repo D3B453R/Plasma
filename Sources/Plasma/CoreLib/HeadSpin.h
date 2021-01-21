@@ -59,22 +59,12 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <cctype>
 #include <cstdarg>
 #include <cstdint>
+#include <type_traits>
 
 //======================================
 // Winblows Hacks
 //======================================
 #ifdef HS_BUILD_FOR_WIN32
-    // 4244: Conversion
-    // 4305: Truncation
-    // 4503: 'identifier' : decorated name length exceeded, name was truncated
-    // 4018: signed/unsigned mismatch
-    // 4786: 255 character debug limit
-    // 4284: STL template defined operator-> for a class it doesn't make sense for (int, etc)
-    // 4800: 'int': forcing value to bool 'true' or 'false' (performance warning)
-#   ifdef _MSC_VER
-#      pragma warning( disable : 4305 4503 4018 4786 4284 4800)
-#   endif // _MSC_VER
-
     // Kind of nasty looking forward declarations, but this is Win32.... it'll never change!
     // If you want to argue: would you rather pull in the entire Windows.h? Windows 8 makes it
     // even more bloated than before!
@@ -105,9 +95,26 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #define kPosInfinity32      (0x7fffffff)
 #define kNegInfinity32      (0x80000000)
 
-#ifndef M_PI
-#   define M_PI       3.14159265358979323846
-#endif
+// Based on std::numbers from C++20
+namespace hsConstants
+{
+    template <typename T>
+    inline constexpr T pi =
+        std::enable_if_t<std::is_floating_point_v<T>, T>(3.141592653589793238462643383279502884L);
+
+    template <typename T>
+    inline constexpr T half_pi = pi<T> / T(2.0);
+
+    template <typename T>
+    inline constexpr T two_pi = pi<T> * T(2.0);
+
+    template <typename T>
+    inline constexpr T sqrt2 =
+        std::enable_if_t<std::is_floating_point_v<T>, T>(1.414213562373095048801688724209698079L);
+
+    template <typename T>
+    inline constexpr T inv_sqrt2 = T(1.0) / hsConstants::sqrt2<T>;
+}
 
 #ifndef nil
 #   define nil (nullptr)
@@ -126,32 +133,6 @@ typedef int32_t   hsError;
 
 // Declare a file-unique identifier without caring what its full name is
 #define hsUniqueIdentifier(prefix) hsMacroJoin(prefix, __LINE__)
-
-#if defined(HAVE_GCC_DEPRECATED_ATTR)
-#   define hsDeprecated(message) __attribute__((deprecated(message)))
-#elif defined(HAVE_CXX14_DEPRECATED_ATTR)
-#   define hsDeprecated(message) [[deprecated(message)]]
-#elif defined(_MSC_VER)
-#   define hsDeprecated(message) __declspec(deprecated(message))
-#else
-#   define hsDeprecated(message)
-#endif
-
-#ifdef HAVE_OVERRIDE
-#   define HS_OVERRIDE  override
-#   define HS_FINAL     final
-#else
-#   define HS_OVERRIDE
-#   define HS_FINAL
-#endif
-
-#ifdef HAVE_NOEXCEPT
-#   define HS_NOEXCEPT          noexcept
-#   define HS_NOEXCEPT_IF(cond) noexcept(cond)
-#else
-#   define HS_NOEXCEPT          throw()
-#   define HS_NOEXCEPT_IF(cond)
-#endif
 
 //======================================
 // Endian swap funcitions
@@ -264,24 +245,6 @@ inline double hsSwapEndianDouble(double dvalue)
 
 /****************************************************************************
 *
-*   arrsize
-*   arrsize returns the number of elements in an array variable
-*
-*   Example:
-*
-*   StrPrintf(buffer, arrsize(buffer), "%u", value);
-*
-***/
-#ifdef HAVE_CONSTEXPR
-    template <typename _T, size_t _Sz>
-    constexpr size_t arrsize(_T(&)[_Sz]) { return _Sz; }
-#else
-#   define  arrsize(a)  (sizeof(a) / sizeof((a)[0]))
-#endif
-
-
-/****************************************************************************
-*
 *   IS_POW2
 *
 ***/
@@ -374,14 +337,9 @@ int hsMessageBoxWithOwner(hsWindowHndl owner, const wchar_t* message, const wcha
 
 #if HS_BUILD_FOR_WIN32
      // This is for Windows
-#    define hsVsnprintf     _vsnprintf
-#    define hsVsnwprintf    _vsnwprintf
-#    define hsSnprintf      _snprintf
-#    define hsSnwprintf     _snwprintf
-
 #    define snprintf        _snprintf
-#    define snwprintf       _snwprintf
 #    define swprintf        _snwprintf
+#    define vsnprintf       _vsnprintf
 
 #    ifndef fileno
 #        define fileno(__F)       _fileno(__F)
@@ -390,11 +348,6 @@ int hsMessageBoxWithOwner(hsWindowHndl owner, const wchar_t* message, const wcha
 #   define hsWFopen(name, mode)     _wfopen(name, mode)
 #else
      // This is for Unix, Linux, OSX, etc.
-#    define hsVsnprintf     vsnprintf
-#    define hsVsnwprintf    vswprintf
-#    define hsSnprintf      snprintf
-#    define hsSnwprintf     swprintf
-
 #   define hsWFopen(name, mode)     fopen(hsWStringToString(name), hsWStringToString(mode))
 
 #   include <limits.h>
@@ -403,9 +356,9 @@ int hsMessageBoxWithOwner(hsWindowHndl owner, const wchar_t* message, const wcha
 #define MAX_EXT     (256)
 
 // Useful floating point utilities
-inline float hsDegreesToRadians(float deg) { return float(deg * (M_PI / 180)); }
-inline float hsRadiansToDegrees(float rad) { return float(rad * (180 / M_PI)); }
-#define hsInvert(a) (1 / (a))
+constexpr float hsDegreesToRadians(float deg) { return deg * (hsConstants::pi<float> / 180.f); }
+constexpr float hsRadiansToDegrees(float rad) { return rad * (180.f / hsConstants::pi<float>); }
+constexpr float hsInvert(float a) { return 1.f / a; }
 
 #ifdef _MSC_VER
 #   define ALIGN(n) __declspec(align(n))
@@ -437,10 +390,10 @@ void DebugMsg(const char* fmt, ...);
     
     void    hsDebugMessage(const char* message, long refcon);
     #define hsDebugCode(code)                   code
-    #define hsIfDebugMessage(expr, msg, ref)    (void)( ((expr) != 0) || (hsDebugMessage(msg, ref), 0) )
-    #define hsAssert(expr, ...)                 (void)( ((expr) != 0) || (ErrorAssert(__LINE__, __FILE__, __VA_ARGS__), 0) )
-    #define ASSERT(expr)                        (void)( ((expr) != 0) || (ErrorAssert(__LINE__, __FILE__, #expr), 0) )
-    #define ASSERTMSG(expr, ...)                (void)( ((expr) != 0) || (ErrorAssert(__LINE__, __FILE__, __VA_ARGS__), 0) )
+    #define hsIfDebugMessage(expr, msg, ref)    (void)( (!!(expr)) || (hsDebugMessage(msg, ref), 0) )
+    #define hsAssert(expr, ...)                 (void)( (!!(expr)) || (ErrorAssert(__LINE__, __FILE__, __VA_ARGS__), 0) )
+    #define ASSERT(expr)                        (void)( (!!(expr)) || (ErrorAssert(__LINE__, __FILE__, #expr), 0) )
+    #define ASSERTMSG(expr, ...)                (void)( (!!(expr)) || (ErrorAssert(__LINE__, __FILE__, __VA_ARGS__), 0) )
     #define FATAL(...)                          ErrorAssert(__LINE__, __FILE__, __VA_ARGS__)
     #define DEBUG_MSG                           DebugMsg
     #define DEBUG_BREAK_IF_DEBUGGER_PRESENT     DebugBreakIfDebuggerPresent

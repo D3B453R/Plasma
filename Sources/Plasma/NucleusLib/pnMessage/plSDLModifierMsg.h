@@ -71,7 +71,7 @@ protected:
     uint32_t fFlags;
 
 public:
-    plSDLModifierMsg(const ST::string& sdlName=ST::null, Action a=kActionNone);
+    plSDLModifierMsg(const ST::string& sdlName={}, Action a=kActionNone);
     ~plSDLModifierMsg();
 
     CLASSNAME_REGISTER(plSDLModifierMsg);
@@ -93,10 +93,10 @@ public:
     void SetPlayerID(uint32_t p) { fPlayerID=p;   }
 
     // IO
-    void Read(hsStream* stream, hsResMgr* mgr) HS_OVERRIDE {
+    void Read(hsStream* stream, hsResMgr* mgr) override {
         hsAssert(false, "local only msg");
     }
-    void Write(hsStream* stream, hsResMgr* mgr) HS_OVERRIDE {
+    void Write(hsStream* stream, hsResMgr* mgr) override {
         hsAssert(false, "local only msg");
     }
 };

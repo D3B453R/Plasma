@@ -47,7 +47,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <max.h>
 
 #include "resource.h"
-#pragma hdrstop
 
 #include "plAgeDescInterface.h"
 
@@ -534,7 +533,7 @@ void plAgeDescInterface::ICheckedPageFlag(int ctrlID)
     }
 }
 
-void    plAgeDescInterface::ICheckOutCurrentAge( void )
+void    plAgeDescInterface::ICheckOutCurrentAge()
 {
 #ifdef MAXASS_AVAILABLE
     hsAssert( !fCurrAgeCheckedOut, "Trying to re-check out an age!" );
@@ -566,7 +565,7 @@ void    plAgeDescInterface::ICheckOutCurrentAge( void )
     IEnableControls( true );
 }
 
-void    plAgeDescInterface::ICheckInCurrentAge( void )
+void    plAgeDescInterface::ICheckInCurrentAge()
 {
 #ifdef MAXASS_AVAILABLE
     hsAssert( fCurrAgeCheckedOut, "Trying to check in an age when none is checked out!" );
@@ -590,7 +589,7 @@ void    plAgeDescInterface::ICheckInCurrentAge( void )
     IEnableControls( true );
 }
 
-void    plAgeDescInterface::IUndoCheckOutCurrentAge( void )
+void    plAgeDescInterface::IUndoCheckOutCurrentAge()
 {
 #ifdef MAXASS_AVAILABLE
     hsAssert( fCurrAgeCheckedOut, "Trying to undo check out an age when none is checked out!" );
@@ -614,7 +613,7 @@ void    plAgeDescInterface::IUndoCheckOutCurrentAge( void )
     IEnableControls( true );
 }
 
-void    plAgeDescInterface::IInvalidateCheckOutIndicator( void )
+void    plAgeDescInterface::IInvalidateCheckOutIndicator()
 {
     RECT    r;
     HWND    dummy = GetDlgItem( fhDlg, IDC_AGEDESC );
@@ -624,7 +623,7 @@ void    plAgeDescInterface::IInvalidateCheckOutIndicator( void )
     RedrawWindow( fhDlg, &r, nil, RDW_INVALIDATE | RDW_ERASE );
 }
 
-bool    plAgeDescInterface::IMakeSureCheckedIn( void )
+bool    plAgeDescInterface::IMakeSureCheckedIn()
 {
 #ifdef MAXASS_AVAILABLE
     int result;
@@ -677,7 +676,7 @@ bool    plAgeDescInterface::IMakeSureCheckedIn( void )
     return true;
 }
 
-void    plAgeDescInterface::IUpdateCurAge( void )
+void    plAgeDescInterface::IUpdateCurAge()
 {
     // Get the current age selection
     plAgeFile   *currAge = IGetCurrentAge();
@@ -918,7 +917,7 @@ hsTArray<plFileName> plAgeDescInterface::BuildAgeFileList()
 //// IFillAgeTree /////////////////////////////////////////////////////////////
 //  Refreshes/inits the tree view of all ages we have to work with. If
 //  specified, will also get the latest version of the .age files from assetMan.
-void plAgeDescInterface::IFillAgeTree( void )
+void plAgeDescInterface::IFillAgeTree()
 {
     HWND ageTree = GetDlgItem( fhDlg, IDC_AGE_LIST );
 
@@ -1338,7 +1337,7 @@ uint32_t  plAgeDescInterface::IGetNextFreeSequencePrefix( bool getReservedPrefix
     return searchSeq;
 }
 
-plAgeFile* plAgeDescInterface::IGetCurrentAge( void )
+plAgeFile* plAgeDescInterface::IGetCurrentAge()
 {
     HWND    ageTree = GetDlgItem( fhDlg, IDC_AGE_LIST );
     fCurrAgeItem = TreeView_GetSelection( ageTree );

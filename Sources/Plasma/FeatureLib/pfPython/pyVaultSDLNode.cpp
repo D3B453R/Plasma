@@ -46,22 +46,15 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 //////////////////////////////////////////////////////////////////////
 
 #include <Python.h>
-#pragma hdrstop
 
 #include "pyVaultSDLNode.h"
 #include "plSDL/plSDL.h"
 #include "pySDL.h"
 #include "plVault/plVault.h"
 
-// should only be created from C++ side
-pyVaultSDLNode::pyVaultSDLNode(RelVaultNode* nfsNode)
-: pyVaultNode(nfsNode)
-{
-}
-
 //create from the Python side
 pyVaultSDLNode::pyVaultSDLNode()
-: pyVaultNode(new RelVaultNode)
+    : pyVaultNode()
 {
     fNode->SetNodeType(plVault::kNodeType_SDL);
 }

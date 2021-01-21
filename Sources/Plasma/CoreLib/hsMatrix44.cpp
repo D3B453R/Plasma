@@ -43,7 +43,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 
 #include <cmath>
 #include "HeadSpin.h"
-#pragma hdrstop
 
 #include "hsGeometry3.h"
 #include "hsQuat.h"
@@ -59,15 +58,15 @@ const hsMatrix44& hsMatrix44::IdentityMatrix() { return myIdent; }
 
 /*
     For the rotation:
-         ¦        2     2                                      ¦
-         ¦ 1 - (2Y  + 2Z )   2XY + 2ZW         2XZ - 2YW       ¦
-         ¦                                                     ¦
-         ¦                          2     2                    ¦
-     M = ¦ 2XY - 2ZW         1 - (2X  + 2Z )   2YZ + 2XW       ¦
-         ¦                                                     ¦
-         ¦                                            2     2  ¦
-         ¦ 2XZ + 2YW         2YZ - 2XW         1 - (2X  + 2Y ) ¦
-         ¦                                                     ¦
+         Â¦        2     2                                      Â¦
+         Â¦ 1 - (2Y  + 2Z )   2XY + 2ZW         2XZ - 2YW       Â¦
+         Â¦                                                     Â¦
+         Â¦                          2     2                    Â¦
+     M = Â¦ 2XY - 2ZW         1 - (2X  + 2Z )   2YZ + 2XW       Â¦
+         Â¦                                                     Â¦
+         Â¦                                            2     2  Â¦
+         Â¦ 2XZ + 2YW         2YZ - 2XW         1 - (2X  + 2Y ) Â¦
+         Â¦                                                     Â¦
 
     The translation is far too complex to discuss here. ;^)
 */
@@ -96,7 +95,7 @@ hsMatrix44::hsMatrix44(const hsScalarTriple &translate, const hsQuat &rotate)
 void hsMatrix44::DecompRigid(hsScalarTriple &translate, hsQuat &rotate) const
 {
     translate = GetTranslate();
-    rotate.QuatFromMatrix44(*this);
+    rotate = hsQuat::QuatFromMatrix44(*this);
 }
 
 static hsMatrix44 mat_mult_fpu(const hsMatrix44 &a, const hsMatrix44 &b)
@@ -211,10 +210,9 @@ hsPoint3 hsMatrix44::operator*(const hsPoint3& p) const
     if (fFlags & hsMatrix44::kIsIdent)
         return p;
 
-    hsPoint3 rVal;
-    rVal.fX = (p.fX * fMap[0][0]) + (p.fY * fMap[0][1]) + (p.fZ * fMap[0][2]) + fMap[0][3];
-    rVal.fY = (p.fX * fMap[1][0]) + (p.fY * fMap[1][1]) + (p.fZ * fMap[1][2]) + fMap[1][3];
-    rVal.fZ = (p.fX * fMap[2][0]) + (p.fY * fMap[2][1]) + (p.fZ * fMap[2][2]) + fMap[2][3];
+    hsPoint3 rVal((p.fX * fMap[0][0]) + (p.fY * fMap[0][1]) + (p.fZ * fMap[0][2]) + fMap[0][3],
+                  (p.fX * fMap[1][0]) + (p.fY * fMap[1][1]) + (p.fZ * fMap[1][2]) + fMap[1][3],
+                  (p.fX * fMap[2][0]) + (p.fY * fMap[2][1]) + (p.fZ * fMap[2][2]) + fMap[2][3]);
     return rVal;
 }
 
@@ -230,6 +228,30 @@ hsVector3 hsMatrix44::operator*(const hsVector3& p) const
     rVal.fZ = (p.fX * fMap[2][0]) + (p.fY * fMap[2][1]) + (p.fZ * fMap[2][2]);
 
     return rVal;
+}
+
+bool hsMatrix44::Compare(const hsMatrix44& rhs, float tolerance) const
+{
+    return
+        (fabs(fMap[0][0] - rhs.fMap[0][0]) < tolerance) &&
+        (fabs(fMap[0][1] - rhs.fMap[0][1]) < tolerance) &&
+        (fabs(fMap[0][2] - rhs.fMap[0][2]) < tolerance) &&
+        (fabs(fMap[0][3] - rhs.fMap[0][3]) < tolerance) &&
+
+        (fabs(fMap[1][0] - rhs.fMap[1][0]) < tolerance) &&
+        (fabs(fMap[1][1] - rhs.fMap[1][1]) < tolerance) &&
+        (fabs(fMap[1][2] - rhs.fMap[1][2]) < tolerance) &&
+        (fabs(fMap[1][3] - rhs.fMap[1][3]) < tolerance) &&
+
+        (fabs(fMap[2][0] - rhs.fMap[2][0]) < tolerance) &&
+        (fabs(fMap[2][1] - rhs.fMap[2][1]) < tolerance) &&
+        (fabs(fMap[2][2] - rhs.fMap[2][2]) < tolerance) &&
+        (fabs(fMap[2][3] - rhs.fMap[2][3]) < tolerance) &&
+
+        (fabs(fMap[3][0] - rhs.fMap[3][0]) < tolerance) &&
+        (fabs(fMap[3][1] - rhs.fMap[3][1]) < tolerance) &&
+        (fabs(fMap[3][2] - rhs.fMap[3][2]) < tolerance) &&
+        (fabs(fMap[3][3] - rhs.fMap[3][3]) < tolerance);
 }
 
 bool hsMatrix44::operator==(const hsMatrix44& ss) const
@@ -507,16 +529,15 @@ hsMatrix44& hsMatrix44::MakeCamera(const hsPoint3* from, const hsPoint3* at,
 {
     hsVector3 dirZ(at, from);
     hsVector3 trans( -from->fX, -from->fY, -from->fZ );
-    hsVector3 dirY, dirX;
     hsMatrix44 rmat;
-    
-    dirX = (*up) % dirZ; // Stop passing in down!!! // mf_flip_up - mf
+
+    hsVector3 dirX = (*up) % dirZ; // Stop passing in down!!! // mf_flip_up - mf
     if (dirX.MagnitudeSquared())
         dirX.Normalize();
 
     if (dirZ.MagnitudeSquared())
         dirZ.Normalize();
-    dirY = dirZ % dirX;
+    hsVector3 dirY = dirZ % dirX;
     if (dirY.MagnitudeSquared())
         dirY.Normalize();
 
@@ -569,17 +590,17 @@ void hsMatrix44::MakeCameraMatrices(const hsPoint3& from, const hsPoint3& at, co
 
 void hsMatrix44::MakeEnvMapMatrices(const hsPoint3& pos, hsMatrix44* worldToCameras, hsMatrix44* cameraToWorlds)
 {
-    MakeCameraMatrices(pos, hsPoint3(pos.fX - 1.f, pos.fY, pos.fZ), hsVector3(0, 0, 1.f), worldToCameras[0], cameraToWorlds[0]);
+    MakeCameraMatrices(pos, hsPoint3(pos.fX - 1.f, pos.fY, pos.fZ), hsVector3(0.f, 0.f, 1.f), worldToCameras[0], cameraToWorlds[0]);
 
-    MakeCameraMatrices(pos, hsPoint3(pos.fX + 1.f, pos.fY, pos.fZ), hsVector3(0, 0, 1.f), worldToCameras[1], cameraToWorlds[1]);
+    MakeCameraMatrices(pos, hsPoint3(pos.fX + 1.f, pos.fY, pos.fZ), hsVector3(0.f, 0.f, 1.f), worldToCameras[1], cameraToWorlds[1]);
 
-    MakeCameraMatrices(pos, hsPoint3(pos.fX, pos.fY + 1.f, pos.fZ), hsVector3(0, 0, 1.f), worldToCameras[2], cameraToWorlds[2]);
+    MakeCameraMatrices(pos, hsPoint3(pos.fX, pos.fY + 1.f, pos.fZ), hsVector3(0.f, 0.f, 1.f), worldToCameras[2], cameraToWorlds[2]);
 
-    MakeCameraMatrices(pos, hsPoint3(pos.fX, pos.fY - 1.f, pos.fZ), hsVector3(0, 0, 1.f), worldToCameras[3], cameraToWorlds[3]);
+    MakeCameraMatrices(pos, hsPoint3(pos.fX, pos.fY - 1.f, pos.fZ), hsVector3(0.f, 0.f, 1.f), worldToCameras[3], cameraToWorlds[3]);
 
-    MakeCameraMatrices(pos, hsPoint3(pos.fX, pos.fY, pos.fZ + 1.f), hsVector3(0, -1.f, 0), worldToCameras[4], cameraToWorlds[4]);
+    MakeCameraMatrices(pos, hsPoint3(pos.fX, pos.fY, pos.fZ + 1.f), hsVector3(0.f, -1.f, 0.f), worldToCameras[4], cameraToWorlds[4]);
 
-    MakeCameraMatrices(pos, hsPoint3(pos.fX, pos.fY, pos.fZ - 1.f), hsVector3(0, 1.f, 0), worldToCameras[5], cameraToWorlds[5]);
+    MakeCameraMatrices(pos, hsPoint3(pos.fX, pos.fY, pos.fZ - 1.f), hsVector3(0.f, 1.f, 0.f), worldToCameras[5], cameraToWorlds[5]);
 }
 
 //
@@ -604,10 +625,9 @@ hsMatrix44& hsMatrix44::MakeCameraUpPreserving(const hsPoint3* from, const hsPoi
     hsVector3 dirZ(at, from);
     hsVector3 trans( -from->fX, -from->fY, -from->fZ );
     hsVector3 dirY( up->fX, up->fY, up->fZ );
-    hsVector3 dirX;
     hsMatrix44 rmat;
-    
-    dirX =   dirY % dirZ;
+
+    hsVector3 dirX =   dirY % dirZ;
     dirX.Normalize();
 
     dirY.Normalize();
@@ -629,16 +649,6 @@ hsMatrix44& hsMatrix44::MakeCameraUpPreserving(const hsPoint3* from, const hsPoi
 }
 
 ///////////////////////////////////////////////////////
-
-static float GetDeterminant33(const hsMatrix44* mat)
-{
-    return  ((mat->fMap[0][0] * mat->fMap[1][1]) * mat->fMap[2][2]) +
-            ((mat->fMap[0][1] * mat->fMap[1][2]) * mat->fMap[2][0]) +
-            ((mat->fMap[0][2] * mat->fMap[1][0]) * mat->fMap[2][1]) -
-            ((mat->fMap[0][2] * mat->fMap[1][1]) * mat->fMap[2][0]) -
-            ((mat->fMap[0][1] * mat->fMap[1][0]) * mat->fMap[2][2]) -
-            ((mat->fMap[0][0] * mat->fMap[1][2]) * mat->fMap[2][1]);
-}
 
 hsMatrix44* hsMatrix44::GetTranspose(hsMatrix44* transp) const
 {
@@ -805,16 +815,6 @@ hsVector3* hsMatrix44::GetTranslate(hsVector3 *pt) const
     return pt;
 }
 
-const hsPoint3 hsMatrix44::GetTranslate() const
-{
-    hsPoint3 pt;
-    for (int i =0; i < 3; i++)
-    {
-        (pt)[i] = fMap[i][3];
-    }
-    return pt;
-}
-
 
 hsPoint3*  hsMatrix44::MapPoints(long count, hsPoint3 points[]) const
 {
@@ -829,7 +829,7 @@ hsPoint3*  hsMatrix44::MapPoints(long count, hsPoint3 points[]) const
     return points;
 }
 
-bool hsMatrix44::IsIdentity(void)
+bool hsMatrix44::IsIdentity()
 {
     bool retVal = true;
     int i, j;

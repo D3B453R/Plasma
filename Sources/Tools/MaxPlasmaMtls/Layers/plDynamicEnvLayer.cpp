@@ -57,7 +57,6 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
 #include <iparamm2.h>
 #include <stdmat.h>
 #include <triobj.h>
-#pragma hdrstop
 
 #include "plDynamicEnvLayer.h"
 
@@ -411,7 +410,7 @@ DWORD plDynamicEnvLayer::GetActiveTexHandle(TimeValue t, TexHandleMaker& thmaker
 //  must *ALSO* be unique. Hence why this function is called by
 //  hsMaterialConverter::IMustBeUniqueMaterial().
 
-bool    plDynamicEnvLayer::MustBeUnique( void )
+bool    plDynamicEnvLayer::MustBeUnique()
 {
     if( fBitmapPB->GetINode( kBmpAnchorNode ) == nil )
         return true;

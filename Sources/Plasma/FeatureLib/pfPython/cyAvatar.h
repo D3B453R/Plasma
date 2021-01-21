@@ -77,10 +77,11 @@ protected:
 // XX   static bool IExitTopmostGenericMode();
 
 protected:
-    cyAvatar() {}
-    cyAvatar(plKey sender,plKey recvr=nil);
+    cyAvatar() : fNetForce() { }
+    cyAvatar(plKey sender, plKey recvr=nullptr);
 
 public:
+    virtual ~cyAvatar() { }
 
     // required functions for PyObject interoperability
     PYTHON_CLASS_NEW_FRIEND(ptAvatar);
@@ -90,7 +91,7 @@ public:
     PYTHON_CLASS_CONVERT_FROM_DEFINITION(cyAvatar); // converts a PyObject to a cyAvatar (throws error if not correct type)
 
     static void AddPlasmaClasses(PyObject *m);
-    static void AddPlasmaMethods(std::vector<PyMethodDef> &methods);
+    static void AddPlasmaMethods(PyObject* m);
     static void AddPlasmaConstantsClasses(PyObject *m);
 
     // setters

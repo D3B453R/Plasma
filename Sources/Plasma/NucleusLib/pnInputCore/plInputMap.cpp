@@ -39,7 +39,7 @@ You can contact Cyan Worlds, Inc. by email legal@cyan.com
       Mead, WA   99021
 
 *==LICENSE==*/
-// plInputDevice.cpp
+// plInputMap.cpp
 #include <string>
 
 #include "plInputMap.h"
@@ -159,7 +159,7 @@ void    plKeyBinding::SetKey2( const plKeyCombo &newCombo )
     fKey2 = newCombo;
 }
 
-void    plKeyBinding::ClearKeys( void )
+void    plKeyBinding::ClearKeys()
 {
     fKey1 = fKey2 = plKeyCombo::kUnmapped;
 }
@@ -182,7 +182,7 @@ plKeyMap::~plKeyMap()
     ClearAll();
 }
 
-void    plKeyMap::ClearAll( void )
+void    plKeyMap::ClearAll()
 {
     uint32_t  i;
 
@@ -488,7 +488,7 @@ void    plKeyMap::UnmapBinding( ControlEventCode code )
 //// UnmapAllBindings ////////////////////////////////////////////////////////
 //  Unmaps all the bindings, but leaves the code records themselves
 
-void    plKeyMap::UnmapAllBindings( void )
+void    plKeyMap::UnmapAllBindings()
 {
     uint32_t  i;
 
@@ -536,7 +536,8 @@ const char* plKeyMap::ConvertVKeyToChar( uint32_t vk )
 //          break;
 
         // default is English
-
+        default:
+            break;
     }
     for (int i = 0; keyConvert[i].fVKey != 0xffffffff; i++)
     {
@@ -566,7 +567,8 @@ plKeyDef plKeyMap::ConvertCharToVKey( const char *c )
 //          break;
 
         // default is English
-
+        default:
+            break;
     }
     for (int i = 0; keyConvert[i].fVKey != 0xffffffff; i++)
     {
@@ -646,7 +648,8 @@ const char* plKeyMap::GetStringCtrl()
             break;
 */
         // default is English
-
+        default:
+            break;
     }
     return "Ctrl+";
 }
@@ -669,7 +672,8 @@ const char* plKeyMap::GetStringShift()
             break;
 */
         // default is English
-
+        default:
+            break;
     }
     return "Shift+";
 }
@@ -692,7 +696,8 @@ const char* plKeyMap::GetStringUnmapped()
             break;
 */
         // default is English
-
+        default:
+            break;
     }
     return "(unmapped)";
 }
@@ -728,6 +733,7 @@ void plKeyMap::ICheckAndBindDupe(plKeyDef origKey, plKeyDef dupeKey)
 
 Win32keyConvert plKeyMap::fKeyConversionEnglish[] =
 { 
+#ifdef HS_BUILD_FOR_WIN32
     { VK_F1,    "F1"}, 
     { VK_F2,    "F2"}, 
     { VK_F3,    "F3"}, 
@@ -786,12 +792,14 @@ Win32keyConvert plKeyMap::fKeyConversionEnglish[] =
     { VK_OEM_5,     "Backslash"},   
     { VK_OEM_6,     "RightBracket"},
     { VK_OEM_7,     "Quote"},
+#endif
                 
     { 0xffffffff,   "Unused"},
 };
 
 Win32keyConvert  plKeyMap::fKeyConversionFrench[] =
 {
+#ifdef HS_BUILD_FOR_WIN32
     { VK_F1,    "F1"}, 
     { VK_F2,    "F2"}, 
     { VK_F3,    "F3"}, 
@@ -850,12 +858,14 @@ Win32keyConvert  plKeyMap::fKeyConversionFrench[] =
     { VK_OEM_5,     "BarreInverse"},    
     { VK_OEM_6,     "ParenthèseD"},
     { VK_OEM_7,     "Guillemet"},
+#endif
                 
     { 0xffffffff,   "Unused"},
 };
 
 Win32keyConvert  plKeyMap::fKeyConversionGerman[] =
 {
+#ifdef HS_BUILD_FOR_WIN32
     { VK_F1,    "F1"}, 
     { VK_F2,    "F2"}, 
     { VK_F3,    "F3"}, 
@@ -914,6 +924,7 @@ Win32keyConvert  plKeyMap::fKeyConversionGerman[] =
     { VK_OEM_5,     "Backslash"},   
     { VK_OEM_6,     "Akzent"},
     { VK_OEM_7,     "Ä"},
+#endif
                 
     { 0xffffffff,   "Unused"},
 };
