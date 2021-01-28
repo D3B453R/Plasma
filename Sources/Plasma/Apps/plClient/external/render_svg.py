@@ -49,7 +49,6 @@ import os
 import math
 from xml.dom.minidom import parse
 from optparse import OptionParser
-import scalergba
 
 try:
 	import cairosvg
@@ -148,7 +147,6 @@ def render_cursors(inpath, outpath):
 			outfile = os.path.join(outpath, cursor + ".png")
 			cairosvg.svg2png(bytestring=cursorSVG.toxml().encode('utf-8'), write_to=outfile, 
 				parent_width=svgwidth, parent_height=svgheight, scale=scalefactor)
-			scalergba.scale(outfile, outfile, scalefactor)
 
 def render_loading_books(inpath, outpath):
 	resSize = {"width":256, "height":256}
